@@ -1,0 +1,85 @@
+import { useParams } from "wouter";
+import { useQuery } from "@tanstack/react-query";
+import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { BookOpen } from "lucide-react";
+import type { H5pContent, QuizData, FlashcardData, InteractiveVideoData, ImageHotspotData } from "@shared/schema";
+import { QuizPlayer } from "@/components/players/QuizPlayer";
+import { FlashcardPlayer } from "@/components/players/FlashcardPlayer";
+import { VideoPlayer } from "@/components/players/VideoPlayer";
+import { ImageHotspotPlayer } from "@/components/players/ImageHotspotPlayer";
+
+export default function PublicPreviewPage() {
+  const params = useParams();
+  const contentId = params.id;
+
+  const { data: content, isLoading, error } = useQuery<H5pContent>({
+    queryKey: ["/api/preview", contentId],
+    retry: false,
+  });
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background p-8">
+        <div className="max-w-4xl mx-auto space-y-6">
+          <Skeleton className="h-20 w-full" />
+          <Skeleton className="h-96 w-full" />
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !content) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-6">
+        <Card className="max-w-md w-full p-8 text-center">
+          <div className="mb-6">
+            <div className="h-16 w-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+              <BookOpen className="h-8 w-8 text-muted-foreground" />
+            </div>
+            <h1 className="text-2xl font-bold text-foreground mb-2">Content Not Available</h1>
+            <p className="text-muted-foreground">
+              This content doesn't exist or hasn't been published yet.
+            </p>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <div className="border-b bg-card">
+        <div className="max-w-7xl mx-auto px-6 py-6">
+          <div className="flex items-start gap-4">
+            <div className="h-12 w-12 bg-primary rounded-lg flex items-center justify-center flex-shrink-0">
+              <BookOpen className="h-6 w-6 text-primary-foreground" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-foreground mb-1">{content.title}</h1>
+              {content.description && (
+                <p className="text-muted-foreground">{content.description}</p>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Content Player */}
+      <main className="max-w-7xl mx-auto px-6 py-8">
+        {content.type === "quiz" && <QuizPlayer data={content.data as QuizData} />}
+        {content.type === "flashcard" && <FlashcardPlayer data={content.data as FlashcardData} />}
+        {content.type === "interactive-video" && <VideoPlayer data={content.data as InteractiveVideoData} />}
+        {content.type === "image-hotspot" && <ImageHotspotPlayer data={content.data as ImageHotspotData} />}
+      </main>
+
+      {/* Footer */}
+      <div className="border-t bg-card mt-12">
+        <div className="max-w-7xl mx-auto px-6 py-4 text-center text-sm text-muted-foreground">
+          Created with <span className="text-primary font-semibold">EduCreate</span>
+        </div>
+      </div>
+    </div>
+  );
+}

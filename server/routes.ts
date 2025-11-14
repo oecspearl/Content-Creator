@@ -1,15 +1,306 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
+import session from "express-session";
 import { storage } from "./storage";
+import { aiGenerationSchema } from "@shared/schema";
+import bcrypt from "bcryptjs";
+import { 
+  generateQuizQuestions, 
+  generateFlashcards, 
+  generateVideoHotspots, 
+  generateImageHotspots 
+} from "./openai";
+
+// Type augmentation for session
+declare module "express-session" {
+  interface SessionData {
+    userId: string;
+  }
+}
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // put application routes here
-  // prefix all routes with /api
+  // Session middleware
+  app.use(
+    session({
+      secret: process.env.SESSION_SECRET || "educreat-secret-key-change-in-production",
+      resave: false,
+      saveUninitialized: false,
+      cookie: {
+        secure: process.env.NODE_ENV === "production",
+        httpOnly: true,
+        maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+      },
+    })
+  )
 
-  // use storage to perform CRUD operations on the storage interface
-  // e.g. storage.insertUser(user) or storage.getUserByUsername(username)
+  // Auth middleware
+  const requireAuth = (req: any, res: any, next: any) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    next();
+  };
+
+  // Auth routes
+  app.post("/api/auth/register", async (req, res) => {
+    try {
+      const { email, password, fullName, role, institution } = req.body;
+
+      if (!email || !password || !fullName) {
+        return res.status(400).json({ message: "Missing required fields" });
+      }
+
+      const existing = await storage.getProfileByEmail(email);
+      if (existing) {
+        return res.status(400).json({ message: "Email already registered" });
+      }
+
+      const profile = await storage.createProfile({
+        email,
+        password,
+        fullName,
+        role: role || "teacher",
+        institution: institution || null,
+      });
+
+      req.session.userId = profile.id;
+
+      // Don't send password back
+      const { password: _, ...profileWithoutPassword } = profile;
+      res.json(profileWithoutPassword);
+    } catch (error: any) {
+      console.error("Registration error:", error);
+      res.status(500).json({ message: "Registration failed" });
+    }
+  });
+
+  app.post("/api/auth/login", async (req, res) => {
+    try {
+      const { email, password } = req.body;
+
+      if (!email || !password) {
+        return res.status(400).json({ message: "Missing email or password" });
+      }
+
+      const profile = await storage.getProfileByEmail(email);
+      if (!profile) {
+        return res.status(401).json({ message: "Invalid credentials" });
+      }
+
+      const isValid = await bcrypt.compare(password, profile.password);
+      if (!isValid) {
+        return res.status(401).json({ message: "Invalid credentials" });
+      }
+
+      req.session.userId = profile.id;
+
+      const { password: _, ...profileWithoutPassword } = profile;
+      res.json(profileWithoutPassword);
+    } catch (error: any) {
+      console.error("Login error:", error);
+      res.status(500).json({ message: "Login failed" });
+    }
+  });
+
+  app.get("/api/auth/me", requireAuth, async (req, res) => {
+    try {
+      const profile = await storage.getProfileById(req.session.userId!);
+      if (!profile) {
+        return res.status(404).json({ message: "Profile not found" });
+      }
+
+      const { password: _, ...profileWithoutPassword } = profile;
+      res.json(profileWithoutPassword);
+    } catch (error: any) {
+      console.error("Get profile error:", error);
+      res.status(500).json({ message: "Failed to get profile" });
+    }
+  });
+
+  app.post("/api/auth/logout", (req, res) => {
+    req.session.destroy((err) => {
+      if (err) {
+        return res.status(500).json({ message: "Logout failed" });
+      }
+      res.json({ message: "Logged out successfully" });
+    });
+  });
+
+  // Content routes
+  app.get("/api/content", requireAuth, async (req, res) => {
+    try {
+      const contents = await storage.getContentByUserId(req.session.userId!);
+      res.json(contents);
+    } catch (error: any) {
+      console.error("Get content error:", error);
+      res.status(500).json({ message: "Failed to fetch content" });
+    }
+  });
+
+  app.get("/api/content/:id", requireAuth, async (req, res) => {
+    try {
+      const content = await storage.getContentById(req.params.id);
+      if (!content) {
+        return res.status(404).json({ message: "Content not found" });
+      }
+
+      if (content.userId !== req.session.userId) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      res.json(content);
+    } catch (error: any) {
+      console.error("Get content error:", error);
+      res.status(500).json({ message: "Failed to fetch content" });
+    }
+  });
+
+  app.post("/api/content", requireAuth, async (req, res) => {
+    try {
+      const { title, description, type, data, isPublished, tags } = req.body;
+
+      if (!title || !type || !data) {
+        return res.status(400).json({ message: "Missing required fields" });
+      }
+
+      const content = await storage.createContent({
+        title,
+        description: description || null,
+        type,
+        data,
+        userId: req.session.userId!,
+        isPublished: isPublished || false,
+        tags: tags || null,
+      });
+
+      res.json(content);
+    } catch (error: any) {
+      console.error("Create content error:", error);
+      res.status(500).json({ message: "Failed to create content" });
+    }
+  });
+
+  app.put("/api/content/:id", requireAuth, async (req, res) => {
+    try {
+      const existing = await storage.getContentById(req.params.id);
+      if (!existing) {
+        return res.status(404).json({ message: "Content not found" });
+      }
+
+      if (existing.userId !== req.session.userId) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      const { title, description, data, isPublished, tags } = req.body;
+      const updates: any = {};
+
+      if (title !== undefined) updates.title = title;
+      if (description !== undefined) updates.description = description;
+      if (data !== undefined) updates.data = data;
+      if (isPublished !== undefined) updates.isPublished = isPublished;
+      if (tags !== undefined) updates.tags = tags;
+
+      const updated = await storage.updateContent(req.params.id, updates);
+      res.json(updated);
+    } catch (error: any) {
+      console.error("Update content error:", error);
+      res.status(500).json({ message: "Failed to update content" });
+    }
+  });
+
+  app.delete("/api/content/:id", requireAuth, async (req, res) => {
+    try {
+      const existing = await storage.getContentById(req.params.id);
+      if (!existing) {
+        return res.status(404).json({ message: "Content not found" });
+      }
+
+      if (existing.userId !== req.session.userId) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      await storage.deleteContent(req.params.id);
+      res.json({ message: "Content deleted successfully" });
+    } catch (error: any) {
+      console.error("Delete content error:", error);
+      res.status(500).json({ message: "Failed to delete content" });
+    }
+  });
+
+  app.post("/api/content/:id/share", requireAuth, async (req, res) => {
+    try {
+      const content = await storage.getContentById(req.params.id);
+      if (!content) {
+        return res.status(404).json({ message: "Content not found" });
+      }
+
+      if (content.userId !== req.session.userId) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      // Ensure content is published
+      if (!content.isPublished) {
+        await storage.updateContent(req.params.id, { isPublished: true });
+      }
+
+      const share = await storage.createShare({
+        contentId: req.params.id,
+        sharedBy: req.session.userId!,
+      });
+
+      res.json(share);
+    } catch (error: any) {
+      console.error("Share content error:", error);
+      res.status(500).json({ message: "Failed to share content" });
+    }
+  });
+
+  // Public preview route
+  app.get("/api/preview/:id", async (req, res) => {
+    try {
+      const content = await storage.getPublishedContent(req.params.id);
+      if (!content) {
+        return res.status(404).json({ message: "Content not found or not published" });
+      }
+
+      res.json(content);
+    } catch (error: any) {
+      console.error("Preview content error:", error);
+      res.status(500).json({ message: "Failed to fetch content" });
+    }
+  });
+
+  // AI generation route
+  app.post("/api/ai/generate", requireAuth, async (req, res) => {
+    try {
+      const parsed = aiGenerationSchema.parse(req.body);
+
+      let result: any;
+
+      switch (parsed.contentType) {
+        case "quiz":
+          result = { questions: await generateQuizQuestions(parsed) };
+          break;
+        case "flashcard":
+          result = { cards: await generateFlashcards(parsed) };
+          break;
+        case "interactive-video":
+          result = { hotspots: await generateVideoHotspots(parsed) };
+          break;
+        case "image-hotspot":
+          result = { hotspots: await generateImageHotspots(parsed) };
+          break;
+        default:
+          return res.status(400).json({ message: "Invalid content type" });
+      }
+
+      res.json(result);
+    } catch (error: any) {
+      console.error("AI generation error:", error);
+      res.status(500).json({ message: error.message || "Failed to generate content" });
+    }
+  });
 
   const httpServer = createServer(app);
-
   return httpServer;
 }

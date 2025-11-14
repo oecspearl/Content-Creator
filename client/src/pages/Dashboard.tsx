@@ -1,0 +1,298 @@
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/hooks/useAuth";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Skeleton } from "@/components/ui/skeleton";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { 
+  FileQuestion, 
+  Layers, 
+  Video, 
+  Image as ImageIcon, 
+  Plus, 
+  Edit, 
+  Play, 
+  Share2, 
+  Trash2,
+  LogOut,
+  Grid3x3,
+  List,
+  BookOpen
+} from "lucide-react";
+import { useLocation } from "wouter";
+import type { H5pContent, ContentType } from "@shared/schema";
+import { format } from "date-fns";
+
+const contentTypeConfig: Record<ContentType, { icon: typeof FileQuestion; label: string; color: string }> = {
+  quiz: { icon: FileQuestion, label: "Quiz", color: "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300" },
+  flashcard: { icon: Layers, label: "Flashcard", color: "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300" },
+  "interactive-video": { icon: Video, label: "Interactive Video", color: "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300" },
+  "image-hotspot": { icon: ImageIcon, label: "Image Hotspot", color: "bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300" },
+};
+
+export default function Dashboard() {
+  const { user, logout } = useAuth();
+  const [_, navigate] = useLocation();
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+
+  const { data: contents, isLoading } = useQuery<H5pContent[]>({
+    queryKey: ["/api/content"],
+  });
+
+  const getInitials = (name: string) => {
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
+  const handleCreate = (type: ContentType) => {
+    navigate(`/create/${type}`);
+  };
+
+  const handleEdit = (id: string, type: ContentType) => {
+    navigate(`/create/${type}/${id}`);
+  };
+
+  const handlePlay = (id: string) => {
+    navigate(`/preview/${id}`);
+  };
+
+  const handleShare = (id: string) => {
+    navigate(`/share/${id}`);
+  };
+
+  const handleLogout = async () => {
+    await logout();
+  };
+
+  const groupedContents = contents?.reduce((acc, content) => {
+    if (!acc[content.type]) {
+      acc[content.type] = [];
+    }
+    acc[content.type].push(content);
+    return acc;
+  }, {} as Record<ContentType, H5pContent[]>);
+
+  return (
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <header className="border-b bg-card">
+        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 bg-primary rounded-lg flex items-center justify-center">
+              <BookOpen className="h-6 w-6 text-primary-foreground" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-foreground">EduCreate</h1>
+            </div>
+          </div>
+          <div className="flex items-center gap-4">
+            <ThemeToggle />
+            <div className="flex items-center gap-3">
+              <Avatar className="h-10 w-10">
+                <AvatarFallback className="bg-primary text-primary-foreground">
+                  {user ? getInitials(user.fullName) : "U"}
+                </AvatarFallback>
+              </Avatar>
+              <div className="hidden md:block">
+                <p className="text-sm font-medium text-foreground">{user?.fullName}</p>
+                <p className="text-xs text-muted-foreground">{user?.role}</p>
+              </div>
+            </div>
+            <Button variant="ghost" size="icon" onClick={handleLogout} data-testid="button-logout">
+              <LogOut className="h-5 w-5" />
+            </Button>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-6 py-8">
+        {/* Welcome Section */}
+        <div className="mb-8">
+          <h2 className="text-3xl font-bold text-foreground mb-2">
+            Welcome back, {user?.fullName?.split(" ")[0]}!
+          </h2>
+          <p className="text-muted-foreground">
+            Create and manage your interactive educational content
+          </p>
+        </div>
+
+        {/* Create Content Buttons */}
+        <div className="mb-8">
+          <h3 className="text-lg font-semibold text-foreground mb-4">Create New Content</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {Object.entries(contentTypeConfig).map(([type, config]) => {
+              const Icon = config.icon;
+              return (
+                <Card
+                  key={type}
+                  className="hover-elevate active-elevate-2 cursor-pointer transition-all"
+                  onClick={() => handleCreate(type as ContentType)}
+                  data-testid={`button-create-${type}`}
+                >
+                  <CardHeader className="pb-3">
+                    <div className={`h-12 w-12 rounded-lg ${config.color} flex items-center justify-center mb-3`}>
+                      <Icon className="h-6 w-6" />
+                    </div>
+                    <CardTitle className="text-lg">{config.label}</CardTitle>
+                  </CardHeader>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* View Mode Toggle */}
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold text-foreground">My Content</h3>
+          <div className="flex items-center gap-2">
+            <Button
+              variant={viewMode === "grid" ? "secondary" : "ghost"}
+              size="icon"
+              onClick={() => setViewMode("grid")}
+              data-testid="button-view-grid"
+            >
+              <Grid3x3 className="h-5 w-5" />
+            </Button>
+            <Button
+              variant={viewMode === "list" ? "secondary" : "ghost"}
+              size="icon"
+              onClick={() => setViewMode("list")}
+              data-testid="button-view-list"
+            >
+              <List className="h-5 w-5" />
+            </Button>
+          </div>
+        </div>
+
+        {/* Content Library */}
+        {isLoading ? (
+          <div className={viewMode === "grid" ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" : "space-y-4"}>
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <Card key={i}>
+                <CardHeader>
+                  <Skeleton className="h-12 w-12 rounded-lg mb-3" />
+                  <Skeleton className="h-6 w-3/4" />
+                  <Skeleton className="h-4 w-1/2" />
+                </CardHeader>
+                <CardFooter>
+                  <Skeleton className="h-9 w-full" />
+                </CardFooter>
+              </Card>
+            ))}
+          </div>
+        ) : !contents || contents.length === 0 ? (
+          <Card className="text-center py-12">
+            <CardContent>
+              <div className="flex flex-col items-center">
+                <div className="h-24 w-24 bg-muted rounded-full flex items-center justify-center mb-6">
+                  <BookOpen className="h-12 w-12 text-muted-foreground" />
+                </div>
+                <h3 className="text-xl font-semibold text-foreground mb-2">No content yet</h3>
+                <p className="text-muted-foreground mb-6 max-w-md">
+                  Get started by creating your first piece of interactive content. Choose from quizzes, flashcards,
+                  interactive videos, or image hotspots.
+                </p>
+                <Button onClick={() => handleCreate("quiz")} data-testid="button-create-first">
+                  <Plus className="h-5 w-5 mr-2" />
+                  Create Your First Content
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-8">
+            {Object.entries(contentTypeConfig).map(([type, config]) => {
+              const typeContents = groupedContents?.[type as ContentType] || [];
+              if (typeContents.length === 0) return null;
+
+              const Icon = config.icon;
+
+              return (
+                <div key={type}>
+                  <h4 className="text-lg font-medium text-foreground mb-4 flex items-center gap-2">
+                    <Icon className="h-5 w-5" />
+                    {config.label}s
+                    <Badge variant="secondary">{typeContents.length}</Badge>
+                  </h4>
+                  <div className={viewMode === "grid" ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" : "space-y-4"}>
+                    {typeContents.map((content) => (
+                      <Card key={content.id} className="hover-elevate transition-all" data-testid={`card-content-${content.id}`}>
+                        <CardHeader>
+                          <div className="flex items-start justify-between mb-2">
+                            <div className={`h-12 w-12 rounded-lg ${config.color} flex items-center justify-center`}>
+                              <Icon className="h-6 w-6" />
+                            </div>
+                            {content.isPublished && (
+                              <Badge variant="default" className="bg-green-600 hover:bg-green-600">Published</Badge>
+                            )}
+                          </div>
+                          <CardTitle className="text-xl">{content.title}</CardTitle>
+                          {content.description && (
+                            <CardDescription className="line-clamp-2">{content.description}</CardDescription>
+                          )}
+                        </CardHeader>
+                        <CardContent>
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <span>Updated {format(new Date(content.updatedAt), "MMM d, yyyy")}</span>
+                            {content.tags && content.tags.length > 0 && (
+                              <>
+                                <span>•</span>
+                                <div className="flex gap-1 flex-wrap">
+                                  {content.tags.slice(0, 2).map((tag, i) => (
+                                    <Badge key={i} variant="outline" className="text-xs">
+                                      {tag}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        </CardContent>
+                        <CardFooter className="flex gap-2">
+                          <Button
+                            variant="default"
+                            size="sm"
+                            className="flex-1"
+                            onClick={() => handleEdit(content.id, content.type as ContentType)}
+                            data-testid={`button-edit-${content.id}`}
+                          >
+                            <Edit className="h-4 w-4 mr-1" />
+                            Edit
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => handlePlay(content.id)}
+                            data-testid={`button-play-${content.id}`}
+                          >
+                            <Play className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => handleShare(content.id)}
+                            data-testid={`button-share-${content.id}`}
+                          >
+                            <Share2 className="h-4 w-4" />
+                          </Button>
+                        </CardFooter>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}
