@@ -198,7 +198,7 @@ export function VideoPlayer({ data }: VideoPlayerProps) {
                   <h3 className="text-xl font-semibold">{currentHotspot.title}</h3>
                   <p className="text-muted-foreground">{currentHotspot.content}</p>
 
-                  {currentHotspot.type === "question" && currentHotspot.options && (
+                  {currentHotspot.type === "question" && currentHotspot.options && currentHotspot.options.length > 0 && (
                     <div className="space-y-3">
                       {currentHotspot.options.map((option, index) => {
                         const isCorrect = currentHotspot.correctAnswer === index;
@@ -236,7 +236,7 @@ export function VideoPlayer({ data }: VideoPlayerProps) {
                   )}
 
                   <div className="flex justify-end gap-2 pt-2">
-                    {currentHotspot.type === "question" && !showFeedback && (
+                    {currentHotspot.type === "question" && currentHotspot.options && currentHotspot.options.length > 0 && !showFeedback && (
                       <Button
                         onClick={handleAnswerSubmit}
                         disabled={selectedAnswer === null}
@@ -245,7 +245,7 @@ export function VideoPlayer({ data }: VideoPlayerProps) {
                         Submit Answer
                       </Button>
                     )}
-                    {(currentHotspot.type !== "question" || showFeedback) && (
+                    {(currentHotspot.type !== "question" || !currentHotspot.options || currentHotspot.options.length === 0 || showFeedback) && (
                       <Button onClick={handleContinue} data-testid="button-continue">
                         Continue
                         <SkipForward className="h-4 w-4 ml-2" />
