@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -8,15 +8,19 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { youtubeLoader } from "@/lib/youtube-loader";
 import { AIGenerationModal } from "@/components/AIGenerationModal";
 import { 
   ArrowLeft, 
   Sparkles, 
   Plus, 
   Trash2,
-  Globe
+  Globe,
+  ChevronDown,
+  Play
 } from "lucide-react";
 import type { H5pContent, InteractiveVideoData, VideoHotspot } from "@shared/schema";
 
@@ -34,6 +38,10 @@ export default function InteractiveVideoCreator() {
   const [isPublished, setIsPublished] = useState(false);
   const [showAIModal, setShowAIModal] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
+  const [videoDuration, setVideoDuration] = useState(0);
+  const previewPlayerRef = useRef<any>(null);
+  const previewContainerRef = useRef<HTMLDivElement>(null);
 
   const { data: content } = useQuery<H5pContent>({
     queryKey: ["/api/content", contentId],
@@ -139,6 +147,57 @@ export default function InteractiveVideoCreator() {
     return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
+  const getYouTubeVideoId = (url: string) => {
+    const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&]+)/);
+    return match ? match[1] : null;
+  };
+
+  useEffect(() => {
+    if (!showPreview || !videoUrl) return;
+
+    const videoId = getYouTubeVideoId(videoUrl);
+    if (!videoId) return;
+
+    const initializePreviewPlayer = () => {
+      if (!previewContainerRef.current) return;
+
+      if (previewPlayerRef.current) {
+        previewPlayerRef.current.destroy();
+        previewPlayerRef.current = null;
+      }
+
+      previewPlayerRef.current = new window.YT.Player(previewContainerRef.current, {
+        videoId: videoId,
+        playerVars: {
+          controls: 1,
+          modestbranding: 1,
+          rel: 0,
+        },
+        events: {
+          onReady: (event: any) => {
+            setVideoDuration(event.target.getDuration());
+          },
+        },
+      });
+    };
+
+    // Use shared YouTube loader
+    youtubeLoader.load(initializePreviewPlayer);
+
+    return () => {
+      if (previewPlayerRef.current) {
+        previewPlayerRef.current.destroy();
+        previewPlayerRef.current = null;
+      }
+    };
+  }, [showPreview, videoUrl]);
+
+  const jumpToTimestamp = (timestamp: number) => {
+    if (!previewPlayerRef.current) return;
+    previewPlayerRef.current.seekTo(timestamp, true);
+    previewPlayerRef.current.playVideo();
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Toolbar */}
@@ -216,6 +275,78 @@ export default function InteractiveVideoCreator() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Video Preview */}
+          {videoUrl && (
+            <Collapsible open={showPreview} onOpenChange={setShowPreview}>
+              <Card>
+                <CardHeader>
+                  <CollapsibleTrigger className="flex items-center justify-between w-full hover-elevate rounded-lg -mx-2 px-2">
+                    <div className="flex items-center gap-2">
+                      <Play className="h-5 w-5" />
+                      <CardTitle>Video Preview</CardTitle>
+                    </div>
+                    <ChevronDown
+                      className={`h-5 w-5 transition-transform ${showPreview ? "rotate-180" : ""}`}
+                    />
+                  </CollapsibleTrigger>
+                </CardHeader>
+                <CollapsibleContent>
+                  <CardContent className="space-y-4">
+                    {/* Video Player */}
+                    <div className="relative bg-black rounded-lg overflow-hidden" style={{ aspectRatio: "16/9" }}>
+                      <div ref={previewContainerRef} className="w-full h-full" />
+                    </div>
+
+                    {/* Hotspot Timeline */}
+                    {hotspots.length > 0 && videoDuration > 0 && (
+                      <div className="space-y-2">
+                        <h4 className="text-sm font-medium">Hotspot Timeline</h4>
+                        <div className="relative h-12 bg-muted rounded-lg">
+                          {hotspots.map((hotspot, index) => {
+                            const position = (hotspot.timestamp / videoDuration) * 100;
+                            return (
+                              <button
+                                key={hotspot.id}
+                                className={`absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium cursor-pointer transition-all hover:scale-125 ${
+                                  hotspot.type === "question"
+                                    ? "bg-primary text-primary-foreground"
+                                    : hotspot.type === "info"
+                                    ? "bg-blue-500 text-white"
+                                    : "bg-green-500 text-white"
+                                }`}
+                                style={{ left: `${position}%` }}
+                                onClick={() => jumpToTimestamp(hotspot.timestamp)}
+                                title={`${hotspot.title} at ${formatTime(hotspot.timestamp)}`}
+                                aria-label={`Jump to ${hotspot.title} at ${formatTime(hotspot.timestamp)}`}
+                                data-testid={`preview-marker-${index}`}
+                              >
+                                {index + 1}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                          <div className="flex items-center gap-2">
+                            <div className="w-4 h-4 rounded-full bg-primary" />
+                            <span>Question</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <div className="w-4 h-4 rounded-full bg-blue-500" />
+                            <span>Information</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <div className="w-4 h-4 rounded-full bg-green-500" />
+                            <span>Navigation</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </CollapsibleContent>
+              </Card>
+            </Collapsible>
+          )}
 
           {/* Hotspots */}
           <div className="space-y-4">

@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Play, Pause, Volume2, VolumeX, Maximize, SkipForward, Check, X } from "lucide-react";
+import { youtubeLoader } from "@/lib/youtube-loader";
 import type { InteractiveVideoData, VideoHotspot } from "@shared/schema";
 
 type VideoPlayerProps = {
@@ -66,18 +67,8 @@ export function VideoPlayer({ data }: VideoPlayerProps) {
       });
     };
 
-    // Load YouTube IFrame API if not already loaded
-    if (!window.YT) {
-      const tag = document.createElement('script');
-      tag.src = "https://www.youtube.com/iframe_api";
-      const firstScriptTag = document.getElementsByTagName('script')[0];
-      firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag);
-
-      window.onYouTubeIframeAPIReady = initializePlayer;
-    } else if (window.YT.Player) {
-      // API already loaded, initialize immediately
-      initializePlayer();
-    }
+    // Use shared YouTube loader
+    youtubeLoader.load(initializePlayer);
 
     return () => {
       stopTimeTracking();
