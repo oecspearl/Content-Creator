@@ -53,7 +53,8 @@ export function AIGenerationModal({ open, onOpenChange, contentType, onGenerated
         ...formData,
       });
 
-      onGenerated(response);
+      const data = await response.json();
+      onGenerated(data);
       onOpenChange(false);
       toast({
         title: "Content generated!",

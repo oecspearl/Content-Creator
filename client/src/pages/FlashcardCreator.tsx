@@ -63,20 +63,22 @@ export default function FlashcardCreator() {
       const data: FlashcardData = { cards, settings };
       
       if (isEditing) {
-        return await apiRequest("PUT", `/api/content/${contentId}`, {
+        const response = await apiRequest("PUT", `/api/content/${contentId}`, {
           title,
           description,
           data,
           isPublished: publish,
         });
+        return await response.json();
       } else {
-        return await apiRequest("POST", "/api/content", {
+        const response = await apiRequest("POST", "/api/content", {
           title,
           description,
           type: "flashcard",
           data,
           isPublished: publish,
         });
+        return await response.json();
       }
     },
     onSuccess: (data) => {
@@ -122,7 +124,7 @@ export default function FlashcardCreator() {
 
   const handleAIGenerated = (data: any) => {
     if (data.cards) {
-      setCards([...cards, ...data.cards]);
+      setCards(prev => [...prev, ...data.cards]);
     }
   };
 

@@ -46,6 +46,9 @@ function Router() {
       <Route path="/">
         <ProtectedRoute component={Dashboard} />
       </Route>
+      <Route path="/dashboard">
+        <ProtectedRoute component={Dashboard} />
+      </Route>
       <Route path="/create/quiz">
         <ProtectedRoute component={QuizCreator} />
       </Route>

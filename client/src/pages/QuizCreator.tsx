@@ -67,20 +67,22 @@ export default function QuizCreator() {
       const data: QuizData = { questions, settings };
       
       if (isEditing) {
-        return await apiRequest("PUT", `/api/content/${contentId}`, {
+        const response = await apiRequest("PUT", `/api/content/${contentId}`, {
           title,
           description,
           data,
           isPublished: publish,
         });
+        return await response.json();
       } else {
-        return await apiRequest("POST", "/api/content", {
+        const response = await apiRequest("POST", "/api/content", {
           title,
           description,
           type: "quiz",
           data,
           isPublished: publish,
         });
+        return await response.json();
       }
     },
     onSuccess: (data) => {
@@ -128,7 +130,7 @@ export default function QuizCreator() {
 
   const handleAIGenerated = (data: any) => {
     if (data.questions) {
-      setQuestions([...questions, ...data.questions]);
+      setQuestions(prev => [...prev, ...data.questions]);
     }
   };
 

@@ -56,20 +56,22 @@ export default function ImageHotspotCreator() {
       const data: ImageHotspotData = { imageUrl, hotspots };
       
       if (isEditing) {
-        return await apiRequest("PUT", `/api/content/${contentId}`, {
+        const response = await apiRequest("PUT", `/api/content/${contentId}`, {
           title,
           description,
           data,
           isPublished: publish,
         });
+        return await response.json();
       } else {
-        return await apiRequest("POST", "/api/content", {
+        const response = await apiRequest("POST", "/api/content", {
           title,
           description,
           type: "image-hotspot",
           data,
           isPublished: publish,
         });
+        return await response.json();
       }
     },
     onSuccess: (data) => {
@@ -116,7 +118,7 @@ export default function ImageHotspotCreator() {
 
   const handleAIGenerated = (data: any) => {
     if (data.hotspots) {
-      setHotspots([...hotspots, ...data.hotspots]);
+      setHotspots(prev => [...prev, ...data.hotspots]);
     }
   };
 
