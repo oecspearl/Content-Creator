@@ -1,14 +1,99 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { X } from "lucide-react";
 import type { ImageHotspotData } from "@shared/schema";
+import { useProgressTracker } from "@/hooks/use-progress-tracker";
 
 type ImageHotspotPlayerProps = {
   data: ImageHotspotData;
+  contentId: string;
 };
 
-export function ImageHotspotPlayer({ data }: ImageHotspotPlayerProps) {
+export function ImageHotspotPlayer({ data, contentId }: ImageHotspotPlayerProps) {
   const [selectedHotspot, setSelectedHotspot] = useState<number | null>(null);
+  const [viewedHotspots, setViewedHotspots] = useState<Set<string>>(new Set());
+
+  const { progress: savedProgress, isProgressFetched, updateProgress, logInteraction, isAuthenticated } = useProgressTracker(contentId);
+  const [lastSentProgress, setLastSentProgress] = useState<number>(-1);
+  const [isProgressInitialized, setIsProgressInitialized] = useState(false);
+  const pendingMilestoneRef = useRef<number | null>(null);
+  const pendingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const previousAuthRef = useRef<boolean>(isAuthenticated);
+
+  // Reset initialization when auth changes from false → true
+  useEffect(() => {
+    if (!previousAuthRef.current && isAuthenticated) {
+      // User just logged in - reset to wait for progress fetch
+      setIsProgressInitialized(false);
+      setLastSentProgress(-1);
+      pendingMilestoneRef.current = null;
+      if (pendingTimeoutRef.current) {
+        clearTimeout(pendingTimeoutRef.current);
+        pendingTimeoutRef.current = null;
+      }
+    }
+    previousAuthRef.current = isAuthenticated;
+  }, [isAuthenticated]);
+
+  // Initialize from persisted progress and reconcile when savedProgress updates
+  useEffect(() => {
+    if (!isProgressInitialized) {
+      if (!isAuthenticated) {
+        setIsProgressInitialized(true);
+      } else if (isProgressFetched) {
+        if (savedProgress) {
+          setLastSentProgress(savedProgress.completionPercentage);
+        }
+        setIsProgressInitialized(true);
+      }
+    } else if (savedProgress) {
+      // After initialization, reconcile: server can only raise, never lower
+      // Only update if savedProgress is truthy (skip null refetches)
+      setLastSentProgress(prev => Math.max(prev, savedProgress.completionPercentage));
+      // Clear pending milestone if it's been saved
+      if (pendingMilestoneRef.current !== null && savedProgress.completionPercentage >= pendingMilestoneRef.current) {
+        pendingMilestoneRef.current = null;
+        if (pendingTimeoutRef.current) {
+          clearTimeout(pendingTimeoutRef.current);
+          pendingTimeoutRef.current = null;
+        }
+      }
+    }
+  }, [savedProgress, isProgressFetched, isAuthenticated, isProgressInitialized]);
+
+  // Track hotspot views and update progress (monotonic, only after initialization)
+  useEffect(() => {
+    if (!isProgressInitialized || !isAuthenticated) return;
+    
+    if (selectedHotspot !== null) {
+      const hotspot = data.hotspots[selectedHotspot];
+      if (!viewedHotspots.has(hotspot.id)) {
+        const newViewedHotspots = new Set(viewedHotspots).add(hotspot.id);
+        setViewedHotspots(newViewedHotspots);
+
+        // Update progress based on hotspots viewed (only if higher and not pending)
+        const completionPercentage = Math.round((newViewedHotspots.size / data.hotspots.length) * 100);
+        if (completionPercentage > lastSentProgress && completionPercentage !== pendingMilestoneRef.current) {
+          pendingMilestoneRef.current = completionPercentage;
+          updateProgress(completionPercentage);
+          // Clear pending after 5 seconds to allow retry on failure
+          if (pendingTimeoutRef.current) {
+            clearTimeout(pendingTimeoutRef.current);
+          }
+          pendingTimeoutRef.current = setTimeout(() => {
+            pendingMilestoneRef.current = null;
+            pendingTimeoutRef.current = null;
+          }, 5000);
+        }
+
+        // Log interaction
+        logInteraction("hotspot_viewed", {
+          hotspotId: hotspot.id,
+          hotspotTitle: hotspot.id,
+        });
+      }
+    }
+  }, [selectedHotspot, lastSentProgress, isProgressInitialized, isAuthenticated]);
 
   return (
     <div className="space-y-6">

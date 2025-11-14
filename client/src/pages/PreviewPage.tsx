@@ -66,10 +66,10 @@ export default function PreviewPage() {
 
       {/* Content Player */}
       <main className="max-w-7xl mx-auto px-6 py-8">
-        {content.type === "quiz" && <QuizPlayer data={content.data as QuizData} />}
-        {content.type === "flashcard" && <FlashcardPlayer data={content.data as FlashcardData} />}
-        {content.type === "interactive-video" && <VideoPlayer data={content.data as InteractiveVideoData} />}
-        {content.type === "image-hotspot" && <ImageHotspotPlayer data={content.data as ImageHotspotData} />}
+        {content.type === "quiz" && <QuizPlayer data={content.data as QuizData} contentId={content.id} />}
+        {content.type === "flashcard" && <FlashcardPlayer data={content.data as FlashcardData} contentId={content.id} />}
+        {content.type === "interactive-video" && <VideoPlayer data={content.data as InteractiveVideoData} contentId={content.id} />}
+        {content.type === "image-hotspot" && <ImageHotspotPlayer data={content.data as ImageHotspotData} contentId={content.id} />}
       </main>
     </div>
   );

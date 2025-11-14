@@ -1,23 +1,97 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, XCircle, RotateCcw } from "lucide-react";
 import type { QuizData } from "@shared/schema";
+import { useProgressTracker } from "@/hooks/use-progress-tracker";
 
 type QuizPlayerProps = {
   data: QuizData;
+  contentId: string;
 };
 
-export function QuizPlayer({ data }: QuizPlayerProps) {
+export function QuizPlayer({ data, contentId }: QuizPlayerProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<(string | number | null)[]>(new Array(data.questions.length).fill(null));
   const [showResults, setShowResults] = useState(false);
   const [showExplanation, setShowExplanation] = useState(false);
 
+  const { progress: savedProgress, isProgressFetched, updateProgress, saveQuizAttempt, logInteraction, isAuthenticated } = useProgressTracker(contentId);
+  const [lastSentProgress, setLastSentProgress] = useState<number>(-1);
+  const [isProgressInitialized, setIsProgressInitialized] = useState(false);
+  const pendingMilestoneRef = useRef<number | null>(null);
+  const pendingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const previousAuthRef = useRef<boolean>(isAuthenticated);
+
   const currentQuestion = data.questions[currentIndex];
-  const progress = ((currentIndex + 1) / data.questions.length) * 100;
+  const progressPercentage = ((currentIndex + 1) / data.questions.length) * 100;
+
+  // Reset initialization when auth changes from false → true
+  useEffect(() => {
+    if (!previousAuthRef.current && isAuthenticated) {
+      // User just logged in - reset to wait for progress fetch
+      setIsProgressInitialized(false);
+      setLastSentProgress(-1);
+      pendingMilestoneRef.current = null;
+      if (pendingTimeoutRef.current) {
+        clearTimeout(pendingTimeoutRef.current);
+        pendingTimeoutRef.current = null;
+      }
+    }
+    previousAuthRef.current = isAuthenticated;
+  }, [isAuthenticated]);
+
+  // Initialize from persisted progress and reconcile when savedProgress updates
+  useEffect(() => {
+    if (!isProgressInitialized) {
+      if (!isAuthenticated) {
+        setIsProgressInitialized(true);
+      } else if (isProgressFetched) {
+        if (savedProgress) {
+          setLastSentProgress(savedProgress.completionPercentage);
+        }
+        setIsProgressInitialized(true);
+      }
+    } else if (savedProgress) {
+      // After initialization, reconcile: server can only raise, never lower
+      // Only update if savedProgress is truthy (skip null refetches)
+      setLastSentProgress(prev => Math.max(prev, savedProgress.completionPercentage));
+      // Clear pending milestone if it's been saved
+      if (pendingMilestoneRef.current !== null && savedProgress.completionPercentage >= pendingMilestoneRef.current) {
+        pendingMilestoneRef.current = null;
+        if (pendingTimeoutRef.current) {
+          clearTimeout(pendingTimeoutRef.current);
+          pendingTimeoutRef.current = null;
+        }
+      }
+    }
+  }, [savedProgress, isProgressFetched, isAuthenticated, isProgressInitialized]);
+
+  // Update progress as user advances through questions (monotonic, only after initialization)
+  useEffect(() => {
+    if (!isProgressInitialized || !isAuthenticated) return;
+    
+    if (answers[currentIndex] !== null) {
+      const completionPercentage = Math.round(
+        (answers.filter((a) => a !== null).length / data.questions.length) * 100
+      );
+      // Only send if higher than local high water mark, not yet complete, and not already pending
+      if (completionPercentage > lastSentProgress && completionPercentage < 100 && completionPercentage !== pendingMilestoneRef.current) {
+        pendingMilestoneRef.current = completionPercentage;
+        updateProgress(completionPercentage);
+        // Clear pending after 5 seconds to allow retry on failure
+        if (pendingTimeoutRef.current) {
+          clearTimeout(pendingTimeoutRef.current);
+        }
+        pendingTimeoutRef.current = setTimeout(() => {
+          pendingMilestoneRef.current = null;
+          pendingTimeoutRef.current = null;
+        }, 5000);
+      }
+    }
+  }, [currentIndex, answers, lastSentProgress, isProgressInitialized, isAuthenticated]);
 
   const handleAnswer = (answer: string | number) => {
     const newAnswers = [...answers];
@@ -31,6 +105,17 @@ export function QuizPlayer({ data }: QuizPlayerProps) {
     if (currentIndex < data.questions.length - 1) {
       setCurrentIndex(currentIndex + 1);
     } else {
+      // Quiz completed - save attempt and show results
+      const score = calculateScore();
+      const answersData = data.questions.map((q, i) => ({
+        questionId: q.id,
+        answer: answers[i] || "",
+        isCorrect: q.correctAnswer === answers[i],
+      }));
+      
+      // Save quiz attempt (which also updates progress to 100%)
+      // Don't update local state here - let reconciliation handle it on success
+      saveQuizAttempt(score, data.questions.length, answersData);
       setShowResults(true);
     }
   };
@@ -45,6 +130,7 @@ export function QuizPlayer({ data }: QuizPlayerProps) {
     setAnswers(new Array(data.questions.length).fill(null));
     setShowResults(false);
     setShowExplanation(false);
+    logInteraction("quiz_restarted");
   };
 
   const calculateScore = () => {
@@ -121,9 +207,9 @@ export function QuizPlayer({ data }: QuizPlayerProps) {
       <div className="space-y-2">
         <div className="flex items-center justify-between text-sm">
           <span className="text-muted-foreground">Question {currentIndex + 1} of {data.questions.length}</span>
-          <span className="font-medium">{Math.round(progress)}%</span>
+          <span className="font-medium">{Math.round(progressPercentage)}%</span>
         </div>
-        <Progress value={progress} className="h-2" />
+        <Progress value={progressPercentage} className="h-2" />
       </div>
 
       {/* Question Card */}

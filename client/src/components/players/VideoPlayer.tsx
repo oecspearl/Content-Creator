@@ -6,12 +6,14 @@ import { Progress } from "@/components/ui/progress";
 import { Play, Pause, Volume2, VolumeX, Maximize, SkipForward, Check, X } from "lucide-react";
 import { youtubeLoader } from "@/lib/youtube-loader";
 import type { InteractiveVideoData, VideoHotspot } from "@shared/schema";
+import { useProgressTracker } from "@/hooks/use-progress-tracker";
 
 type VideoPlayerProps = {
   data: InteractiveVideoData;
+  contentId: string;
 };
 
-export function VideoPlayer({ data }: VideoPlayerProps) {
+export function VideoPlayer({ data, contentId }: VideoPlayerProps) {
   const [currentHotspot, setCurrentHotspot] = useState<VideoHotspot | null>(null);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [completedHotspots, setCompletedHotspots] = useState<Set<string>>(new Set());
@@ -23,6 +25,101 @@ export function VideoPlayer({ data }: VideoPlayerProps) {
   const [duration, setDuration] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
+
+  const { progress: savedProgress, isProgressFetched, updateProgress, logInteraction, isAuthenticated } = useProgressTracker(contentId);
+  const [highestProgress, setHighestProgress] = useState<number>(0);
+  const [isProgressInitialized, setIsProgressInitialized] = useState(false);
+  const pendingMilestoneRef = useRef<number | null>(null);
+  const pendingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const previousAuthRef = useRef<boolean>(isAuthenticated);
+
+  // Reset initialization when auth changes from false → true
+  useEffect(() => {
+    if (!previousAuthRef.current && isAuthenticated) {
+      // User just logged in - reset to wait for progress fetch
+      setIsProgressInitialized(false);
+      setHighestProgress(0);
+      pendingMilestoneRef.current = null;
+      if (pendingTimeoutRef.current) {
+        clearTimeout(pendingTimeoutRef.current);
+        pendingTimeoutRef.current = null;
+      }
+    }
+    previousAuthRef.current = isAuthenticated;
+  }, [isAuthenticated]);
+
+  // Initialize from persisted progress and reconcile when savedProgress updates
+  useEffect(() => {
+    if (!isProgressInitialized) {
+      if (!isAuthenticated) {
+        setIsProgressInitialized(true);
+      } else if (isProgressFetched) {
+        if (savedProgress) {
+          setHighestProgress(savedProgress.completionPercentage);
+        }
+        setIsProgressInitialized(true);
+      }
+    } else if (savedProgress) {
+      // After initialization, reconcile: server can only raise, never lower
+      // Only update if savedProgress is truthy (skip null refetches)
+      setHighestProgress(prev => Math.max(prev, savedProgress.completionPercentage));
+      // Clear pending milestone if it's been saved
+      if (pendingMilestoneRef.current !== null && savedProgress.completionPercentage >= pendingMilestoneRef.current) {
+        pendingMilestoneRef.current = null;
+        if (pendingTimeoutRef.current) {
+          clearTimeout(pendingTimeoutRef.current);
+          pendingTimeoutRef.current = null;
+        }
+      }
+    }
+  }, [savedProgress, isProgressFetched, isAuthenticated, isProgressInitialized]);
+
+  // Track video progress (monotonic - only increase, never decrease, wait for init)
+  useEffect(() => {
+    if (!isProgressInitialized || !isAuthenticated) return;
+    
+    if (duration > 0 && currentTime > 0) {
+      const watchPercentage = Math.round((currentTime / duration) * 100);
+      const milestone = Math.floor(watchPercentage / 10) * 10;
+      
+      // Only update if this milestone is higher than local high water mark and not already pending
+      if (milestone > highestProgress && milestone > 0 && milestone !== pendingMilestoneRef.current) {
+        pendingMilestoneRef.current = milestone;
+        updateProgress(milestone);
+        // Clear pending after 5 seconds to allow retry on failure
+        if (pendingTimeoutRef.current) {
+          clearTimeout(pendingTimeoutRef.current);
+        }
+        pendingTimeoutRef.current = setTimeout(() => {
+          pendingMilestoneRef.current = null;
+          pendingTimeoutRef.current = null;
+        }, 5000);
+      }
+    }
+  }, [currentTime, duration, highestProgress, isProgressInitialized, isAuthenticated]);
+
+  // Track hotspot completion (monotonic - only send if higher, wait for init)
+  useEffect(() => {
+    if (!isProgressInitialized || !isAuthenticated) return;
+    
+    if (data.hotspots.length > 0) {
+      const completionPercentage = Math.round((completedHotspots.size / data.hotspots.length) * 100);
+      
+      // Only update if hotspot completion exceeds local high water mark and not already pending
+      if (completionPercentage > highestProgress && completionPercentage > 0 && completionPercentage !== pendingMilestoneRef.current) {
+        pendingMilestoneRef.current = completionPercentage;
+        updateProgress(completionPercentage);
+        // Clear pending after 5 seconds to allow retry on failure
+        if (pendingTimeoutRef.current) {
+          clearTimeout(pendingTimeoutRef.current);
+        }
+        pendingTimeoutRef.current = setTimeout(() => {
+          pendingMilestoneRef.current = null;
+          pendingTimeoutRef.current = null;
+        }, 5000);
+      }
+    }
+  }, [completedHotspots.size, highestProgress, isProgressInitialized, isAuthenticated]);
 
   const getYouTubeVideoId = (url: string) => {
     const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&]+)/);
@@ -157,7 +254,19 @@ export function VideoPlayer({ data }: VideoPlayerProps) {
 
   const handleContinue = () => {
     if (!currentHotspot) return;
-    setCompletedHotspots(prev => new Set([...prev, currentHotspot.id]));
+    
+    // Log hotspot interaction
+    logInteraction("hotspot_completed", {
+      hotspotId: currentHotspot.id,
+      hotspotType: currentHotspot.type,
+      timestamp: currentHotspot.timestamp,
+      ...(currentHotspot.type === "question" && {
+        selectedAnswer,
+        isCorrect: currentHotspot.correctAnswer === selectedAnswer,
+      }),
+    });
+    
+    setCompletedHotspots(prev => new Set(Array.from(prev).concat(currentHotspot.id)));
     setCurrentHotspot(null);
     setSelectedAnswer(null);
     setShowFeedback(false);

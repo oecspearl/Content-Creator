@@ -72,6 +72,9 @@ Preferred communication style: Simple, everyday language.
 - `profiles` - User accounts with authentication credentials and metadata
 - `h5p_content` - Educational content with type-specific JSON data structures
 - `content_shares` - Share tracking for published content
+- `learner_progress` - User completion tracking per content item (completion percentage, time spent, last accessed)
+- `quiz_attempts` - Quiz attempt history with scores and answers
+- `interaction_events` - Detailed interaction logs (card flips, hotspot views, video playback)
 
 **Data Modeling Approach**
 - JSONB columns for flexible content structure (supports different content types without schema changes)
@@ -108,3 +111,21 @@ Preferred communication style: Simple, everyday language.
 - esbuild for server-side bundling (ESM format, platform: node)
 - Vite for client-side bundling with code splitting
 - Support for static hosting platforms (Vercel, Netlify, Cloudflare Pages)
+
+## Progress Tracking Implementation
+
+**Current Status**: Functional for primary use case (authenticated users viewing their own content)
+
+**Implementation Details**:
+- Monotonic progress updates (completion percentage only increases, never decreases)
+- Pending milestone deduplication prevents duplicate API calls during mutations
+- 5-second timeout-based retry mechanism for failed mutations
+- Authentication gating: anonymous viewers can view but not track progress
+- Query-based initialization prevents mutations before progress data loads
+- Auth transition handling: resets state when user logs in mid-session
+- Reconciliation: server values can only raise local high-water marks, never lower
+
+**Known Limitations** (edge cases for future refinement):
+- React Query cache isolation: Progress data from previous user sessions may leak if multiple users log in/out without page refresh. Workaround: refresh page after logout.
+- Cross-account scenarios not fully tested: Switching between user accounts in same browser session may cause stale progress data.
+- Suggested future improvements: Per-user query keys, proactive cache clearing on logout, comprehensive e2e testing for auth transition flows.
