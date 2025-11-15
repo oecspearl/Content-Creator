@@ -136,7 +136,7 @@ export type InteractionEvent = typeof interactionEvents.$inferSelect;
 export type InsertInteractionEvent = z.infer<typeof insertInteractionEventSchema>;
 
 // Content type definitions
-export type ContentType = "quiz" | "flashcard" | "interactive-video" | "image-hotspot";
+export type ContentType = "quiz" | "flashcard" | "interactive-video" | "image-hotspot" | "drag-drop" | "fill-blanks" | "memory-game" | "interactive-book";
 
 export type QuizQuestion = {
   id: string;
@@ -199,9 +199,89 @@ export type ImageHotspotData = {
   hotspots: ImageHotspot[];
 };
 
+// Drag and Drop types
+export type DragItem = {
+  id: string;
+  content: string;
+  correctZone: string; // ID of the correct drop zone
+};
+
+export type DropZone = {
+  id: string;
+  label: string;
+  allowMultiple: boolean;
+};
+
+export type DragAndDropData = {
+  items: DragItem[];
+  zones: DropZone[];
+  settings: {
+    showZoneLabels: boolean;
+    instantFeedback: boolean;
+    allowRetry: boolean;
+  };
+};
+
+// Fill in the Blanks types
+export type BlankItem = {
+  id: string;
+  correctAnswers: string[]; // Multiple acceptable answers
+  caseSensitive: boolean;
+  showHint?: string;
+};
+
+export type FillInBlanksData = {
+  text: string; // Text with __blank__ or *blank* markers
+  blanks: BlankItem[]; // Array indexed to match blank positions
+  settings: {
+    caseSensitive: boolean;
+    showHints: boolean;
+    allowRetry: boolean;
+  };
+};
+
+// Memory Game types
+export type MemoryCard = {
+  id: string;
+  content: string;
+  matchId: string; // Cards with same matchId are pairs
+  type: "text" | "image";
+  imageUrl?: string;
+};
+
+export type MemoryGameData = {
+  cards: MemoryCard[];
+  settings: {
+    rows: number;
+    columns: number;
+    showTimer: boolean;
+    showMoves: boolean;
+  };
+};
+
+// Interactive Book types
+export type BookPage = {
+  id: string;
+  title: string;
+  content: string; // Rich text/HTML content
+  embeddedContent?: {
+    type: ContentType;
+    data: QuizData | FlashcardData | InteractiveVideoData | ImageHotspotData | DragAndDropData | FillInBlanksData | MemoryGameData;
+  };
+};
+
+export type InteractiveBookData = {
+  pages: BookPage[];
+  settings: {
+    showNavigation: boolean;
+    showProgress: boolean;
+    requireCompletion: boolean; // Must complete embedded activities to proceed
+  };
+};
+
 // AI Generation request
 export const aiGenerationSchema = z.object({
-  contentType: z.enum(["quiz", "flashcard", "interactive-video", "image-hotspot"]),
+  contentType: z.enum(["quiz", "flashcard", "interactive-video", "image-hotspot", "drag-drop", "fill-blanks", "memory-game", "interactive-book"]),
   topic: z.string().min(1),
   difficulty: z.enum(["beginner", "intermediate", "advanced"]),
   gradeLevel: z.string().optional(),

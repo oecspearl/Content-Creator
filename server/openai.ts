@@ -1,5 +1,5 @@
 import OpenAI from "openai";
-import type { AIGenerationRequest, QuizQuestion, FlashcardData, VideoHotspot, ImageHotspot } from "@shared/schema";
+import type { AIGenerationRequest, QuizQuestion, FlashcardData, VideoHotspot, ImageHotspot, DragAndDropData, FillInBlanksData, MemoryGameData, InteractiveBookData } from "@shared/schema";
 
 // This is using OpenAI's API, which points to OpenAI's API servers and requires your own API key.
 // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
@@ -152,4 +152,158 @@ Respond in JSON format:
 
   const result = JSON.parse(response.choices[0].message.content || "{}");
   return result.hotspots || [];
+}
+
+export async function generateDragDropItems(request: AIGenerationRequest): Promise<{ zones: DragAndDropData["zones"], items: DragAndDropData["items"] }> {
+  const prompt = `Generate a drag-and-drop activity about "${request.topic}" at ${request.difficulty} difficulty level${request.gradeLevel ? ` for ${request.gradeLevel}` : ""}.
+
+Requirements:
+- Create 3-5 drop zones (categories)
+- Create ${request.numberOfItems} draggable items that belong to these zones
+- Each item should have a clear association with one zone
+- Make it educational and intuitive
+${request.additionalContext ? `\nAdditional context: ${request.additionalContext}` : ""}
+
+Respond in JSON format:
+{
+  "zones": [
+    {
+      "id": "unique-id",
+      "label": "zone label"
+    }
+  ],
+  "items": [
+    {
+      "id": "unique-id",
+      "content": "item text",
+      "correctZone": "zone-id"
+    }
+  ]
+}`;
+
+  const response = await openai.chat.completions.create({
+    model: "gpt-5",
+    messages: [
+      { role: "system", content: "You are an expert educator creating interactive drag-and-drop activities. Always respond with valid JSON." },
+      { role: "user", content: prompt },
+    ],
+    response_format: { type: "json_object" },
+    max_completion_tokens: 4096,
+  });
+
+  const result = JSON.parse(response.choices[0].message.content || "{}");
+  return { zones: result.zones || [], items: result.items || [] };
+}
+
+export async function generateFillBlanksBlanks(request: AIGenerationRequest): Promise<{ text: string, blanks: FillInBlanksData["blanks"] }> {
+  const prompt = `Generate a fill-in-the-blanks exercise about "${request.topic}" at ${request.difficulty} difficulty level${request.gradeLevel ? ` for ${request.gradeLevel}` : ""}.
+
+Requirements:
+- Create a passage with ${request.numberOfItems} blanks marked as *blank*
+- For each blank, provide correct answers (including acceptable variations)
+- Optionally include hints
+- Make it educational and clear
+${request.additionalContext ? `\nAdditional context: ${request.additionalContext}` : ""}
+
+Respond in JSON format:
+{
+  "text": "The capital of France is *blank*. It is known for the *blank* Tower.",
+  "blanks": [
+    {
+      "id": "1",
+      "correctAnswers": ["Paris", "paris"],
+      "caseSensitive": false,
+      "showHint": "Starts with P"
+    }
+  ]
+}`;
+
+  const response = await openai.chat.completions.create({
+    model: "gpt-5",
+    messages: [
+      { role: "system", content: "You are an expert educator creating fill-in-the-blanks exercises. Always respond with valid JSON." },
+      { role: "user", content: prompt },
+    ],
+    response_format: { type: "json_object" },
+    max_completion_tokens: 4096,
+  });
+
+  const result = JSON.parse(response.choices[0].message.content || "{}");
+  return { text: result.text || "", blanks: result.blanks || [] };
+}
+
+export async function generateMemoryGameCards(request: AIGenerationRequest): Promise<MemoryGameData["cards"]> {
+  const prompt = `Generate ${request.numberOfItems} matching card pairs for a memory game about "${request.topic}" at ${request.difficulty} difficulty level${request.gradeLevel ? ` for ${request.gradeLevel}` : ""}.
+
+Requirements:
+- Each pair should have two matching items (term-definition, question-answer, etc.)
+- Make the matches clear and educational
+- Content should be concise to fit on cards
+${request.additionalContext ? `\nAdditional context: ${request.additionalContext}` : ""}
+
+Respond in JSON format:
+{
+  "cards": [
+    {
+      "id": "1-a",
+      "content": "H2O",
+      "matchId": "pair-1",
+      "type": "text"
+    },
+    {
+      "id": "1-b",
+      "content": "Water",
+      "matchId": "pair-1",
+      "type": "text"
+    }
+  ]
+}`;
+
+  const response = await openai.chat.completions.create({
+    model: "gpt-5",
+    messages: [
+      { role: "system", content: "You are an expert educator creating memory game cards. Always respond with valid JSON." },
+      { role: "user", content: prompt },
+    ],
+    response_format: { type: "json_object" },
+    max_completion_tokens: 4096,
+  });
+
+  const result = JSON.parse(response.choices[0].message.content || "{}");
+  return result.cards || [];
+}
+
+export async function generateInteractiveBookPages(request: AIGenerationRequest): Promise<InteractiveBookData["pages"]> {
+  const prompt = `Generate ${request.numberOfItems} pages for an interactive educational book about "${request.topic}" at ${request.difficulty} difficulty level${request.gradeLevel ? ` for ${request.gradeLevel}` : ""}.
+
+Requirements:
+- Each page should have a title and informative content
+- Progress logically from page to page
+- Make content engaging and educational
+- Keep each page focused on one concept
+${request.additionalContext ? `\nAdditional context: ${request.additionalContext}` : ""}
+
+Respond in JSON format:
+{
+  "pages": [
+    {
+      "id": "unique-id",
+      "title": "page title",
+      "content": "page content - can be multiple paragraphs"
+    }
+  ]
+}`;
+
+  const response = await openai.chat.completions.create({
+    model: "gpt-5",
+    messages: [
+      { role: "system", content: "You are an expert educator creating interactive educational books. Always respond with valid JSON." },
+      { role: "user", content: prompt },
+    ],
+    response_format: { type: "json_object" },
+    max_completion_tokens: 4096,
+  });
+
+  const result = JSON.parse(response.choices[0].message.content || "{}");
+  return result.pages || [];
 }

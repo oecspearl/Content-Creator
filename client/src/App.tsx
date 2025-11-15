@@ -11,6 +11,10 @@ import QuizCreator from "@/pages/QuizCreator";
 import FlashcardCreator from "@/pages/FlashcardCreator";
 import InteractiveVideoCreator from "@/pages/InteractiveVideoCreator";
 import ImageHotspotCreator from "@/pages/ImageHotspotCreator";
+import DragDropCreator from "@/pages/DragDropCreator";
+import FillBlanksCreator from "@/pages/FillBlanksCreator";
+import MemoryGameCreator from "@/pages/MemoryGameCreator";
+import InteractiveBookCreator from "@/pages/InteractiveBookCreator";
 import PreviewPage from "@/pages/PreviewPage";
 import SharePage from "@/pages/SharePage";
 import PublicPreviewPage from "@/pages/PublicPreviewPage";
@@ -72,6 +76,30 @@ function Router() {
       </Route>
       <Route path="/create/image-hotspot/:id">
         <ProtectedRoute component={ImageHotspotCreator} />
+      </Route>
+      <Route path="/create/drag-drop">
+        <ProtectedRoute component={DragDropCreator} />
+      </Route>
+      <Route path="/create/drag-drop/:id">
+        <ProtectedRoute component={DragDropCreator} />
+      </Route>
+      <Route path="/create/fill-blanks">
+        <ProtectedRoute component={FillBlanksCreator} />
+      </Route>
+      <Route path="/create/fill-blanks/:id">
+        <ProtectedRoute component={FillBlanksCreator} />
+      </Route>
+      <Route path="/create/memory-game">
+        <ProtectedRoute component={MemoryGameCreator} />
+      </Route>
+      <Route path="/create/memory-game/:id">
+        <ProtectedRoute component={MemoryGameCreator} />
+      </Route>
+      <Route path="/create/interactive-book">
+        <ProtectedRoute component={InteractiveBookCreator} />
+      </Route>
+      <Route path="/create/interactive-book/:id">
+        <ProtectedRoute component={InteractiveBookCreator} />
       </Route>
       <Route path="/preview/:id">
         <ProtectedRoute component={PreviewPage} />

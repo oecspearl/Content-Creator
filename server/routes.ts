@@ -13,7 +13,11 @@ import {
   generateQuizQuestions, 
   generateFlashcards, 
   generateVideoHotspots, 
-  generateImageHotspots 
+  generateImageHotspots,
+  generateDragDropItems,
+  generateFillBlanksBlanks,
+  generateMemoryGameCards,
+  generateInteractiveBookPages 
 } from "./openai";
 
 // Type augmentation for session
@@ -341,6 +345,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
           break;
         case "image-hotspot":
           result = { hotspots: await generateImageHotspots(parsed) };
+          break;
+        case "drag-drop":
+          result = await generateDragDropItems(parsed);
+          break;
+        case "fill-blanks":
+          result = await generateFillBlanksBlanks(parsed);
+          break;
+        case "memory-game":
+          result = { cards: await generateMemoryGameCards(parsed) };
+          break;
+        case "interactive-book":
+          result = { pages: await generateInteractiveBookPages(parsed) };
           break;
         default:
           return res.status(400).json({ message: "Invalid content type" });

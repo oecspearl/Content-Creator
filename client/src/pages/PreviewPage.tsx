@@ -2,11 +2,15 @@ import { useParams, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Share2 } from "lucide-react";
-import type { H5pContent, QuizData, FlashcardData, InteractiveVideoData, ImageHotspotData } from "@shared/schema";
+import type { H5pContent, QuizData, FlashcardData, InteractiveVideoData, ImageHotspotData, DragAndDropData, FillInBlanksData, MemoryGameData, InteractiveBookData } from "@shared/schema";
 import { QuizPlayer } from "@/components/players/QuizPlayer";
 import { FlashcardPlayer } from "@/components/players/FlashcardPlayer";
 import { VideoPlayer } from "@/components/players/VideoPlayer";
 import { ImageHotspotPlayer } from "@/components/players/ImageHotspotPlayer";
+import { DragDropPlayer } from "@/components/players/DragDropPlayer";
+import { FillBlanksPlayer } from "@/components/players/FillBlanksPlayer";
+import { MemoryGamePlayer } from "@/components/players/MemoryGamePlayer";
+import { InteractiveBookPlayer } from "@/components/players/InteractiveBookPlayer";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function PreviewPage() {
@@ -70,6 +74,10 @@ export default function PreviewPage() {
         {content.type === "flashcard" && <FlashcardPlayer data={content.data as FlashcardData} contentId={content.id} />}
         {content.type === "interactive-video" && <VideoPlayer data={content.data as InteractiveVideoData} contentId={content.id} />}
         {content.type === "image-hotspot" && <ImageHotspotPlayer data={content.data as ImageHotspotData} contentId={content.id} />}
+        {content.type === "drag-drop" && <DragDropPlayer data={content.data as DragAndDropData} contentId={content.id} />}
+        {content.type === "fill-blanks" && <FillBlanksPlayer data={content.data as FillInBlanksData} contentId={content.id} />}
+        {content.type === "memory-game" && <MemoryGamePlayer data={content.data as MemoryGameData} contentId={content.id} />}
+        {content.type === "interactive-book" && <InteractiveBookPlayer data={content.data as InteractiveBookData} contentId={content.id} />}
       </main>
     </div>
   );
