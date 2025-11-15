@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useEffect } from "react";
+import heroBackground from "@assets/stock_images/caribbean_beach_ocea_2b814185.jpg";
 
 export default function LandingPage() {
   const [_, navigate] = useLocation();
@@ -111,13 +112,32 @@ export default function LandingPage() {
 
       {/* Hero Section */}
       <section className="relative overflow-hidden py-20 sm:py-32" role="main">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Background Image */}
+        <div 
+          className="absolute inset-0 z-0"
+          style={{
+            backgroundImage: `url(${heroBackground})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat'
+          }}
+        />
+        
+        {/* Gradient Overlay */}
+        <div 
+          className="absolute inset-0 z-10"
+          style={{
+            background: 'linear-gradient(135deg, rgba(82, 64, 59, 0.85) 0%, rgba(34, 139, 34, 0.75) 50%, rgba(0, 128, 128, 0.85) 100%)'
+          }}
+        />
+
+        <div className="relative z-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-foreground mb-6">
+            <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-white mb-6">
               Create Interactive Educational
-              <span className="block text-primary mt-2">Content in Minutes</span>
+              <span className="block text-primary-foreground mt-2" style={{ color: '#a3e635' }}>Content in Minutes</span>
             </h2>
-            <p className="mt-6 text-lg sm:text-xl text-muted-foreground max-w-3xl mx-auto">
+            <p className="mt-6 text-lg sm:text-xl text-gray-100 max-w-3xl mx-auto">
               Empower educators across the Eastern Caribbean with AI-powered tools to create 
               engaging quizzes, flashcards, interactive videos, and more. All in one platform.
             </p>
@@ -125,7 +145,7 @@ export default function LandingPage() {
               <Button 
                 size="lg" 
                 onClick={() => navigate("/login")}
-                className="w-full sm:w-auto"
+                className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground border-0"
                 data-testid="button-hero-get-started"
               >
                 Get Started Free
@@ -135,7 +155,7 @@ export default function LandingPage() {
                 size="lg" 
                 variant="outline" 
                 onClick={() => document.getElementById('content-types')?.scrollIntoView({ behavior: 'smooth' })}
-                className="w-full sm:w-auto"
+                className="w-full sm:w-auto border-white text-white hover:bg-white/10 backdrop-blur-sm"
                 data-testid="button-hero-learn-more"
               >
                 Learn More
@@ -146,16 +166,16 @@ export default function LandingPage() {
           {/* Stats */}
           <div className="mt-20 grid grid-cols-1 sm:grid-cols-3 gap-8 max-w-4xl mx-auto">
             <div className="text-center">
-              <div className="text-4xl font-bold text-primary mb-2">8</div>
-              <div className="text-sm text-muted-foreground">Content Types</div>
+              <div className="text-4xl font-bold text-white mb-2" style={{ color: '#a3e635' }}>8</div>
+              <div className="text-sm text-gray-100">Content Types</div>
             </div>
             <div className="text-center">
-              <div className="text-4xl font-bold text-primary mb-2">AI</div>
-              <div className="text-sm text-muted-foreground">Powered Generation</div>
+              <div className="text-4xl font-bold text-white mb-2" style={{ color: '#a3e635' }}>AI</div>
+              <div className="text-sm text-gray-100">Powered Generation</div>
             </div>
             <div className="text-center">
-              <div className="text-4xl font-bold text-primary mb-2">100%</div>
-              <div className="text-sm text-muted-foreground">Free to Start</div>
+              <div className="text-4xl font-bold text-white mb-2" style={{ color: '#a3e635' }}>100%</div>
+              <div className="text-sm text-gray-100">Free to Start</div>
             </div>
           </div>
         </div>
