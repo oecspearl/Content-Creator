@@ -1,9 +1,56 @@
-# Design Guidelines: Interactive Educational Content Creator
+# Design Guidelines: OECS Content Creator
+
+**Tagline:** "Create. Engage. Educate."
+
+## Brand Identity
+
+**Application Name:** OECS Content Creator
+**Mission:** Empowering educators across the Organization of Eastern Caribbean States to create engaging, interactive educational content.
+
+**Color Philosophy:** The color palette is inspired by the vibrant OECS logo, combining the energy of Caribbean education (lime green), the trust and stability of academic excellence (navy blue), and the warmth of learning engagement (amber gold).
+
+## Color Palette
+
+### Primary Colors (from OECS Logo)
+
+**Lime Green (Primary Brand Color):**
+- Light mode: `#9DD84E` - Vibrant, energetic, representing growth and learning
+- Use for: Primary buttons, active states, brand elements, navigation highlights
+- Symbolizes: Innovation, growth, Caribbean vitality
+
+**Navy Blue (Authority Color):**
+- `#1B2A4E` - Professional, trustworthy, academic
+- Use for: Text, headers, secondary elements, professional accents
+- Symbolizes: Knowledge, trust, educational excellence
+
+**Amber Gold (Accent Color):**
+- `#FFB74D` - Warm, engaging, approachable
+- Use for: Highlights, success states, interactive elements, warmth
+- Symbolizes: Achievement, warmth, engagement
+
+### Supporting Colors
+
+**Neutral Backgrounds:**
+- Light mode background: `#FAFAFA` - Soft white for reduced eye strain
+- Dark mode background: `#0F1419` - Deep charcoal
+- Card backgrounds: Slightly elevated from base background
+
+**Text Hierarchy:**
+- Primary text: Navy blue in light mode, off-white in dark mode
+- Secondary text: Muted variants for supporting information
+- Tertiary text: Further muted for labels and metadata
+
+**Semantic Colors:**
+- Success: Derived from lime green
+- Warning: Amber gold variants
+- Error: Coral red `#EF4444`
+- Info: Sky blue `#3B82F6`
 
 ## Design Approach
-**Selected System:** Material Design 3 with productivity-focused adaptations, inspired by Notion's content organization and Linear's clarity for complex tools.
 
-**Rationale:** This application requires clear information hierarchy, extensive form handling, and content management - Material Design's elevation system, clear typography, and robust component library are ideal for educational productivity tools.
+**Selected System:** Material Design 3 with Caribbean-inspired vibrant accents, maintaining the productivity focus of tools like Notion while incorporating the energetic OECS brand colors.
+
+**Rationale:** Educational content creation requires clear hierarchy and robust components, enhanced with the vibrant, welcoming OECS brand identity to create an engaging yet professional environment.
 
 ## Typography System
 
@@ -12,7 +59,7 @@
 - Monospace: JetBrains Mono for code snippets or technical content
 
 **Hierarchy:**
-- Page Titles: text-3xl font-bold (48px)
+- Page Titles: text-3xl font-bold (48px) in navy blue
 - Section Headers: text-2xl font-semibold (32px)
 - Card/Component Titles: text-xl font-semibold (24px)
 - Subheadings: text-lg font-medium (20px)
@@ -41,140 +88,158 @@
 ## Component Library
 
 ### Navigation & App Shell
+
 **Top Navigation Bar:**
 - Full-width with max-w-7xl container
 - Height: h-16
-- Logo/brand (left), user profile menu (right)
-- Subtle bottom border (border-b)
+- OECS logo/brand (left) with lime green accent, user profile menu (right)
+- Subtle bottom border in navy blue tint
 
 **Sidebar (for Dashboard):**
 - Fixed width: w-64 on desktop, collapsible drawer on mobile
-- Content type filters with icons
-- Persistent across dashboard views
+- Content type filters with icons in lime green when active
+- Navy blue accents for professional feel
 
 ### Dashboard Components
+
 **Content Cards:**
 - Elevated containers with rounded-xl borders
-- Header area with type icon (h-12 w-12 rounded-lg background), title, status badge
+- Header area with type icon (h-12 w-12 rounded-lg with lime green background), title, status badge
+- Status badge uses lime green for published, amber for draft
 - Metadata row: Last modified, completion percentage
 - Action buttons row at bottom (Edit, Preview, Share, Delete)
-- Hover state: subtle elevation increase
+- Hover state: subtle lime green glow
 
 **Empty State:**
-- Centered layout with large icon (h-24 w-24)
-- Heading + description + prominent CTA button
-- Illustration suggestion: Creative workspace or content creation metaphor
+- Centered layout with large icon (h-24 w-24) in lime green
+- Heading in navy blue + description + prominent lime green CTA button
+- Welcoming, Caribbean-inspired messaging
 
 ### Content Creator Components
+
 **Toolbar:**
 - Sticky top position (sticky top-0 z-10)
 - Height: h-14
-- Contains: Back button, auto-save indicator, publish toggle, AI generate button, settings icon
-- Background with backdrop blur
+- Contains: Back button, auto-save indicator (amber when saving), publish toggle (lime green when on), AI generate button (lime green accent), settings icon
+- Background with backdrop blur and navy blue text
 
 **Editor Panels:**
 - Left panel (w-2/3): Main editing area with form inputs
 - Right panel (w-1/3): Live preview or settings
-- Resizable divider between panels
+- Resizable divider with navy blue accent
 
 **Question/Card Items:**
 - Each item in bordered container with rounded-lg
-- Drag handle icon (left), content (center), action buttons (right)
-- Reorder with visual feedback
+- Drag handle icon in muted navy, content (center), action buttons (right)
+- Active state uses lime green accent
 - Spacing: space-y-4 between items
 
 **Form Inputs:**
-- Labels above inputs (text-sm font-medium)
-- Inputs with rounded-lg borders, focus:ring-2 focus:ring-offset-2
+- Labels above inputs (text-sm font-medium in navy)
+- Inputs with rounded-lg borders, focus ring in lime green
 - Helper text below (text-xs text-gray-500)
 - Consistent height: h-10 for single-line, h-24 for textareas
 
 ### Modals & Overlays
+
 **AI Generation Modal:**
 - Centered overlay (max-w-2xl)
-- Header with title + close button (h-16)
+- Header with title in navy + close button (h-16)
 - Content area with form fields (space-y-6 p-6)
-- Footer with cancel + generate button (h-16)
+- Footer with cancel (outlined) + generate button (lime green solid) (h-16)
 
 **Share Modal:**
 - Similar structure to AI modal (max-w-lg)
-- Shareable link with copy button
+- Shareable link with lime green copy button
 - Share options as icon buttons in row
 
 ### Buttons & Actions
-**Primary CTA:** Solid background, rounded-lg, px-6 py-3, font-medium
-**Secondary:** Outlined variant with same sizing
-**Tertiary/Ghost:** Text only with hover background
-**Icon Buttons:** Square (h-10 w-10), rounded-lg, centered icon
+
+**Primary CTA:** Lime green background, rounded-lg, px-6 py-3, font-medium, white text
+**Secondary:** Navy blue outlined variant with same sizing
+**Tertiary/Ghost:** Text only with hover background in lime green tint
+**Icon Buttons:** Square (h-10 w-10), rounded-lg, centered icon, lime green on hover
 
 ### Content Players
+
 **Quiz Player:**
 - Question card centered (max-w-2xl)
-- Options as selectable cards (hover + selected states)
+- Options as selectable cards (lime green border when selected)
 - Navigation: Previous/Next at bottom
-- Progress indicator at top (progress bar, thin h-1)
+- Progress indicator at top (lime green progress bar, thin h-1)
 
 **Flashcard Player:**
 - Card centered (aspect-ratio-[3/2], max-w-xl)
-- Flip animation on click
-- Card counter below (e.g., "5 / 20")
-- Shuffle and restart controls
+- Flip animation on click with lime green accent on active side
+- Card counter below in navy (e.g., "5 / 20")
+- Shuffle and restart controls with lime green icons
 
 **Interactive Video:**
 - YouTube embed full-width in container
-- Hotspot overlays at precise timestamps
-- Timeline scrubber below video with hotspot markers
+- Hotspot overlays with lime green pulsing indicators
+- Timeline scrubber below video with lime green hotspot markers
 
 **Image Hotspot:**
 - Image container with relative positioning
-- Clickable hotspot dots (absolute positioned circles)
-- Tooltip/popup on click with descriptions
+- Clickable hotspot dots (lime green circles with pulse animation)
+- Tooltip/popup on click with navy blue headers and descriptions
 
 ### Status & Feedback
-**Loading States:** Skeleton screens matching content structure
+
+**Loading States:** Skeleton screens with lime green pulse animation
 **Toasts:** Top-right corner, rounded-xl, auto-dismiss, max-w-sm
+  - Success: Lime green background
+  - Warning: Amber background
+  - Error: Coral red background
 **Error States:** Alert boxes with icon, rounded-lg, appropriate color treatment
-**Success States:** Checkmark icon with confirmation message
+**Success States:** Lime green checkmark icon with confirmation message
 
 ## Animations
+
 Use sparingly and purposefully:
 - Page transitions: Fade (200ms)
 - Modal enter/exit: Scale + fade (150ms)
-- Drag and drop: Visual lift with shadow
-- Card hovers: Subtle elevation shift (100ms)
-- Button interactions: Native browser defaults
+- Drag and drop: Visual lift with lime green shadow
+- Card hovers: Subtle lime green glow (100ms)
+- Button interactions: Lime green ripple effect
 **NO:** Scroll-triggered animations, decorative motion, auto-playing effects
 
 ## Images
 
 **Dashboard Empty State:**
-- Illustration of content creation tools (quiz, flashcards, video) in friendly style
+- Illustration of content creation tools (quiz, flashcards, video) in Caribbean-inspired style with lime green and amber accents
 - Placement: Center of empty content grid
 - Size: max-w-md
 
-**Help Page:**
-- Screenshot examples of each creator interface
-- Placement: Alongside feature descriptions
-- Bordered with rounded corners
-
-**User Profile:**
-- Avatar/profile image (h-10 w-10 rounded-full) in navigation
-- Default to initials if no image
+**OECS Logo:**
+- Use official OECS logo in navigation header
+- Always maintain proper spacing and sizing
+- Logo should be prominently displayed with lime green accent
 
 **Content Type Icons:**
-- Use Lucide icons consistently: FileQuestion (quiz), Layers (flashcard), Video (video), Image (image hotspot)
+- Use Lucide icons consistently with lime green coloring: FileQuestion (quiz), Layers (flashcard), Video (video), Image (image hotspot)
 - Size: h-5 w-5 in cards, h-6 w-6 in headers
 
 ## Responsive Behavior
-- Mobile (< 768px): Single column, collapsible navigation, stacked creator panels
+
+- Mobile (< 768px): Single column, collapsible navigation with lime green active states, stacked creator panels
 - Tablet (768-1024px): Two columns for dashboard, maintain split for creators
 - Desktop (1024px+): Full three-column dashboard grid, side-by-side creator layout
 
 ## Accessibility Notes
-- All interactive elements keyboard navigable
-- Focus indicators with 2px offset ring
-- ARIA labels for icon-only buttons
-- Color contrast minimum WCAG AA
-- Form validation messages with icons + text
 
-This design system creates a professional, efficient educational content creation environment prioritizing clarity, productivity, and ease of use over decorative elements.
+- All interactive elements keyboard navigable
+- Focus indicators with 2px lime green ring
+- ARIA labels for icon-only buttons
+- Color contrast minimum WCAG AA (lime green text only on dark backgrounds)
+- Form validation messages with icons + text
+- Never use lime green for body text on white backgrounds (contrast issue)
+
+## Brand Voice
+
+- Professional yet approachable
+- Caribbean warmth combined with educational excellence
+- Empowering and inclusive
+- Innovation-focused
+
+This design system creates a vibrant, professional educational content creation environment that reflects the OECS mission of excellence in Caribbean education while maintaining usability and accessibility standards.
