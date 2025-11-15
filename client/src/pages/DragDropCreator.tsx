@@ -86,7 +86,7 @@ export default function DragDropCreator() {
     setZones([...zones, {
       id: Date.now().toString(),
       label: "",
-      allowMultiple: false,
+      allowMultiple: true,
     }]);
   };
 
