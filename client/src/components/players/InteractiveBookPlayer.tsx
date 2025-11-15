@@ -109,9 +109,10 @@ export function InteractiveBookPlayer({ data, contentId }: InteractiveBookPlayer
             <BookOpen className="h-6 w-6 text-primary" />
             <h2 className="text-2xl font-bold">{currentPage.title}</h2>
           </div>
-          <div className="prose max-w-none">
-            <p className="text-base leading-relaxed whitespace-pre-wrap">{currentPage.content}</p>
-          </div>
+          <div 
+            className="prose prose-slate max-w-none dark:prose-invert"
+            dangerouslySetInnerHTML={{ __html: currentPage.content }}
+          />
         </CardContent>
       </Card>
 

@@ -4,11 +4,11 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { RichTextEditor } from "@/components/RichTextEditor";
 import { ArrowLeft, Plus, Trash2, Globe, ChevronLeft, ChevronRight } from "lucide-react";
 import type { H5pContent, InteractiveBookData } from "@shared/schema";
 
@@ -217,16 +217,14 @@ export default function InteractiveBookCreator() {
                       </div>
                       <div>
                         <Label>Page Content</Label>
-                        <Textarea
-                          value={pages[currentPageIndex].content}
-                          onChange={(e) => {
+                        <RichTextEditor
+                          content={pages[currentPageIndex].content}
+                          onChange={(html) => {
                             const updated = [...pages];
-                            updated[currentPageIndex] = { ...updated[currentPageIndex], content: e.target.value };
+                            updated[currentPageIndex] = { ...updated[currentPageIndex], content: html };
                             setPages(updated);
                           }}
-                          placeholder="Page content"
-                          className="min-h-48"
-                          data-testid={`textarea-page-content-${currentPageIndex}`}
+                          placeholder="Write your page content here. Use the toolbar to format text and add images..."
                         />
                       </div>
                     </div>
