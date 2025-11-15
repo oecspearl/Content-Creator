@@ -5,6 +5,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { ChatContextProvider } from "@/hooks/useChatContext";
+import ChatAssistant from "@/components/ChatAssistant";
 import LoginPage from "@/pages/LoginPage";
 import Dashboard from "@/pages/Dashboard";
 import QuizCreator from "@/pages/QuizCreator";
@@ -120,6 +122,17 @@ function Router() {
   );
 }
 
+function AppContent() {
+  const { user } = useAuth();
+  
+  return (
+    <ChatContextProvider>
+      <Router />
+      {user && <ChatAssistant />}
+    </ChatContextProvider>
+  );
+}
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
@@ -127,7 +140,7 @@ function App() {
         <AuthProvider>
           <TooltipProvider>
             <Toaster />
-            <Router />
+            <AppContent />
           </TooltipProvider>
         </AuthProvider>
       </ThemeProvider>
