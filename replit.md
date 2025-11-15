@@ -135,26 +135,40 @@ Preferred communication style: Simple, everyday language.
 
 ## Accessibility Features
 
-The platform implements comprehensive accessibility features to ensure educational content is usable by all learners, including those with disabilities:
+The platform implements comprehensive accessibility features to ensure educational content is usable by all learners, including those with disabilities. All improvements comply with WCAG 2.1 AA standards:
 
 **Keyboard Navigation**:
 - Full keyboard support for all interactive elements
-- Skip-to-content links on all major pages for quick navigation
-- Visible focus indicators using the primary color ring
+- Skip-to-content links on all pages (Dashboard, Analytics, Preview, Public Preview, Help) for quick navigation
+- Visible focus indicators (2px ring with offset) on interactive elements only (buttons, inputs, links, form controls)
 - Logical tab order throughout the application
+- Focus management: Quiz completion automatically shifts focus to restart button
 
 **Screen Reader Support**:
-- ARIA labels for all icon-only buttons and interactive elements
-- ARIA live regions for dynamic content announcements
-- Screen reader announcements for quiz feedback (correct/incorrect answers)
+- ARIA labels for all icon-only buttons and interactive elements (back buttons, logout, theme toggle, etc.)
+- ARIA live regions for dynamic content announcements with proper politeness levels (polite/assertive)
+- Screen reader announcements for quiz interactions:
+  - Answer selection feedback (correct/incorrect with explanations)
+  - Question navigation ("Question X of Y")
+  - Quiz completion with score announcement
+  - Validation messages (e.g., "Please select an answer before continuing")
 - Semantic HTML with proper landmark roles (banner, main, region)
 - Proper heading hierarchy for content structure
+- Unique keys for repeated announcements to ensure screen readers don't suppress duplicate messages
+
+**WAI-ARIA Compliance**:
+- Quiz Player uses semantic RadioGroup/RadioGroupItem components (not buttons with role="radio")
+- RadioGroup properly linked to question text via aria-labelledby
+- Proper aria-checked states for radio buttons
+- aria-required on form controls where applicable
+- No conflicting roles that violate WAI-ARIA 1.2 specifications
 
 **Visual Accessibility**:
-- High contrast focus indicators (2px ring with offset)
+- High contrast focus indicators (2px ring with offset) only on interactive elements
 - Consistent color contrast ratios meeting WCAG AA standards
-- Support for both light and dark modes
+- Support for both light and dark modes with proper color tokens
 - Clear visual feedback for all interactive states
+- Answer feedback shown visually with colors and icons (green check for correct, red X for incorrect)
 
 **Motion & Animation**:
 - Respects `prefers-reduced-motion` system setting
@@ -162,16 +176,22 @@ The platform implements comprehensive accessibility features to ensure education
 - Smooth scrolling disabled when reduced motion is preferred
 
 **Content Player Accessibility**:
-- Quiz Player: Screen reader announcements for answer feedback, ARIA labels for all options, keyboard-accessible controls
+- Quiz Player: 
+  - Proper RadioGroup implementation for multiple-choice questions
+  - Screen reader announcements at every interaction
+  - Keyboard-accessible controls with arrow key navigation
+  - Focus management on completion
+  - Answer validation before advancing
 - Progress indicators with ARIA labels for completion status
-- All buttons include descriptive aria-labels
-- Form inputs include proper labels and placeholders
+- All icon buttons include descriptive aria-labels
+- Form inputs include proper labels and associations
 
 **Implementation Details**:
-- Custom CSS utilities for focus states, skip links, and screen reader-only text
-- ScreenReaderAnnouncer component for dynamic announcements
+- Custom CSS utilities for focus states, skip links, and screen reader-only text in index.css
+- ScreenReaderAnnouncer component with unique keys for reliable repeated announcements
+- Politeness level support (polite for informational, assertive for critical feedback)
 - Role attributes on all major sections (banner, main, region)
-- ARIA attributes for interactive elements (aria-label, aria-pressed, aria-live)
+- ARIA attributes properly applied (aria-label, aria-labelledby, aria-checked, aria-live, aria-atomic)
 
 ## Analytics Dashboard
 
