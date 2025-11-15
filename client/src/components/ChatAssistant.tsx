@@ -129,17 +129,21 @@ export default function ChatAssistant({}: ChatAssistantProps) {
         const maxAttempts = 10; // Try 10 times max
         
         for (let attempt = 0; attempt < maxAttempts; attempt++) {
-          // Actively refetch from server to get latest data
-          await queryClient.refetchQueries({ queryKey: ["/api/chat/history"] });
-          
-          const currentHistory = queryClient.getQueryData<ChatMessage[]>(["/api/chat/history"]);
-          
-          if (currentHistory && currentHistory.length > 0) {
-            const lastMessage = currentHistory[currentHistory.length - 1];
-            // Check if the last message matches our streamed response
-            if (lastMessage.role === "assistant" && lastMessage.content === fullResponse) {
-              return true; // Message confirmed in history
+          try {
+            // Use fetchQuery to get fresh data from server (not cached)
+            const currentHistory = await queryClient.fetchQuery<ChatMessage[]>({
+              queryKey: ["/api/chat/history"],
+            });
+            
+            if (currentHistory && currentHistory.length > 0) {
+              const lastMessage = currentHistory[currentHistory.length - 1];
+              // Check if the last message matches our streamed response (trim for resilience)
+              if (lastMessage.role === "assistant" && lastMessage.content.trim() === fullResponse.trim()) {
+                return true; // Message confirmed in history
+              }
             }
+          } catch (error) {
+            console.error("Error fetching chat history during verification:", error);
           }
           
           // If not the active request anymore, stop checking
