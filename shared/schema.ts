@@ -186,6 +186,8 @@ export type FlashcardData = {
     category?: string;
     frontImageUrl?: string;
     backImageUrl?: string;
+    frontImageAlt?: string;
+    backImageAlt?: string;
   }>;
   settings: {
     shuffleCards: boolean;

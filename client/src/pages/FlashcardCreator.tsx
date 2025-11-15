@@ -113,8 +113,10 @@ export default function FlashcardCreator() {
       front: "",
       back: "",
       category: "",
-      frontImageUrl: "",
-      backImageUrl: "",
+      frontImageUrl: undefined,
+      backImageUrl: undefined,
+      frontImageAlt: undefined,
+      backImageAlt: undefined,
     };
     setCards([...cards, newCard]);
   };
@@ -274,21 +276,37 @@ export default function FlashcardCreator() {
                                 <Input
                                   placeholder="https://example.com/image.jpg"
                                   value={card.frontImageUrl || ""}
-                                  onChange={(e) => updateCard(index, { frontImageUrl: e.target.value })}
+                                  onChange={(e) => {
+                                    const value = e.target.value.trim();
+                                    updateCard(index, { frontImageUrl: value || undefined });
+                                  }}
                                   className="text-sm"
                                   data-testid={`input-front-image-${index}`}
                                 />
                                 {card.frontImageUrl && (
-                                  <div className="mt-2 rounded-md overflow-hidden border">
-                                    <img 
-                                      src={card.frontImageUrl} 
-                                      alt="Front preview" 
-                                      className="w-full h-32 object-cover"
-                                      onError={(e) => {
-                                        (e.target as HTMLImageElement).style.display = 'none';
+                                  <>
+                                    <Input
+                                      placeholder="Image description (for accessibility)"
+                                      value={card.frontImageAlt || ""}
+                                      onChange={(e) => {
+                                        const value = e.target.value.trim();
+                                        updateCard(index, { frontImageAlt: value || undefined });
                                       }}
+                                      className="text-sm"
+                                      data-testid={`input-front-image-alt-${index}`}
                                     />
-                                  </div>
+                                    <div className="mt-2 rounded-md overflow-hidden border">
+                                      <img 
+                                        src={card.frontImageUrl} 
+                                        alt={card.frontImageAlt || "Front preview"} 
+                                        className="w-full h-32 object-cover"
+                                        loading="lazy"
+                                        onError={(e) => {
+                                          (e.target as HTMLImageElement).style.display = 'none';
+                                        }}
+                                      />
+                                    </div>
+                                  </>
                                 )}
                               </div>
                             </div>
@@ -309,21 +327,37 @@ export default function FlashcardCreator() {
                                 <Input
                                   placeholder="https://example.com/image.jpg"
                                   value={card.backImageUrl || ""}
-                                  onChange={(e) => updateCard(index, { backImageUrl: e.target.value })}
+                                  onChange={(e) => {
+                                    const value = e.target.value.trim();
+                                    updateCard(index, { backImageUrl: value || undefined });
+                                  }}
                                   className="text-sm"
                                   data-testid={`input-back-image-${index}`}
                                 />
                                 {card.backImageUrl && (
-                                  <div className="mt-2 rounded-md overflow-hidden border">
-                                    <img 
-                                      src={card.backImageUrl} 
-                                      alt="Back preview" 
-                                      className="w-full h-32 object-cover"
-                                      onError={(e) => {
-                                        (e.target as HTMLImageElement).style.display = 'none';
+                                  <>
+                                    <Input
+                                      placeholder="Image description (for accessibility)"
+                                      value={card.backImageAlt || ""}
+                                      onChange={(e) => {
+                                        const value = e.target.value.trim();
+                                        updateCard(index, { backImageAlt: value || undefined });
                                       }}
+                                      className="text-sm"
+                                      data-testid={`input-back-image-alt-${index}`}
                                     />
-                                  </div>
+                                    <div className="mt-2 rounded-md overflow-hidden border">
+                                      <img 
+                                        src={card.backImageUrl} 
+                                        alt={card.backImageAlt || "Back preview"} 
+                                        className="w-full h-32 object-cover"
+                                        loading="lazy"
+                                        onError={(e) => {
+                                          (e.target as HTMLImageElement).style.display = 'none';
+                                        }}
+                                      />
+                                    </div>
+                                  </>
                                 )}
                               </div>
                             </div>
