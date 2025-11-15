@@ -53,8 +53,13 @@ export default function PublicPreviewPage() {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Skip to main content */}
+      <a href="#main-content" className="skip-to-content">
+        Skip to main content
+      </a>
+      
       {/* Header */}
-      <div className="border-b bg-card">
+      <div className="border-b bg-card" role="banner">
         <div className="max-w-7xl mx-auto px-6 py-6">
           <div className="flex items-start gap-4">
             <div className="h-12 w-12 bg-primary rounded-lg flex items-center justify-center flex-shrink-0">
@@ -71,7 +76,7 @@ export default function PublicPreviewPage() {
       </div>
 
       {/* Content Player - Public preview doesn't track progress */}
-      <main className="max-w-7xl mx-auto px-6 py-8">
+      <main id="main-content" className="max-w-7xl mx-auto px-6 py-8" role="main">
         {content.type === "quiz" && <QuizPlayer data={content.data as QuizData} contentId={content.id} />}
         {content.type === "flashcard" && <FlashcardPlayer data={content.data as FlashcardData} contentId={content.id} />}
         {content.type === "interactive-video" && <VideoPlayer data={content.data as InteractiveVideoData} contentId={content.id} />}

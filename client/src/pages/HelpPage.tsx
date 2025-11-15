@@ -42,8 +42,13 @@ export default function HelpPage() {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Skip to main content */}
+      <a href="#main-content" className="skip-to-content">
+        Skip to main content
+      </a>
+      
       {/* Header */}
-      <header className="border-b bg-card sticky top-0 z-50">
+      <header className="border-b bg-card sticky top-0 z-50" role="banner">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Button
@@ -51,6 +56,7 @@ export default function HelpPage() {
               size="icon"
               onClick={() => navigate("/dashboard")}
               data-testid="button-back-dashboard"
+              aria-label="Back to dashboard"
             >
               <ArrowLeft className="h-5 w-5" />
             </Button>
@@ -76,7 +82,7 @@ export default function HelpPage() {
                 <p className="text-xs text-muted-foreground">{user?.role}</p>
               </div>
             </div>
-            <Button variant="ghost" size="icon" onClick={handleLogout} data-testid="button-logout">
+            <Button variant="ghost" size="icon" onClick={handleLogout} data-testid="button-logout" aria-label="Log out">
               <LogOut className="h-5 w-5" />
             </Button>
           </div>
@@ -84,7 +90,7 @@ export default function HelpPage() {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-4xl mx-auto px-6 py-12">
+      <main id="main-content" className="max-w-4xl mx-auto px-6 py-12" role="main">
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-foreground mb-4">Help & User Manual</h1>
           <p className="text-lg text-muted-foreground">

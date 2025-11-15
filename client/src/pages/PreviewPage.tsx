@@ -49,11 +49,16 @@ export default function PreviewPage() {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Skip to main content */}
+      <a href="#main-content" className="skip-to-content">
+        Skip to main content
+      </a>
+      
       {/* Header */}
-      <div className="border-b bg-card">
+      <div className="border-b bg-card" role="banner">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate("/")} data-testid="button-back">
+            <Button variant="ghost" size="icon" onClick={() => navigate("/")} data-testid="button-back" aria-label="Back to dashboard">
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <div>
@@ -69,7 +74,7 @@ export default function PreviewPage() {
       </div>
 
       {/* Content Player */}
-      <main className="max-w-7xl mx-auto px-6 py-8">
+      <main id="main-content" className="max-w-7xl mx-auto px-6 py-8" role="main">
         {content.type === "quiz" && <QuizPlayer data={content.data as QuizData} contentId={content.id} />}
         {content.type === "flashcard" && <FlashcardPlayer data={content.data as FlashcardData} contentId={content.id} />}
         {content.type === "interactive-video" && <VideoPlayer data={content.data as InteractiveVideoData} contentId={content.id} />}

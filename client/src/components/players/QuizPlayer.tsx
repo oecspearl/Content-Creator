@@ -3,6 +3,8 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 import { CheckCircle2, XCircle, RotateCcw } from "lucide-react";
 import type { QuizData } from "@shared/schema";
 import { useProgressTracker } from "@/hooks/use-progress-tracker";
@@ -18,7 +20,8 @@ export function QuizPlayer({ data, contentId }: QuizPlayerProps) {
   const [answers, setAnswers] = useState<(string | number | null)[]>(new Array(data.questions.length).fill(null));
   const [showResults, setShowResults] = useState(false);
   const [showExplanation, setShowExplanation] = useState(false);
-  const { message: srMessage, announce } = useScreenReaderAnnounce();
+  const { announcement, announce } = useScreenReaderAnnounce();
+  const restartButtonRef = useRef<HTMLButtonElement>(null);
 
   const { progress: savedProgress, isProgressFetched, updateProgress, saveQuizAttempt, logInteraction, isAuthenticated } = useProgressTracker(contentId);
   const [lastSentProgress, setLastSentProgress] = useState<number>(-1);
@@ -96,10 +99,20 @@ export function QuizPlayer({ data, contentId }: QuizPlayerProps) {
   }, [currentIndex, answers, lastSentProgress, isProgressInitialized, isAuthenticated]);
 
   const handleAnswer = (answer: string | number) => {
+    // Don't allow changing answers after explanation is shown
+    if (showExplanation) return;
+    
     const newAnswers = [...answers];
     newAnswers[currentIndex] = answer;
     setAnswers(newAnswers);
-    setShowExplanation(true);
+    
+    // Log interaction
+    logInteraction("answered");
+    
+    // If immediate feedback is enabled, show explanation
+    if (data.settings.provideFeedback && currentQuestion.explanation) {
+      setShowExplanation(true);
+    }
     
     // Screen reader announcement
     const isCorrect = currentQuestion.correctAnswer === answer;
@@ -112,9 +125,17 @@ export function QuizPlayer({ data, contentId }: QuizPlayerProps) {
   };
 
   const handleNext = () => {
+    // Don't allow advancing without an answer
+    if (answers[currentIndex] === null) {
+      announce("Please select an answer before continuing", "assertive");
+      return;
+    }
+    
     setShowExplanation(false);
     if (currentIndex < data.questions.length - 1) {
       setCurrentIndex(currentIndex + 1);
+      // Announce question change for screen readers
+      announce(`Question ${currentIndex + 2} of ${data.questions.length}`, "polite");
     } else {
       // Quiz completed - save attempt and show results
       const score = calculateScore();
@@ -128,6 +149,11 @@ export function QuizPlayer({ data, contentId }: QuizPlayerProps) {
       // Don't update local state here - let reconciliation handle it on success
       saveQuizAttempt(score, data.questions.length, answersData);
       setShowResults(true);
+      announce(`Quiz complete! You scored ${Math.round((score / data.questions.length) * 100)}%`, "assertive");
+      // Focus the restart button when results are shown
+      setTimeout(() => {
+        restartButtonRef.current?.focus();
+      }, 100);
     }
   };
 
@@ -202,7 +228,12 @@ export function QuizPlayer({ data, contentId }: QuizPlayerProps) {
         </CardContent>
         <CardFooter className="justify-center">
           {data.settings.allowRetry && (
-            <Button onClick={handleRestart} data-testid="button-restart" aria-label="Restart the quiz">
+            <Button 
+              ref={restartButtonRef}
+              onClick={handleRestart} 
+              data-testid="button-restart" 
+              aria-label="Restart the quiz"
+            >
               <RotateCcw className="h-4 w-4 mr-2" />
               Retry Quiz
             </Button>
@@ -215,7 +246,7 @@ export function QuizPlayer({ data, contentId }: QuizPlayerProps) {
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       {/* Screen Reader Announcer */}
-      <ScreenReaderAnnouncer message={srMessage} politeness="assertive" />
+      <ScreenReaderAnnouncer announcement={announcement} />
       
       {/* Progress */}
       <div className="space-y-2" role="region" aria-label="Quiz progress">
@@ -230,39 +261,54 @@ export function QuizPlayer({ data, contentId }: QuizPlayerProps) {
       <Card role="region" aria-label={`Question ${currentIndex + 1} of ${data.questions.length}`}>
         <CardHeader>
           <div className="flex items-start justify-between gap-4">
-            <CardTitle className="text-xl">{currentQuestion.question}</CardTitle>
+            <CardTitle id={`question-${currentIndex}`} className="text-xl">{currentQuestion.question}</CardTitle>
             <Badge variant="outline">{currentQuestion.type.replace("-", " ")}</Badge>
           </div>
         </CardHeader>
         <CardContent className="space-y-3">
           {currentQuestion.type === "multiple-choice" && currentQuestion.options && (
-            <div className="space-y-2">
+            <RadioGroup 
+              value={answers[currentIndex]?.toString() || ""}
+              onValueChange={(value) => handleAnswer(parseInt(value))}
+              disabled={showExplanation}
+              aria-labelledby={`question-${currentIndex}`}
+              aria-required="true"
+              className="space-y-2"
+            >
               {currentQuestion.options.map((option, index) => {
                 const isSelected = answers[currentIndex] === index;
                 const isCorrectOption = currentQuestion.correctAnswer === index;
                 const showCorrect = showExplanation && data.settings.showCorrectAnswers;
 
                 return (
-                  <Button
-                    key={index}
-                    variant={isSelected ? "default" : "outline"}
-                    className={`w-full justify-start h-auto py-4 px-4 text-left ${
+                  <div 
+                    key={index} 
+                    className={`flex items-center space-x-3 border rounded-lg p-4 ${
+                      isSelected ? "border-primary bg-primary/5" : "border-border"
+                    } ${
                       showCorrect && isCorrectOption ? "border-green-600 bg-green-50 dark:bg-green-950" : ""
-                    } ${showCorrect && isSelected && !isCorrectOption ? "border-destructive bg-destructive/10" : ""}`}
-                    onClick={() => !showExplanation && handleAnswer(index)}
-                    disabled={showExplanation}
-                    data-testid={`option-${index}`}
-                    role="button"
-                    aria-label={`Option ${index + 1}: ${option}`}
-                    aria-pressed={isSelected}
+                    } ${
+                      showCorrect && isSelected && !isCorrectOption ? "border-destructive bg-destructive/10" : ""
+                    }`}
                   >
-                    <span className="flex-1">{option}</span>
+                    <RadioGroupItem 
+                      value={index.toString()} 
+                      id={`option-${currentIndex}-${index}`}
+                      disabled={showExplanation}
+                      data-testid={`option-${index}`}
+                    />
+                    <Label 
+                      htmlFor={`option-${currentIndex}-${index}`}
+                      className="flex-1 cursor-pointer text-base"
+                    >
+                      {option}
+                    </Label>
                     {showCorrect && isCorrectOption && <CheckCircle2 className="h-5 w-5 text-green-600" />}
                     {showCorrect && isSelected && !isCorrectOption && <XCircle className="h-5 w-5 text-destructive" />}
-                  </Button>
+                  </div>
                 );
               })}
-            </div>
+            </RadioGroup>
           )}
 
           {currentQuestion.type === "true-false" && (
