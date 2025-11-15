@@ -18,6 +18,7 @@ import InteractiveBookCreator from "@/pages/InteractiveBookCreator";
 import PreviewPage from "@/pages/PreviewPage";
 import SharePage from "@/pages/SharePage";
 import PublicPreviewPage from "@/pages/PublicPreviewPage";
+import HelpPage from "@/pages/HelpPage";
 import NotFound from "@/pages/not-found";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -106,6 +107,9 @@ function Router() {
       </Route>
       <Route path="/share/:id">
         <ProtectedRoute component={SharePage} />
+      </Route>
+      <Route path="/help">
+        <ProtectedRoute component={HelpPage} />
       </Route>
       <Route component={NotFound} />
     </Switch>

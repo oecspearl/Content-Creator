@@ -29,7 +29,8 @@ import {
   BookOpen,
   Search,
   Filter,
-  X
+  X,
+  HelpCircle
 } from "lucide-react";
 import { useLocation } from "wouter";
 import type { H5pContent, ContentType } from "@shared/schema";
@@ -134,6 +135,14 @@ export default function Dashboard() {
             </div>
           </div>
           <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate("/help")}
+              data-testid="button-help"
+            >
+              <HelpCircle className="h-5 w-5" />
+            </Button>
             <ThemeToggle />
             <div className="flex items-center gap-3">
               <Avatar className="h-10 w-10">
