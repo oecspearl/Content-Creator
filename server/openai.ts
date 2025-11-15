@@ -1,9 +1,13 @@
 import OpenAI from "openai";
-import type { AIGenerationRequest, QuizQuestion, FlashcardData, VideoHotspot, ImageHotspot, DragAndDropData, FillInBlanksData, MemoryGameData, InteractiveBookData } from "@shared/schema";
+import type { AIGenerationRequest, QuizQuestion, FlashcardData, VideoHotspot, ImageHotspot, DragAndDropData, FillInBlanksData, MemoryGameData, InteractiveBookData, H5pContent } from "@shared/schema";
 
 // This is using OpenAI's API, which points to OpenAI's API servers and requires your own API key.
 // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+export function getOpenAIClient() {
+  return openai;
+}
 
 export async function generateQuizQuestions(request: AIGenerationRequest): Promise<QuizQuestion[]> {
   const prompt = `Generate ${request.numberOfItems} quiz questions about "${request.topic}" at ${request.difficulty} difficulty level${request.gradeLevel ? ` for ${request.gradeLevel}` : ""}.

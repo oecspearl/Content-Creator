@@ -72,6 +72,16 @@ export const interactionEvents = pgTable("interaction_events", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Chat messages table - stores AI assistant conversation history
+export const chatMessages = pgTable("chat_messages", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => profiles.id, { onDelete: "cascade" }),
+  role: text("role").notNull(), // 'user' | 'assistant' | 'system'
+  content: text("content").notNull(),
+  context: jsonb("context"), // User's current context (page, content being viewed, etc.)
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // Zod schemas
 export const insertProfileSchema = createInsertSchema(profiles).omit({
   id: true,
@@ -121,6 +131,15 @@ export const insertInteractionEventSchema = createInsertSchema(interactionEvents
   eventData: z.record(z.any()).optional().nullable(),
 });
 
+export const insertChatMessageSchema = createInsertSchema(chatMessages).omit({
+  id: true,
+  createdAt: true,
+}).extend({
+  role: z.enum(["user", "assistant", "system"]),
+  content: z.string().min(1),
+  context: z.record(z.any()).optional().nullable(),
+});
+
 // Types
 export type Profile = typeof profiles.$inferSelect;
 export type InsertProfile = z.infer<typeof insertProfileSchema>;
@@ -134,6 +153,8 @@ export type QuizAttempt = typeof quizAttempts.$inferSelect;
 export type InsertQuizAttempt = z.infer<typeof insertQuizAttemptSchema>;
 export type InteractionEvent = typeof interactionEvents.$inferSelect;
 export type InsertInteractionEvent = z.infer<typeof insertInteractionEventSchema>;
+export type ChatMessage = typeof chatMessages.$inferSelect;
+export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;
 
 // Content type definitions
 export type ContentType = "quiz" | "flashcard" | "interactive-video" | "image-hotspot" | "drag-drop" | "fill-blanks" | "memory-game" | "interactive-book";

@@ -1,12 +1,13 @@
 import { db } from "../db";
-import { profiles, h5pContent, contentShares, learnerProgress, quizAttempts, interactionEvents } from "@shared/schema";
+import { profiles, h5pContent, contentShares, learnerProgress, quizAttempts, interactionEvents, chatMessages } from "@shared/schema";
 import type { 
   Profile, InsertProfile, 
   H5pContent, InsertH5pContent, 
   ContentShare, InsertContentShare,
   LearnerProgress, InsertLearnerProgress,
   QuizAttempt, InsertQuizAttempt,
-  InteractionEvent, InsertInteractionEvent
+  InteractionEvent, InsertInteractionEvent,
+  ChatMessage, InsertChatMessage
 } from "@shared/schema";
 import { eq, and, desc, sql, count, avg, sum } from "drizzle-orm";
 import bcrypt from "bcryptjs";
@@ -47,6 +48,11 @@ export interface IStorage {
   getContentAnalytics(contentId: string): Promise<any>;
   getUserContentAnalytics(userId: string): Promise<any[]>;
   getContentLearners(contentId: string): Promise<any[]>;
+  
+  // Chat message methods
+  createChatMessage(message: InsertChatMessage): Promise<ChatMessage>;
+  getChatHistory(userId: string, limit?: number): Promise<ChatMessage[]>;
+  deleteChatHistory(userId: string): Promise<void>;
 }
 
 export class DbStorage implements IStorage {
@@ -362,6 +368,24 @@ export class DbStorage implements IStorage {
         totalInteractions: Number(interactionsByUser[learner.userId] || 0),
       };
     });
+  }
+
+  async createChatMessage(message: InsertChatMessage): Promise<ChatMessage> {
+    const [chatMessage] = await db.insert(chatMessages).values(message).returning();
+    return chatMessage;
+  }
+
+  async getChatHistory(userId: string, limit: number = 50): Promise<ChatMessage[]> {
+    return await db
+      .select()
+      .from(chatMessages)
+      .where(eq(chatMessages.userId, userId))
+      .orderBy(desc(chatMessages.createdAt))
+      .limit(limit);
+  }
+
+  async deleteChatHistory(userId: string): Promise<void> {
+    await db.delete(chatMessages).where(eq(chatMessages.userId, userId));
   }
 }
 

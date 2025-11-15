@@ -17,7 +17,8 @@ import {
   generateDragDropItems,
   generateFillBlanksBlanks,
   generateMemoryGameCards,
-  generateInteractiveBookPages 
+  generateInteractiveBookPages,
+  getOpenAIClient
 } from "./openai";
 
 // Type augmentation for session
@@ -366,6 +367,142 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("AI generation error:", error);
       res.status(500).json({ message: error.message || "Failed to generate content" });
+    }
+  });
+
+  // Chat assistant endpoint with streaming
+  app.post("/api/chat", requireAuth, async (req, res) => {
+    try {
+      const { message, context } = req.body;
+      const userId = req.session.userId!;
+
+      if (!message || typeof message !== "string") {
+        return res.status(400).json({ message: "Message is required" });
+      }
+
+      // Get user info
+      const user = await storage.getProfileById(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Get recent chat history for context (last 10 messages)
+      const history = await storage.getChatHistory(userId, 10);
+      const recentMessages = history.reverse().slice(-10);
+
+      // Build context-aware system message
+      let systemMessage = `You are a helpful AI assistant for the OECS Content Creator platform, an educational content creation tool for teachers in the Organization of Eastern Caribbean States.
+
+Your role is to help educators:
+- Create engaging educational content (quizzes, flashcards, interactive videos, etc.)
+- Get guidance on using the platform features
+- Answer questions about educational best practices
+- Provide support with content creation
+
+User Information:
+- Name: ${user.fullName}
+- Role: ${user.role}
+- Institution: ${user.institution || "Not specified"}
+
+Platform Features:
+- 8 content types: Quiz, Flashcard, Interactive Video, Image Hotspot, Drag & Drop, Fill in the Blanks, Memory Game, Interactive Book
+- AI-powered content generation
+- Progress tracking and analytics
+- Public sharing and preview links
+- Full accessibility support (WCAG 2.1 AA compliant)
+
+Be conversational, friendly, and educational. Provide specific, actionable advice.`;
+
+      // Add additional context if provided
+      if (context) {
+        systemMessage += `\n\nCurrent Context:\n${JSON.stringify(context, null, 2)}`;
+      }
+
+      // Build messages array for OpenAI
+      const messages: any[] = [
+        { role: "system", content: systemMessage },
+        ...recentMessages.map((msg) => ({
+          role: msg.role,
+          content: msg.content,
+        })),
+        { role: "user", content: message },
+      ];
+
+      // Save user message
+      await storage.createChatMessage({
+        userId,
+        role: "user",
+        content: message,
+        context: context || null,
+      });
+
+      // Set headers for streaming
+      res.setHeader("Content-Type", "text/event-stream");
+      res.setHeader("Cache-Control", "no-cache");
+      res.setHeader("Connection", "keep-alive");
+
+      const openai = getOpenAIClient();
+      const stream = await openai.chat.completions.create({
+        model: "gpt-5",
+        messages,
+        stream: true,
+        max_completion_tokens: 2048,
+      });
+
+      let fullResponse = "";
+
+      // Stream the response
+      for await (const chunk of stream) {
+        const content = chunk.choices[0]?.delta?.content || "";
+        if (content) {
+          fullResponse += content;
+          res.write(`data: ${JSON.stringify({ content })}\n\n`);
+        }
+      }
+
+      // Save assistant response
+      await storage.createChatMessage({
+        userId,
+        role: "assistant",
+        content: fullResponse,
+        context: null,
+      });
+
+      res.write(`data: [DONE]\n\n`);
+      res.end();
+    } catch (error: any) {
+      console.error("Chat error:", error);
+      if (!res.headersSent) {
+        res.status(500).json({ message: error.message || "Failed to process chat" });
+      } else {
+        res.write(`data: ${JSON.stringify({ error: error.message })}\n\n`);
+        res.end();
+      }
+    }
+  });
+
+  // Get chat history
+  app.get("/api/chat/history", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const limit = parseInt(req.query.limit as string) || 50;
+      const history = await storage.getChatHistory(userId, limit);
+      res.json(history.reverse());
+    } catch (error: any) {
+      console.error("Get chat history error:", error);
+      res.status(500).json({ message: "Failed to get chat history" });
+    }
+  });
+
+  // Clear chat history
+  app.delete("/api/chat/history", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      await storage.deleteChatHistory(userId);
+      res.json({ message: "Chat history cleared" });
+    } catch (error: any) {
+      console.error("Delete chat history error:", error);
+      res.status(500).json({ message: "Failed to clear chat history" });
     }
   });
 
