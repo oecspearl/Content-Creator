@@ -122,7 +122,6 @@ export class DbStorage implements IStorage {
       .onConflictDoUpdate({
         target: [learnerProgress.userId, learnerProgress.contentId],
         set: {
-          learnerName: progress.learnerName,
           completionPercentage: progress.completionPercentage,
           completedAt: progress.completedAt,
           lastAccessedAt: new Date(),
@@ -288,72 +287,81 @@ export class DbStorage implements IStorage {
   }
 
   async getContentLearners(contentId: string): Promise<any[]> {
-    // Get all learners who have accessed this content with their progress
+    // Get all learners with their progress and profile info in one query
     const learners = await db
       .select({
         userId: learnerProgress.userId,
-        learnerName: learnerProgress.learnerName,
+        fullName: profiles.fullName,
+        email: profiles.email,
+        role: profiles.role,
         completionPercentage: learnerProgress.completionPercentage,
         completedAt: learnerProgress.completedAt,
         lastAccessedAt: learnerProgress.lastAccessedAt,
-        createdAt: learnerProgress.createdAt,
+        firstAccessedAt: learnerProgress.createdAt,
       })
       .from(learnerProgress)
+      .innerJoin(profiles, eq(learnerProgress.userId, profiles.id))
       .where(eq(learnerProgress.contentId, contentId))
       .orderBy(desc(learnerProgress.lastAccessedAt));
 
-    // Get user profile info for authenticated users
-    const learnersWithProfiles = await Promise.all(
-      learners.map(async (learner) => {
-        const profile = await this.getProfileById(learner.userId);
-        
-        // Get quiz attempts if any
-        const attempts = await db
-          .select({
-            score: quizAttempts.score,
-            totalQuestions: quizAttempts.totalQuestions,
-            completedAt: quizAttempts.completedAt,
-          })
-          .from(quizAttempts)
-          .where(and(
-            eq(quizAttempts.userId, learner.userId),
-            eq(quizAttempts.contentId, contentId)
-          ))
-          .orderBy(desc(quizAttempts.completedAt))
-          .limit(5);
-
-        // Get interaction count
-        const interactionStats = await db
-          .select({
-            totalInteractions: count(interactionEvents.id),
-          })
-          .from(interactionEvents)
-          .where(and(
-            eq(interactionEvents.userId, learner.userId),
-            eq(interactionEvents.contentId, contentId)
-          ));
-
-        return {
-          userId: learner.userId,
-          displayName: learner.learnerName || profile?.fullName || "Anonymous",
-          email: profile?.email || null,
-          isAuthenticated: !!profile,
-          completionPercentage: learner.completionPercentage,
-          completedAt: learner.completedAt,
-          lastAccessedAt: learner.lastAccessedAt,
-          firstAccessedAt: learner.createdAt,
-          quizAttempts: attempts.map(attempt => ({
-            score: attempt.score,
-            totalQuestions: attempt.totalQuestions,
-            percentage: (attempt.score / attempt.totalQuestions * 100).toFixed(1),
-            completedAt: attempt.completedAt,
-          })),
-          totalInteractions: Number(interactionStats[0]?.totalInteractions || 0),
-        };
+    // Get all user IDs to fetch quiz attempts and interactions efficiently
+    const userIds = learners.map(l => l.userId);
+    
+    // Batch fetch quiz attempts for all users
+    const allQuizAttempts = userIds.length > 0 ? await db
+      .select({
+        userId: quizAttempts.userId,
+        score: quizAttempts.score,
+        totalQuestions: quizAttempts.totalQuestions,
+        completedAt: quizAttempts.completedAt,
       })
-    );
+      .from(quizAttempts)
+      .where(eq(quizAttempts.contentId, contentId))
+      .orderBy(desc(quizAttempts.completedAt)) : [];
 
-    return learnersWithProfiles;
+    // Batch fetch interaction counts for all users
+    const allInteractions = userIds.length > 0 ? await db
+      .select({
+        userId: interactionEvents.userId,
+        totalInteractions: count(interactionEvents.id),
+      })
+      .from(interactionEvents)
+      .where(eq(interactionEvents.contentId, contentId))
+      .groupBy(interactionEvents.userId) : [];
+
+    // Create lookup maps
+    const quizAttemptsByUser = allQuizAttempts.reduce((acc, attempt) => {
+      if (!acc[attempt.userId]) acc[attempt.userId] = [];
+      acc[attempt.userId].push(attempt);
+      return acc;
+    }, {} as Record<string, typeof allQuizAttempts>);
+
+    const interactionsByUser = allInteractions.reduce((acc, stat) => {
+      acc[stat.userId] = stat.totalInteractions;
+      return acc;
+    }, {} as Record<string, number>);
+
+    // Combine data
+    return learners.map((learner) => {
+      const userAttempts = (quizAttemptsByUser[learner.userId] || []).slice(0, 5);
+      return {
+        userId: learner.userId,
+        displayName: learner.fullName,
+        email: learner.email,
+        role: learner.role,
+        completionPercentage: learner.completionPercentage,
+        completedAt: learner.completedAt,
+        lastAccessedAt: learner.lastAccessedAt,
+        firstAccessedAt: learner.firstAccessedAt,
+        quizAttempts: userAttempts.map(attempt => ({
+          score: attempt.score,
+          totalQuestions: attempt.totalQuestions,
+          percentage: (attempt.score / attempt.totalQuestions * 100).toFixed(1),
+          completedAt: attempt.completedAt,
+        })),
+        totalInteractions: Number(interactionsByUser[learner.userId] || 0),
+      };
+    });
   }
 }
 
