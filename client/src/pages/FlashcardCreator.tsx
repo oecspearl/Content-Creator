@@ -54,7 +54,11 @@ export default function FlashcardCreator() {
       setDescription(content.description || "");
       const flashcardData = content.data as FlashcardData;
       setCards(flashcardData.cards || []);
-      setSettings(flashcardData.settings || settings);
+      setSettings({
+        shuffleCards: flashcardData.settings?.shuffleCards ?? settings.shuffleCards,
+        showProgress: flashcardData.settings?.showProgress ?? settings.showProgress,
+        autoFlipDelay: flashcardData.settings?.autoFlipDelay ?? settings.autoFlipDelay,
+      });
       setIsPublished(content.isPublished);
     }
   }, [content]);

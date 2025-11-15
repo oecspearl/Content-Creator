@@ -161,12 +161,23 @@ export function FlashcardPlayer({ data, contentId }: FlashcardPlayerProps) {
           <Card
             className={`absolute inset-0 backface-hidden ${
               isFlipped ? "invisible" : "visible"
-            } flex items-center justify-center hover-elevate`}
+            } flex items-center justify-center hover-elevate overflow-hidden`}
           >
-            <CardContent className="p-8 text-center">
+            <CardContent className="p-8 text-center w-full">
               <div className="space-y-4">
                 <div className="text-xs uppercase tracking-wide text-muted-foreground">Front</div>
-                <div className="text-2xl font-semibold">{currentCard.front}</div>
+                {currentCard.frontImageUrl && (
+                  <div className="mb-4">
+                    <img 
+                      src={currentCard.frontImageUrl} 
+                      alt="Front" 
+                      className="max-w-full max-h-48 mx-auto rounded-md object-contain"
+                    />
+                  </div>
+                )}
+                {currentCard.front && (
+                  <div className="text-2xl font-semibold">{currentCard.front}</div>
+                )}
                 {currentCard.category && (
                   <div className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-xs">
                     {currentCard.category}
@@ -181,13 +192,24 @@ export function FlashcardPlayer({ data, contentId }: FlashcardPlayerProps) {
           <Card
             className={`absolute inset-0 backface-hidden ${
               !isFlipped ? "invisible" : "visible"
-            } flex items-center justify-center bg-primary/5 hover-elevate`}
+            } flex items-center justify-center bg-primary/5 hover-elevate overflow-hidden`}
             style={{ transform: "rotateY(180deg)" }}
           >
-            <CardContent className="p-8 text-center">
+            <CardContent className="p-8 text-center w-full">
               <div className="space-y-4">
                 <div className="text-xs uppercase tracking-wide text-muted-foreground">Back</div>
-                <div className="text-2xl font-semibold">{currentCard.back}</div>
+                {currentCard.backImageUrl && (
+                  <div className="mb-4">
+                    <img 
+                      src={currentCard.backImageUrl} 
+                      alt="Back" 
+                      className="max-w-full max-h-48 mx-auto rounded-md object-contain"
+                    />
+                  </div>
+                )}
+                {currentCard.back && (
+                  <div className="text-2xl font-semibold">{currentCard.back}</div>
+                )}
                 {currentCard.category && (
                   <div className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-xs">
                     {currentCard.category}
