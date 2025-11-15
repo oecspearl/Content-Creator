@@ -1,47 +1,17 @@
 import { google } from 'googleapis';
 
-let connectionSettings: any;
-
-async function getAccessToken() {
-  if (connectionSettings && connectionSettings.settings.expires_at && new Date(connectionSettings.settings.expires_at).getTime() > Date.now()) {
-    return connectionSettings.settings.access_token;
+// Get YouTube client using Google API Key
+function getYouTubeClient() {
+  const apiKey = process.env.GOOGLE_API_KEY;
+  
+  if (!apiKey) {
+    throw new Error('GOOGLE_API_KEY not found in environment variables');
   }
   
-  const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME
-  const xReplitToken = process.env.REPL_IDENTITY 
-    ? 'repl ' + process.env.REPL_IDENTITY 
-    : process.env.WEB_REPL_RENEWAL 
-    ? 'depl ' + process.env.WEB_REPL_RENEWAL 
-    : null;
-
-  if (!xReplitToken) {
-    throw new Error('X_REPLIT_TOKEN not found for repl/depl');
-  }
-
-  connectionSettings = await fetch(
-    'https://' + hostname + '/api/v2/connection?include_secrets=true&connector_names=youtube',
-    {
-      headers: {
-        'Accept': 'application/json',
-        'X_REPLIT_TOKEN': xReplitToken
-      }
-    }
-  ).then(res => res.json()).then(data => data.items?.[0]);
-
-  const accessToken = connectionSettings?.settings?.access_token || connectionSettings.settings?.oauth?.credentials?.access_token;
-
-  if (!connectionSettings || !accessToken) {
-    throw new Error('YouTube not connected');
-  }
-  return accessToken;
-}
-
-// WARNING: Never cache this client.
-// Access tokens expire, so a new client must be created each time.
-// Always call this function again to get a fresh client.
-export async function getUncachableYouTubeClient() {
-  const accessToken = await getAccessToken();
-  return google.youtube({ version: 'v3', auth: accessToken });
+  return google.youtube({
+    version: 'v3',
+    auth: apiKey,
+  });
 }
 
 export interface YouTubeSearchParams {
@@ -55,7 +25,7 @@ export interface YouTubeSearchParams {
 
 export async function searchEducationalVideos(params: YouTubeSearchParams) {
   try {
-    const youtube = await getUncachableYouTubeClient();
+    const youtube = getYouTubeClient();
     
     // Build search query from educational criteria
     const query = `${params.subject} ${params.topic} ${params.learningOutcome} education tutorial grade ${params.gradeLevel}`;
@@ -103,13 +73,13 @@ export async function searchEducationalVideos(params: YouTubeSearchParams) {
   } catch (error: any) {
     console.error('YouTube API error:', error);
     
-    // Check if it's an auth issue
-    if (error.message && error.message.includes('YouTube not connected')) {
-      throw new Error('YouTube integration not set up. Please authorize the YouTube connection in your Replit account settings.');
+    // Check if it's an auth/key issue
+    if (error.message && error.message.includes('GOOGLE_API_KEY')) {
+      throw new Error('YouTube API key not configured. Please add GOOGLE_API_KEY to your secrets.');
     }
     
-    if (error.message && (error.message.includes('API key') || error.message.includes('credentials'))) {
-      throw new Error('YouTube API authorization required. Please complete the YouTube OAuth setup in Replit.');
+    if (error.message && (error.message.includes('API key') || error.message.includes('invalid') || error.message.includes('credentials'))) {
+      throw new Error('Invalid YouTube API key. Please check your GOOGLE_API_KEY secret.');
     }
     
     throw new Error('Failed to search YouTube videos. Please try again.');

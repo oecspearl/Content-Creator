@@ -1,12 +1,16 @@
 import { Card } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ExternalLink, Play, Calendar, Search as SearchIcon } from "lucide-react";
 import type { VideoFinderData } from "@shared/schema";
+import { useState } from "react";
 
 interface VideoFinderPlayerProps {
   data: VideoFinderData;
 }
 
 export function VideoFinderPlayer({ data }: VideoFinderPlayerProps) {
+  const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
+
   const formatDuration = (duration: string) => {
     // Convert ISO 8601 duration to readable format
     const match = duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
