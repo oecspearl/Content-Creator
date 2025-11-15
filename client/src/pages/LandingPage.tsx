@@ -66,13 +66,25 @@ export default function LandingPage() {
 
             {/* Navigation */}
             <nav className="hidden md:flex items-center gap-6" role="navigation">
-              <a href="#features" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+              <a 
+                href="#features" 
+                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                data-testid="link-nav-features"
+              >
                 Features
               </a>
-              <a href="#content-types" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+              <a 
+                href="#content-types" 
+                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                data-testid="link-nav-content-types"
+              >
                 Content Types
               </a>
-              <a href="#get-started" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+              <a 
+                href="#get-started" 
+                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                data-testid="link-nav-get-started"
+              >
                 Get Started
               </a>
             </nav>
@@ -150,7 +162,7 @@ export default function LandingPage() {
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-20 bg-muted/30">
+      <section id="features" className="py-20 bg-muted/30 scroll-mt-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h3 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">
@@ -178,7 +190,7 @@ export default function LandingPage() {
       </section>
 
       {/* Content Types Section */}
-      <section id="content-types" className="py-20">
+      <section id="content-types" className="py-20 scroll-mt-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h3 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">
@@ -206,7 +218,7 @@ export default function LandingPage() {
       </section>
 
       {/* CTA Section */}
-      <section id="get-started" className="py-20 bg-primary text-primary-foreground">
+      <section id="get-started" className="py-20 bg-primary text-primary-foreground scroll-mt-20">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h3 className="text-3xl sm:text-4xl font-bold mb-4">
             Ready to Transform Your Teaching?
@@ -251,12 +263,20 @@ export default function LandingPage() {
               <h4 className="font-semibold text-foreground mb-4">Product</h4>
               <ul className="space-y-2">
                 <li>
-                  <a href="#features" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                  <a 
+                    href="#features" 
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                    data-testid="link-footer-features"
+                  >
                     Features
                   </a>
                 </li>
                 <li>
-                  <a href="#content-types" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                  <a 
+                    href="#content-types" 
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                    data-testid="link-footer-content-types"
+                  >
                     Content Types
                   </a>
                 </li>
@@ -271,6 +291,7 @@ export default function LandingPage() {
                   <button 
                     onClick={() => navigate("/login")}
                     className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                    data-testid="link-footer-login"
                   >
                     Log In
                   </button>
@@ -279,6 +300,7 @@ export default function LandingPage() {
                   <button 
                     onClick={() => navigate("/login")}
                     className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                    data-testid="link-footer-signup"
                   >
                     Sign Up
                   </button>

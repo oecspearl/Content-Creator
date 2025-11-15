@@ -6,6 +6,49 @@ OECS Content Creator is a full-stack web application designed for educators acro
 
 The application enables educators to build engaging learning materials, preview them in real-time, publish content for public access, and share educational resources with students and other educators.
 
+## Landing Page
+
+The public-facing landing page (accessible at "/") showcases the platform to new visitors and provides clear calls-to-action for registration and login:
+
+**Header**:
+- Sticky header with OECS logo (green book icon) and brand name
+- Navigation menu: Features, Content Types, Get Started (desktop only)
+- "Log In" and "Sign Up" buttons for quick access
+- Remains visible while scrolling for easy navigation
+
+**Hero Section**:
+- Main heading: "Create Interactive Educational Content in Minutes"
+- Descriptive subheading explaining the platform's value proposition
+- Dual CTAs: "Get Started Free" (primary) and "Learn More" (secondary with smooth scroll)
+- Stats showcase: 8 Content Types, AI-Powered Generation, 100% Free to Start
+
+**Features Section**:
+- Four key benefits: AI-Powered Generation, Progress Tracking, Public Sharing, Accessible Design
+- Caribbean-focused messaging: "Built for Caribbean Educators"
+
+**Content Types Section**:
+- All 8 interactive content types displayed with color-coded icons
+- Brief description for each content type
+- Helps educators understand the variety of formats available
+
+**Call-to-Action Section**:
+- Green branded section with "Ready to Transform Your Teaching?" message
+- Final encouragement to get started
+- OECS primary green color for brand consistency
+
+**Footer**:
+- OECS branding with tagline
+- Quick links to Features and Content Types
+- Support links (Log In, Sign Up)
+- Copyright notice
+
+**Behavior**:
+- Unauthenticated users see the full landing page
+- Authenticated users are automatically redirected to /dashboard
+- All CTA buttons navigate to /login page for registration or authentication
+- Responsive design: Mobile-friendly layouts with hamburger menu on small screens
+- Smooth scroll navigation with proper offset for sticky header (scroll-margin-top: 5rem)
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
