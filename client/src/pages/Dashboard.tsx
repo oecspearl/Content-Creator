@@ -124,8 +124,13 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Skip to main content for keyboard navigation */}
+      <a href="#main-content" className="skip-to-content">
+        Skip to main content
+      </a>
+      
       {/* Header */}
-      <header className="border-b bg-card">
+      <header className="border-b bg-card" role="banner">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 bg-primary rounded-lg flex items-center justify-center">
@@ -141,6 +146,7 @@ export default function Dashboard() {
               size="icon"
               onClick={() => navigate("/analytics")}
               data-testid="button-analytics"
+              aria-label="View analytics dashboard"
             >
               <BarChart3 className="h-5 w-5" />
             </Button>
@@ -149,6 +155,7 @@ export default function Dashboard() {
               size="icon"
               onClick={() => navigate("/help")}
               data-testid="button-help"
+              aria-label="Open help documentation"
             >
               <HelpCircle className="h-5 w-5" />
             </Button>
@@ -164,7 +171,13 @@ export default function Dashboard() {
                 <p className="text-xs text-muted-foreground">{user?.role}</p>
               </div>
             </div>
-            <Button variant="ghost" size="icon" onClick={handleLogout} data-testid="button-logout">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={handleLogout} 
+              data-testid="button-logout"
+              aria-label="Log out"
+            >
               <LogOut className="h-5 w-5" />
             </Button>
           </div>
@@ -172,7 +185,7 @@ export default function Dashboard() {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-6 py-8">
+      <main id="main-content" className="max-w-7xl mx-auto px-6 py-8" role="main">
         {/* Welcome Section */}
         <div className="mb-8">
           <h2 className="text-3xl font-bold text-foreground mb-2">

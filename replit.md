@@ -133,6 +133,46 @@ Preferred communication style: Simple, everyday language.
 - Cross-account scenarios not fully tested: Switching between user accounts in same browser session may cause stale progress data.
 - Suggested future improvements: Per-user query keys, proactive cache clearing on logout, comprehensive e2e testing for auth transition flows.
 
+## Accessibility Features
+
+The platform implements comprehensive accessibility features to ensure educational content is usable by all learners, including those with disabilities:
+
+**Keyboard Navigation**:
+- Full keyboard support for all interactive elements
+- Skip-to-content links on all major pages for quick navigation
+- Visible focus indicators using the primary color ring
+- Logical tab order throughout the application
+
+**Screen Reader Support**:
+- ARIA labels for all icon-only buttons and interactive elements
+- ARIA live regions for dynamic content announcements
+- Screen reader announcements for quiz feedback (correct/incorrect answers)
+- Semantic HTML with proper landmark roles (banner, main, region)
+- Proper heading hierarchy for content structure
+
+**Visual Accessibility**:
+- High contrast focus indicators (2px ring with offset)
+- Consistent color contrast ratios meeting WCAG AA standards
+- Support for both light and dark modes
+- Clear visual feedback for all interactive states
+
+**Motion & Animation**:
+- Respects `prefers-reduced-motion` system setting
+- Animations and transitions disabled for users who prefer reduced motion
+- Smooth scrolling disabled when reduced motion is preferred
+
+**Content Player Accessibility**:
+- Quiz Player: Screen reader announcements for answer feedback, ARIA labels for all options, keyboard-accessible controls
+- Progress indicators with ARIA labels for completion status
+- All buttons include descriptive aria-labels
+- Form inputs include proper labels and placeholders
+
+**Implementation Details**:
+- Custom CSS utilities for focus states, skip links, and screen reader-only text
+- ScreenReaderAnnouncer component for dynamic announcements
+- Role attributes on all major sections (banner, main, region)
+- ARIA attributes for interactive elements (aria-label, aria-pressed, aria-live)
+
 ## Analytics Dashboard
 
 **Overview Metrics**:

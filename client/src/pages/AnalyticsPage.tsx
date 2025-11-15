@@ -110,8 +110,13 @@ export default function AnalyticsPage() {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Skip to main content */}
+      <a href="#main-content" className="skip-to-content">
+        Skip to main content
+      </a>
+      
       {/* Header */}
-      <header className="border-b bg-card sticky top-0 z-50">
+      <header className="border-b bg-card sticky top-0 z-50" role="banner">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Button
@@ -119,6 +124,7 @@ export default function AnalyticsPage() {
               size="icon"
               onClick={() => navigate("/dashboard")}
               data-testid="button-back-dashboard"
+              aria-label="Back to dashboard"
             >
               <ArrowLeft className="h-5 w-5" />
             </Button>
@@ -137,6 +143,7 @@ export default function AnalyticsPage() {
               size="icon"
               onClick={() => navigate("/help")}
               data-testid="button-help"
+              aria-label="Open help documentation"
             >
               <HelpCircle className="h-5 w-5" />
             </Button>
@@ -152,7 +159,13 @@ export default function AnalyticsPage() {
                 <p className="text-xs text-muted-foreground">{user?.role}</p>
               </div>
             </div>
-            <Button variant="ghost" size="icon" onClick={handleLogout} data-testid="button-logout">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={handleLogout} 
+              data-testid="button-logout"
+              aria-label="Log out"
+            >
               <LogOut className="h-5 w-5" />
             </Button>
           </div>
@@ -160,7 +173,7 @@ export default function AnalyticsPage() {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-6 py-8">
+      <main id="main-content" className="max-w-7xl mx-auto px-6 py-8" role="main">
         <div className="mb-8">
           <h2 className="text-3xl font-bold text-foreground mb-2">Analytics Dashboard</h2>
           <p className="text-muted-foreground">

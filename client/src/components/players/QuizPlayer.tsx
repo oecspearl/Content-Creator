@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, XCircle, RotateCcw } from "lucide-react";
 import type { QuizData } from "@shared/schema";
 import { useProgressTracker } from "@/hooks/use-progress-tracker";
+import { ScreenReaderAnnouncer, useScreenReaderAnnounce } from "@/components/ScreenReaderAnnouncer";
 
 type QuizPlayerProps = {
   data: QuizData;
@@ -17,6 +18,7 @@ export function QuizPlayer({ data, contentId }: QuizPlayerProps) {
   const [answers, setAnswers] = useState<(string | number | null)[]>(new Array(data.questions.length).fill(null));
   const [showResults, setShowResults] = useState(false);
   const [showExplanation, setShowExplanation] = useState(false);
+  const { message: srMessage, announce } = useScreenReaderAnnounce();
 
   const { progress: savedProgress, isProgressFetched, updateProgress, saveQuizAttempt, logInteraction, isAuthenticated } = useProgressTracker(contentId);
   const [lastSentProgress, setLastSentProgress] = useState<number>(-1);
@@ -98,6 +100,15 @@ export function QuizPlayer({ data, contentId }: QuizPlayerProps) {
     newAnswers[currentIndex] = answer;
     setAnswers(newAnswers);
     setShowExplanation(true);
+    
+    // Screen reader announcement
+    const isCorrect = currentQuestion.correctAnswer === answer;
+    announce(
+      isCorrect 
+        ? "Correct! " + (currentQuestion.explanation || "")
+        : "Incorrect. " + (currentQuestion.explanation || ""),
+      "assertive"
+    );
   };
 
   const handleNext = () => {
@@ -152,13 +163,13 @@ export function QuizPlayer({ data, contentId }: QuizPlayerProps) {
     const percentage = Math.round((score / data.questions.length) * 100);
 
     return (
-      <Card className="max-w-2xl mx-auto">
+      <Card className="max-w-2xl mx-auto" role="region" aria-label="Quiz results">
         <CardHeader className="text-center">
           <CardTitle className="text-3xl">Quiz Complete!</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="text-center">
-            <div className="text-6xl font-bold text-primary mb-2">{percentage}%</div>
+            <div className="text-6xl font-bold text-primary mb-2" aria-label={`Your score is ${percentage} percent`}>{percentage}%</div>
             <p className="text-lg text-muted-foreground">
               You got {score} out of {data.questions.length} questions correct
             </p>
@@ -191,7 +202,7 @@ export function QuizPlayer({ data, contentId }: QuizPlayerProps) {
         </CardContent>
         <CardFooter className="justify-center">
           {data.settings.allowRetry && (
-            <Button onClick={handleRestart} data-testid="button-restart">
+            <Button onClick={handleRestart} data-testid="button-restart" aria-label="Restart the quiz">
               <RotateCcw className="h-4 w-4 mr-2" />
               Retry Quiz
             </Button>
@@ -203,17 +214,20 @@ export function QuizPlayer({ data, contentId }: QuizPlayerProps) {
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
+      {/* Screen Reader Announcer */}
+      <ScreenReaderAnnouncer message={srMessage} politeness="assertive" />
+      
       {/* Progress */}
-      <div className="space-y-2">
+      <div className="space-y-2" role="region" aria-label="Quiz progress">
         <div className="flex items-center justify-between text-sm">
           <span className="text-muted-foreground">Question {currentIndex + 1} of {data.questions.length}</span>
           <span className="font-medium">{Math.round(progressPercentage)}%</span>
         </div>
-        <Progress value={progressPercentage} className="h-2" />
+        <Progress value={progressPercentage} className="h-2" aria-label={`Quiz progress: ${Math.round(progressPercentage)}%`} />
       </div>
 
       {/* Question Card */}
-      <Card>
+      <Card role="region" aria-label={`Question ${currentIndex + 1} of ${data.questions.length}`}>
         <CardHeader>
           <div className="flex items-start justify-between gap-4">
             <CardTitle className="text-xl">{currentQuestion.question}</CardTitle>
@@ -238,6 +252,9 @@ export function QuizPlayer({ data, contentId }: QuizPlayerProps) {
                     onClick={() => !showExplanation && handleAnswer(index)}
                     disabled={showExplanation}
                     data-testid={`option-${index}`}
+                    role="button"
+                    aria-label={`Option ${index + 1}: ${option}`}
+                    aria-pressed={isSelected}
                   >
                     <span className="flex-1">{option}</span>
                     {showCorrect && isCorrectOption && <CheckCircle2 className="h-5 w-5 text-green-600" />}
@@ -280,6 +297,7 @@ export function QuizPlayer({ data, contentId }: QuizPlayerProps) {
               onChange={(e) => !showExplanation && handleAnswer(e.target.value)}
               disabled={showExplanation}
               data-testid="input-fill-blank"
+              aria-label="Answer input"
             />
           )}
 
@@ -296,6 +314,7 @@ export function QuizPlayer({ data, contentId }: QuizPlayerProps) {
             onClick={handlePrevious}
             disabled={currentIndex === 0}
             data-testid="button-previous"
+            aria-label="Go to previous question"
           >
             Previous
           </Button>
@@ -303,6 +322,7 @@ export function QuizPlayer({ data, contentId }: QuizPlayerProps) {
             onClick={handleNext}
             disabled={answers[currentIndex] === null}
             data-testid="button-next"
+            aria-label={currentIndex === data.questions.length - 1 ? "Finish quiz" : "Go to next question"}
           >
             {currentIndex === data.questions.length - 1 ? "Finish" : "Next"}
           </Button>
