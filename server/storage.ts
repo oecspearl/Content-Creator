@@ -15,6 +15,7 @@ import bcrypt from "bcryptjs";
 export interface IStorage {
   // Profile methods
   createProfile(profile: InsertProfile): Promise<Profile>;
+  updateProfile(id: string, updates: Partial<InsertProfile>): Promise<Profile | undefined>;
   getProfileById(id: string): Promise<Profile | undefined>;
   getProfileByEmail(email: string): Promise<Profile | undefined>;
   
@@ -57,10 +58,23 @@ export interface IStorage {
 
 export class DbStorage implements IStorage {
   async createProfile(insertProfile: InsertProfile): Promise<Profile> {
-    const hashedPassword = await bcrypt.hash(insertProfile.password, 10);
+    // Only hash password if it's provided and not already hashed (OAuth users come with pre-hashed sentinel)
+    const password = insertProfile.password 
+      ? (insertProfile.password.startsWith('$2') ? insertProfile.password : await bcrypt.hash(insertProfile.password, 10))
+      : null;
+    
     const [profile] = await db
       .insert(profiles)
-      .values({ ...insertProfile, password: hashedPassword })
+      .values({ ...insertProfile, password })
+      .returning();
+    return profile;
+  }
+
+  async updateProfile(id: string, updates: Partial<InsertProfile>): Promise<Profile | undefined> {
+    const [profile] = await db
+      .update(profiles)
+      .set(updates)
+      .where(eq(profiles.id, id))
       .returning();
     return profile;
   }

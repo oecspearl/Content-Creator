@@ -21,6 +21,8 @@ import {
   getOpenAIClient
 } from "./openai";
 import { searchEducationalVideos } from "./youtube";
+import passportConfig from "./passport-config";
+import { getMsalClient, getRedirectUri } from "./msal-config";
 
 // Type augmentation for session
 declare module "express-session" {
@@ -50,6 +52,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       },
     })
   )
+
+  // Initialize Passport
+  app.use(passportConfig.initialize());
+  app.use(passportConfig.session());
 
   // Auth middleware
   const requireAuth = (req: any, res: any, next: any) => {
@@ -142,6 +148,101 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       res.json({ message: "Logged out successfully" });
     });
+  });
+
+  // Google OAuth routes
+  app.get("/api/auth/google",
+    passportConfig.authenticate("google", { scope: ["profile", "email"] })
+  );
+
+  app.get("/api/auth/google/callback",
+    passportConfig.authenticate("google", { failureRedirect: "/login" }),
+    (req: any, res) => {
+      // Set session userId
+      req.session.userId = req.user.id;
+      req.session.save(() => {
+        res.redirect("/dashboard");
+      });
+    }
+  );
+
+  // Microsoft OAuth routes
+  app.get("/api/auth/microsoft", async (req, res) => {
+    try {
+      const msalClient = getMsalClient();
+      if (!msalClient) {
+        return res.status(500).json({ message: "Microsoft authentication not configured" });
+      }
+
+      const authCodeUrlParameters = {
+        scopes: ["user.read"],
+        redirectUri: getRedirectUri(),
+      };
+
+      const authUrl = await msalClient.getAuthCodeUrl(authCodeUrlParameters);
+      res.redirect(authUrl);
+    } catch (error: any) {
+      console.error("Microsoft auth initiation error:", error);
+      res.status(500).json({ message: "Failed to initiate Microsoft authentication" });
+    }
+  });
+
+  app.get("/api/auth/microsoft/callback", async (req: any, res) => {
+    try {
+      const msalClient = getMsalClient();
+      if (!msalClient) {
+        return res.redirect("/login?error=microsoft_not_configured");
+      }
+
+      const tokenRequest = {
+        code: req.query.code as string,
+        scopes: ["user.read"],
+        redirectUri: getRedirectUri(),
+      };
+
+      const response = await msalClient.acquireTokenByCode(tokenRequest);
+      const email = response.account?.username;
+      const name = response.account?.name || email;
+      const microsoftId = response.account?.homeAccountId;
+
+      if (!email || !microsoftId) {
+        return res.redirect("/login?error=no_email");
+      }
+
+      // Find or create user
+      let user = await storage.getProfileByEmail(email);
+      if (!user) {
+        // Create new Microsoft OAuth user
+        const bcrypt = await import("bcryptjs");
+        const crypto = await import("crypto");
+        const sentinelPassword = await bcrypt.hash(crypto.randomBytes(32).toString("hex"), 10);
+
+        user = await storage.createProfile({
+          email,
+          password: sentinelPassword,
+          fullName: name || email,
+          role: "teacher",
+          institution: null,
+          authProvider: "microsoft",
+          googleId: null,
+          microsoftId,
+        });
+      } else if (!user.microsoftId) {
+        // Link Microsoft account to existing user
+        await storage.updateProfile(user.id, {
+          microsoftId,
+        });
+      }
+
+      // Set session
+      req.session.userId = user.id;
+      req.session.save(() => {
+        res.redirect("/dashboard");
+      });
+    } catch (error: any) {
+      console.error("Microsoft OAuth callback error:", error);
+      res.redirect("/login?error=microsoft_auth_failed");
+    }
   });
 
   // Content routes

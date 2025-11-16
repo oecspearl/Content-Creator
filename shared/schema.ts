@@ -7,10 +7,13 @@ import { z } from "zod";
 export const profiles = pgTable("profiles", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   email: text("email").notNull().unique(),
-  password: text("password").notNull(),
+  password: text("password"), // Nullable for OAuth users
   fullName: text("full_name").notNull(),
   role: text("role").notNull().default("teacher"),
   institution: text("institution"),
+  authProvider: text("auth_provider").default("email"), // 'email' | 'google' | 'microsoft'
+  googleId: text("google_id"),
+  microsoftId: text("microsoft_id"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

@@ -8,7 +8,8 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { GraduationCap } from "lucide-react";
+import { GraduationCap, Building2 } from "lucide-react";
+import { SiGoogle } from "react-icons/si";
 
 export default function LoginPage() {
   const { user, login, register } = useAuth();
@@ -71,6 +72,14 @@ export default function LoginPage() {
     }
   };
 
+  const handleGoogleSignIn = () => {
+    window.location.href = "/api/auth/google";
+  };
+
+  const handleMicrosoftSignIn = () => {
+    window.location.href = "/api/auth/microsoft";
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-6">
       <div className="w-full max-w-md">
@@ -98,6 +107,42 @@ export default function LoginPage() {
               </CardHeader>
               <form onSubmit={handleLogin}>
                 <CardContent className="space-y-4">
+                  {/* OAuth Sign-in Buttons */}
+                  <div className="space-y-3">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full"
+                      onClick={handleGoogleSignIn}
+                      data-testid="button-google-signin"
+                    >
+                      <SiGoogle className="mr-2 h-4 w-4" />
+                      Continue with Google
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full"
+                      onClick={handleMicrosoftSignIn}
+                      data-testid="button-microsoft-signin"
+                    >
+                      <Building2 className="mr-2 h-4 w-4" />
+                      Continue with Microsoft
+                    </Button>
+                  </div>
+
+                  {/* Divider */}
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-background px-2 text-muted-foreground">
+                        Or continue with email
+                      </span>
+                    </div>
+                  </div>
+
                   <div className="space-y-2">
                     <Label htmlFor="login-email">Email</Label>
                     <Input
@@ -139,6 +184,42 @@ export default function LoginPage() {
               </CardHeader>
               <form onSubmit={handleRegister}>
                 <CardContent className="space-y-4">
+                  {/* OAuth Sign-in Buttons */}
+                  <div className="space-y-3">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full"
+                      onClick={handleGoogleSignIn}
+                      data-testid="button-google-register"
+                    >
+                      <SiGoogle className="mr-2 h-4 w-4" />
+                      Sign up with Google
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full"
+                      onClick={handleMicrosoftSignIn}
+                      data-testid="button-microsoft-register"
+                    >
+                      <Building2 className="mr-2 h-4 w-4" />
+                      Sign up with Microsoft
+                    </Button>
+                  </div>
+
+                  {/* Divider */}
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-background px-2 text-muted-foreground">
+                        Or continue with email
+                      </span>
+                    </div>
+                  </div>
+
                   <div className="space-y-2">
                     <Label htmlFor="register-name">Full Name</Label>
                     <Input
