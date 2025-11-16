@@ -361,6 +361,7 @@ export type GoogleSlidesData = {
   presentationId?: string; // Google Slides presentation ID if created
   presentationUrl?: string; // Public URL to the presentation
   generatedDate: string;
+  colorScheme?: string; // Color theme for presentation (e.g., "blue", "green", "purple", "orange")
 };
 
 // Google Slides Generation request
