@@ -175,11 +175,24 @@ export default function GoogleSlidesCreator() {
       }
     },
     onError: (error: any) => {
-      toast({
-        title: "Failed to create presentation",
-        description: error.message || "Please make sure you're signed in with Google and try again.",
-        variant: "destructive",
-      });
+      const errorMessage = error.message || "An error occurred";
+      
+      if (errorMessage.includes("Google") || errorMessage.includes("OAuth")) {
+        toast({
+          title: "Google Account Required",
+          description: "Please connect your Google account first. Click the 'Connect Google Account' button or sign out and sign in with Google.",
+          variant: "destructive",
+        });
+        
+        // Force refresh user data
+        queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+      } else {
+        toast({
+          title: "Failed to create presentation",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      }
     },
   });
 
