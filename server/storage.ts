@@ -126,11 +126,26 @@ export class DbStorage implements IStorage {
     return content;
   }
 
-  async getPublicContent(): Promise<H5pContent[]> {
+  async getPublicContent(): Promise<any[]> {
     console.log('[DEBUG] getPublicContent called');
     const results = await db
-      .select()
+      .select({
+        id: h5pContent.id,
+        title: h5pContent.title,
+        description: h5pContent.description,
+        type: h5pContent.type,
+        data: h5pContent.data,
+        userId: h5pContent.userId,
+        isPublished: h5pContent.isPublished,
+        isPublic: h5pContent.isPublic,
+        tags: h5pContent.tags,
+        createdAt: h5pContent.createdAt,
+        updatedAt: h5pContent.updatedAt,
+        creatorName: profiles.fullName,
+        creatorInstitution: profiles.institution,
+      })
       .from(h5pContent)
+      .leftJoin(profiles, eq(h5pContent.userId, profiles.id))
       .where(and(eq(h5pContent.isPublic, true), eq(h5pContent.isPublished, true)))
       .orderBy(desc(h5pContent.createdAt));
     console.log(`[DEBUG] getPublicContent returned ${results.length} results`);

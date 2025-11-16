@@ -25,6 +25,8 @@ import {
   X,
   ArrowLeft,
   LogOut,
+  GraduationCap,
+  User,
 } from "lucide-react";
 import type { H5pContent } from "@shared/schema";
 
@@ -289,9 +291,13 @@ export default function SharedResourcesPage() {
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {contents.map((content) => {
+          {contents.map((content: any) => {
             const Icon = contentTypeIcons[content.type as keyof typeof contentTypeIcons] || BookOpen;
             const typeLabel = contentTypeLabels[content.type as keyof typeof contentTypeLabels] || content.type;
+            
+            // Extract subject and grade level from content data
+            const subject = content.data?.topic || content.data?.subject || null;
+            const gradeLevel = content.data?.gradeLevel || null;
 
             return (
               <Card key={content.id} className="hover-elevate" data-testid={`card-resource-${content.id}`}>
@@ -310,9 +316,31 @@ export default function SharedResourcesPage() {
                   )}
                 </CardHeader>
                 <CardContent className="space-y-3">
+                  {/* Meta Information */}
+                  <div className="space-y-1.5 text-sm">
+                    {subject && (
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <BookOpen className="h-3.5 w-3.5 flex-shrink-0" />
+                        <span className="truncate">{subject}</span>
+                      </div>
+                    )}
+                    {gradeLevel && (
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <GraduationCap className="h-3.5 w-3.5 flex-shrink-0" />
+                        <span className="truncate">{gradeLevel}</span>
+                      </div>
+                    )}
+                    {content.creatorName && (
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <User className="h-3.5 w-3.5 flex-shrink-0" />
+                        <span className="truncate">{content.creatorName}</span>
+                      </div>
+                    )}
+                  </div>
+
                   {content.tags && content.tags.length > 0 && (
                     <div className="flex flex-wrap gap-1">
-                      {content.tags.slice(0, 3).map((tag, idx) => (
+                      {content.tags.slice(0, 3).map((tag: string, idx: number) => (
                         <Badge key={idx} variant="outline" className="text-xs">
                           {tag}
                         </Badge>
