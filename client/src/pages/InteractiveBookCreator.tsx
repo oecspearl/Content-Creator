@@ -33,7 +33,6 @@ export default function InteractiveBookCreator() {
   });
   const [isPublished, setIsPublished] = useState(false);
   const [isPublic, setIsPublic] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
   const [showEmbedDialog, setShowEmbedDialog] = useState(false);
   const [showAIModal, setShowAIModal] = useState(false);
 
@@ -82,14 +81,12 @@ export default function InteractiveBookCreator() {
       });
       queryClient.invalidateQueries({ queryKey: ["/api/content/public"] });
       if (!isEditing) navigate(`/create/interactive-book/${data.id}`);
-      setIsSaving(false);
       toast({
         title: "Saved successfully!",
         description: "Your interactive book has been saved.",
       });
     },
     onError: (error) => {
-      setIsSaving(false);
       toast({
         title: "Failed to save",
         description: "There was an error saving your book. Please try again.",
@@ -97,15 +94,6 @@ export default function InteractiveBookCreator() {
       });
     },
   });
-
-  useEffect(() => {
-    if (!title || pages.length === 0) return;
-    const timer = setTimeout(() => {
-      setIsSaving(true);
-      saveMutation.mutate(isPublished);
-    }, 3000);
-    return () => clearTimeout(timer);
-  }, [title, description, pages, settings, isPublic]);
 
   const addPage = () => {
     setPages([...pages, {
@@ -214,7 +202,7 @@ export default function InteractiveBookCreator() {
             <div>
               <h1 className="text-2xl font-bold">Interactive Book</h1>
               <p className="text-sm text-muted-foreground">
-                {isSaving ? "Saving..." : isEditing ? "Editing book" : "Create new book"}
+                {isEditing ? "Editing book" : "Create new book"}
               </p>
             </div>
           </div>
@@ -229,10 +217,7 @@ export default function InteractiveBookCreator() {
             </Button>
             <Button
               variant="outline"
-              onClick={() => {
-                setIsSaving(true);
-                saveMutation.mutate(isPublished);
-              }}
+              onClick={() => saveMutation.mutate(isPublished)}
               disabled={saveMutation.isPending || !title || pages.length === 0}
               data-testid="button-save"
             >
