@@ -15,7 +15,13 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
         // Use relative path - Passport.js will automatically derive the full URL from the request
         // This ensures it works across localhost, workspace URLs, and custom domains
         callbackURL: '/api/auth/google/callback',
-      },
+        // Request Slides API access
+        scope: [
+          'profile',
+          'email',
+          'https://www.googleapis.com/auth/presentations', // Google Slides API
+        ],
+      } as any,
       async (accessToken: string, refreshToken: string, profile: GoogleProfile, done: VerifyCallback) => {
         try {
           // Check if user exists with this Google ID or email
@@ -25,6 +31,9 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
           }
 
           let user = await storage.getProfileByEmail(email);
+
+          // Calculate token expiry (typically 1 hour from now)
+          const tokenExpiry = new Date(Date.now() + 3600 * 1000);
 
           if (!user) {
             // Create new OAuth user with sentinel password hash
@@ -39,12 +48,20 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
               authProvider: 'google',
               googleId: profile.id,
               microsoftId: null,
+              googleAccessToken: accessToken,
+              googleRefreshToken: refreshToken,
+              googleTokenExpiry: tokenExpiry,
             });
-          } else if (!user.googleId) {
-            // Link Google account to existing email user
+          } else {
+            // Update existing user with new tokens
             await storage.updateProfile(user.id, {
               googleId: profile.id,
+              googleAccessToken: accessToken,
+              googleRefreshToken: refreshToken || user.googleRefreshToken, // Keep existing if new one not provided
+              googleTokenExpiry: tokenExpiry,
             });
+            // Refresh user object
+            user = await storage.getProfileById(user.id);
           }
 
           return done(null, user);

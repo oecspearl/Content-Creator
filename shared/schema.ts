@@ -14,6 +14,9 @@ export const profiles = pgTable("profiles", {
   authProvider: text("auth_provider").default("email"), // 'email' | 'google' | 'microsoft'
   googleId: text("google_id"),
   microsoftId: text("microsoft_id"),
+  googleAccessToken: text("google_access_token"), // For Google Slides API access
+  googleRefreshToken: text("google_refresh_token"), // For refreshing access tokens
+  googleTokenExpiry: timestamp("google_token_expiry"), // When the access token expires
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
