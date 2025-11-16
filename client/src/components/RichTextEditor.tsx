@@ -68,10 +68,13 @@ export function RichTextEditor({ content, onChange, placeholder }: RichTextEdito
     },
   });
 
-  // Update editor content when content prop changes
+  // Update editor content when content prop changes, but only if editor is not focused
   useEffect(() => {
     if (editor && content !== editor.getHTML()) {
-      editor.commands.setContent(content);
+      // Only update if editor is not currently focused (user is not typing)
+      if (!editor.isFocused) {
+        editor.commands.setContent(content);
+      }
     }
   }, [content, editor]);
 

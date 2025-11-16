@@ -75,10 +75,13 @@ export default function InteractiveBookCreator() {
       }
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/content"] });
+      // Only invalidate the list queries, not the current content
+      queryClient.invalidateQueries({ 
+        queryKey: ["/api/content"],
+        exact: true,
+      });
       queryClient.invalidateQueries({ queryKey: ["/api/content/public"] });
       if (!isEditing) navigate(`/create/interactive-book/${data.id}`);
-      toast({ title: "Saved!", description: "Interactive Book saved successfully." });
       setIsSaving(false);
     },
   });
@@ -88,7 +91,7 @@ export default function InteractiveBookCreator() {
     const timer = setTimeout(() => {
       setIsSaving(true);
       saveMutation.mutate(isPublished);
-    }, 2000);
+    }, 3000);
     return () => clearTimeout(timer);
   }, [title, description, pages, settings, isPublic]);
 
