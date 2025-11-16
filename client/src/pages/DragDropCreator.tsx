@@ -180,13 +180,18 @@ export default function DragDropCreator() {
                 <div className="space-y-0.5">
                   <Label htmlFor="isPublic" className="text-base">Share as Public Resource</Label>
                   <p className="text-sm text-muted-foreground">
-                    Allow other teachers to discover and use this drag & drop activity on the Shared Resources page
+                    Allow other teachers to discover and use this drag & drop activity on the Shared Resources page. Content will be automatically published when shared.
                   </p>
                 </div>
                 <Switch
                   id="isPublic"
                   checked={isPublic}
-                  onCheckedChange={setIsPublic}
+                  onCheckedChange={(checked) => {
+                    setIsPublic(checked);
+                    if (checked) {
+                      setIsPublished(true);
+                    }
+                  }}
                   data-testid="switch-public"
                 />
               </div>
