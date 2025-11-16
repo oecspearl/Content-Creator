@@ -16,6 +16,7 @@ import {
   PenTool,
   Brain,
   BookOpenCheck,
+  Search,
   Sparkles,
   Share2,
   Eye,
@@ -112,7 +113,7 @@ export default function HelpPage() {
               <div>
                 <h4 className="font-semibold text-foreground mb-1">Choose a Content Type</h4>
                 <p className="text-sm text-muted-foreground">
-                  Select from eight interactive content types on your dashboard: Quiz, Flashcard, Interactive Video, Image Hotspot, Drag & Drop, Fill in the Blanks, Memory Game, or Interactive Book.
+                  Select from nine interactive content types on your dashboard: Quiz, Flashcard, Interactive Video, Image Hotspot, Drag & Drop, Fill in the Blanks, Memory Game, Interactive Book, or Video Finder.
                 </p>
               </div>
             </div>
@@ -350,6 +351,33 @@ export default function HelpPage() {
                   <li>Embed quizzes or activities to reinforce learning</li>
                   <li>Keep pages focused on one topic or concept</li>
                   <li>Include navigation aids and progress tracking</li>
+                </ul>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <div className="h-12 w-12 bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300 rounded-lg flex items-center justify-center">
+                    <Search className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <CardTitle>Video Finder</CardTitle>
+                    <CardDescription>Discover educational YouTube videos by topic</CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Search and curate collections of educational YouTube videos based on specific learning criteria. Specify subject, topic, learning outcomes, grade level, and age range to find relevant video resources.
+                </p>
+                <p className="text-sm font-semibold text-foreground mb-2">Best Practices:</p>
+                <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
+                  <li>Be specific with your search criteria for better results</li>
+                  <li>Include clear learning outcomes to focus the search</li>
+                  <li>Specify appropriate grade level and age range</li>
+                  <li>Review videos for content quality and relevance</li>
+                  <li>Share curated video collections with students for independent learning</li>
                 </ul>
               </CardContent>
             </Card>
