@@ -35,6 +35,7 @@ import { getMsalClient, getRedirectUri } from "./msal-config";
 declare module "express-session" {
   interface SessionData {
     userId: string;
+    oauthReturnTo?: string;
   }
 }
 
@@ -248,6 +249,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: "Google authentication is not configured. Please set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET." 
       });
     }
+    
+    // Store return URL in session if provided
+    const returnTo = req.query.returnTo as string;
+    if (returnTo && returnTo.startsWith('/')) {
+      req.session.oauthReturnTo = returnTo;
+    }
+    
     passportConfig.authenticate("google", { scope: ["profile", "email"] })(req, res, next);
   });
 
@@ -259,9 +267,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }, (req: any, res) => {
     // Set session userId
     req.session.userId = req.user.id;
+    
+    // Get return URL from session (validate it's a safe relative path)
+    const returnTo = req.session.oauthReturnTo;
+    delete req.session.oauthReturnTo;
+    
     req.session.save(() => {
       // Redirect to stored return URL or dashboard
-      res.redirect("/dashboard?googleAuthSuccess=true");
+      if (returnTo && returnTo.startsWith('/') && !returnTo.includes('//')) {
+        res.redirect(returnTo + '?googleAuthSuccess=true');
+      } else {
+        res.redirect("/dashboard?googleAuthSuccess=true");
+      }
     });
   });
 

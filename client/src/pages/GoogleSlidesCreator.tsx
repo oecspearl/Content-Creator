@@ -63,14 +63,18 @@ export default function GoogleSlidesCreator() {
 
   // Handle return from Google authentication
   useEffect(() => {
-    const returnUrl = localStorage.getItem('googleAuthReturnUrl');
-    if (returnUrl && user?.googleAccessToken) {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('googleAuthSuccess') === 'true' && user?.googleAccessToken) {
       // User just authenticated with Google, show success message
-      localStorage.removeItem('googleAuthReturnUrl');
       toast({
         title: "Google Account Connected!",
-        description: "You can now create Google Slides presentations. Click 'Create in Google Slides' to continue.",
+        description: "You can now create Google Slides presentations.",
       });
+      
+      // Clean up URL
+      urlParams.delete('googleAuthSuccess');
+      const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
+      window.history.replaceState({}, '', newUrl);
     }
   }, [user, toast]);
 
@@ -197,13 +201,12 @@ export default function GoogleSlidesCreator() {
           description: "Redirecting to Google sign-in...",
         });
         
-        // Store current location to return after auth
-        const returnUrl = window.location.pathname + window.location.search;
-        localStorage.setItem('googleAuthReturnUrl', returnUrl);
+        // Build return URL with current location
+        const returnUrl = window.location.pathname;
         
-        // Redirect to Google OAuth
+        // Redirect to Google OAuth with return URL
         setTimeout(() => {
-          window.location.href = "/api/auth/google";
+          window.location.href = `/api/auth/google?returnTo=${encodeURIComponent(returnUrl)}`;
         }, 1500);
       } else {
         toast({
