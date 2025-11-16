@@ -176,7 +176,6 @@ export default function VideoFinderCreator() {
       });
       return;
     }
-    console.log('[VideoFinder] Searching with videoCount:', videoCount);
     setIsSearching(true);
     searchMutation.mutate();
   };
