@@ -470,6 +470,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         );
       }
       
+      // Prevent caching so updates are immediately visible
+      res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.set('Pragma', 'no-cache');
+      res.set('Expires', '0');
       res.json(contents);
     } catch (error: any) {
       console.error("Get public content error:", error);

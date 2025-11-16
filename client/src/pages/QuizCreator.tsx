@@ -92,6 +92,7 @@ export default function QuizCreator() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/content"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/content/public"] });
       if (!isEditing) {
         navigate(`/create/quiz/${data.id}`);
       }

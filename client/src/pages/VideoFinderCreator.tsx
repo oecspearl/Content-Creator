@@ -106,6 +106,7 @@ export default function VideoFinderCreator() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/content"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/content/public"] });
       if (!isEditing) {
         navigate(`/create/video-finder/${data.id}`);
       }

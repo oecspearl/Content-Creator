@@ -122,6 +122,7 @@ export default function GoogleSlidesCreator() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/content"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/content/public"] });
       if (!isEditing) {
         navigate(`/create/google-slides/${data.id}`);
       }

@@ -71,6 +71,7 @@ export default function FillBlanksCreator() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/content"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/content/public"] });
       if (!isEditing) navigate(`/create/fill-blanks/${data.id}`);
       toast({ title: "Saved!", description: "Fill in the Blanks activity saved successfully." });
       setIsSaving(false);

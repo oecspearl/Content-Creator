@@ -69,6 +69,7 @@ export default function MemoryGameCreator() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/content"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/content/public"] });
       if (!isEditing) navigate(`/create/memory-game/${data.id}`);
       toast({ title: "Saved!", description: "Memory Game saved successfully." });
       setIsSaving(false);

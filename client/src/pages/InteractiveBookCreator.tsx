@@ -74,6 +74,7 @@ export default function InteractiveBookCreator() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/content"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/content/public"] });
       if (!isEditing) navigate(`/create/interactive-book/${data.id}`);
       toast({ title: "Saved!", description: "Interactive Book saved successfully." });
       setIsSaving(false);

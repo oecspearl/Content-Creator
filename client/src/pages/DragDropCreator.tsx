@@ -70,6 +70,7 @@ export default function DragDropCreator() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/content"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/content/public"] });
       if (!isEditing) navigate(`/create/drag-drop/${data.id}`);
       toast({ title: "Saved!", description: "Drag & Drop activity saved successfully." });
       setIsSaving(false);

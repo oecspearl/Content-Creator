@@ -90,6 +90,7 @@ export default function InteractiveVideoCreator() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/content"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/content/public"] });
       if (!isEditing) {
         navigate(`/create/interactive-video/${data.id}`);
       }
