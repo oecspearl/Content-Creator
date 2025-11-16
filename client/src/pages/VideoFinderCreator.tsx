@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { ArrowLeft, Search, Globe, ExternalLink, Play, Sparkles, X } from "lucide-react";
+import { ArrowLeft, Search, Globe, ExternalLink, Play, Sparkles, X, CheckSquare, Square } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import type { H5pContent, VideoFinderData, VideoResult } from "@shared/schema";
 
@@ -27,6 +27,7 @@ export default function VideoFinderCreator() {
   const [ageRange, setAgeRange] = useState("");
   const [videoCount, setVideoCount] = useState(10);
   const [searchResults, setSearchResults] = useState<VideoResult[]>([]);
+  const [selectedVideoIds, setSelectedVideoIds] = useState<string[]>([]);
   const [searchDate, setSearchDate] = useState("");
   const [viewingInstructions, setViewingInstructions] = useState("");
   const [guidingQuestions, setGuidingQuestions] = useState<string[]>([]);
@@ -52,6 +53,7 @@ export default function VideoFinderCreator() {
       setAgeRange(data.searchCriteria.ageRange);
       setVideoCount(data.searchCriteria.videoCount);
       setSearchResults(data.searchResults || []);
+      setSelectedVideoIds((data.searchResults || []).map(v => v.id));
       setSearchDate(data.searchDate);
       setViewingInstructions(data.viewingInstructions || "");
       setGuidingQuestions(data.guidingQuestions || []);
@@ -60,7 +62,8 @@ export default function VideoFinderCreator() {
   }, [content]);
 
   const saveMutation = useMutation({
-    mutationFn: async (publish: boolean = false) => {
+    mutationFn: async (params: { publish: boolean, selectedIds: string[] }) => {
+      const selectedVideos = searchResults.filter(v => params.selectedIds.includes(v.id));
       const data: VideoFinderData = {
         searchCriteria: {
           subject,
@@ -70,7 +73,7 @@ export default function VideoFinderCreator() {
           ageRange,
           videoCount,
         },
-        searchResults,
+        searchResults: selectedVideos,
         searchDate,
         viewingInstructions: viewingInstructions || undefined,
         guidingQuestions: guidingQuestions.length > 0 ? guidingQuestions : undefined,
@@ -81,7 +84,7 @@ export default function VideoFinderCreator() {
           title,
           description,
           data,
-          isPublished: publish,
+          isPublished: params.publish,
         });
         return await response.json();
       } else {
@@ -90,7 +93,7 @@ export default function VideoFinderCreator() {
           description,
           type: "video-finder",
           data,
-          isPublished: publish,
+          isPublished: params.publish,
         });
         return await response.json();
       }
@@ -119,6 +122,7 @@ export default function VideoFinderCreator() {
     },
     onSuccess: (data) => {
       setSearchResults(data.results);
+      setSelectedVideoIds(data.results.map((v: VideoResult) => v.id));
       setSearchDate(data.searchDate);
       setIsSearching(false);
       toast({
@@ -138,13 +142,14 @@ export default function VideoFinderCreator() {
 
   const generatePedagogyMutation = useMutation({
     mutationFn: async () => {
+      const selectedVideos = searchResults.filter(v => selectedVideoIds.includes(v.id));
       const response = await apiRequest("POST", "/api/video-finder/generate-pedagogy", {
         subject,
         topic,
         learningOutcome,
         gradeLevel,
         ageRange,
-        videoCount,
+        videoCount: selectedVideos.length,
       });
       return await response.json();
     },
@@ -189,8 +194,16 @@ export default function VideoFinderCreator() {
       });
       return;
     }
+    if (searchResults.length > 0 && selectedVideoIds.length === 0) {
+      toast({
+        title: "No videos selected",
+        description: "Please select at least one video to save",
+        variant: "destructive",
+      });
+      return;
+    }
     setIsSaving(true);
-    saveMutation.mutate(isPublished);
+    saveMutation.mutate({ publish: isPublished, selectedIds: selectedVideoIds });
   };
 
   const handlePublish = async () => {
@@ -202,9 +215,17 @@ export default function VideoFinderCreator() {
       });
       return;
     }
+    if (searchResults.length > 0 && selectedVideoIds.length === 0) {
+      toast({
+        title: "No videos selected",
+        description: "Please select at least one video before publishing",
+        variant: "destructive",
+      });
+      return;
+    }
     setIsSaving(true);
     setIsPublished(true);
-    saveMutation.mutate(true);
+    saveMutation.mutate({ publish: true, selectedIds: selectedVideoIds });
   };
 
   const handleGeneratePedagogy = () => {
@@ -216,8 +237,32 @@ export default function VideoFinderCreator() {
       });
       return;
     }
+    if (selectedVideoIds.length === 0) {
+      toast({
+        title: "No videos selected",
+        description: "Please select at least one video before generating pedagogical content",
+        variant: "destructive",
+      });
+      return;
+    }
     setIsGenerating(true);
     generatePedagogyMutation.mutate();
+  };
+
+  const toggleVideoSelection = (videoId: string) => {
+    setSelectedVideoIds(prev =>
+      prev.includes(videoId)
+        ? prev.filter(id => id !== videoId)
+        : [...prev, videoId]
+    );
+  };
+
+  const selectAllVideos = () => {
+    setSelectedVideoIds(searchResults.map(v => v.id));
+  };
+
+  const clearAllVideos = () => {
+    setSelectedVideoIds([]);
   };
 
   const addGuidingQuestion = () => {
@@ -507,14 +552,38 @@ export default function VideoFinderCreator() {
           <div className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>
-                  Video Results
+                <div className="flex items-center justify-between">
+                  <CardTitle>
+                    Video Results
+                    {searchResults.length > 0 && (
+                      <span className="ml-2 text-sm font-normal text-muted-foreground">
+                        ({selectedVideoIds.length} of {searchResults.length} selected)
+                      </span>
+                    )}
+                  </CardTitle>
                   {searchResults.length > 0 && (
-                    <span className="ml-2 text-sm font-normal text-muted-foreground">
-                      ({searchResults.length} videos)
-                    </span>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={selectAllVideos}
+                        disabled={selectedVideoIds.length === searchResults.length}
+                        data-testid="button-select-all"
+                      >
+                        Select All
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={clearAllVideos}
+                        disabled={selectedVideoIds.length === 0}
+                        data-testid="button-clear-all"
+                      >
+                        Clear All
+                      </Button>
+                    </div>
                   )}
-                </CardTitle>
+                </div>
               </CardHeader>
               <CardContent>
                 {searchResults.length === 0 ? (
@@ -524,45 +593,64 @@ export default function VideoFinderCreator() {
                   </div>
                 ) : (
                   <div className="space-y-4 max-h-[600px] overflow-y-auto">
-                    {searchResults.map((video) => (
-                      <Card key={video.id} className="overflow-hidden">
-                        <div className="flex gap-4 p-4">
-                          <div className="relative flex-shrink-0 w-40 h-24 bg-muted rounded overflow-hidden group">
-                            <img
-                              src={video.thumbnailUrl}
-                              alt={video.title}
-                              className="w-full h-full object-cover"
-                            />
-                            <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                              <Play className="h-8 w-8 text-white" />
+                    {searchResults.map((video) => {
+                      const isSelected = selectedVideoIds.includes(video.id);
+                      return (
+                        <div 
+                          key={video.id}
+                          className={`transition-all ${!isSelected ? 'opacity-60' : ''}`}
+                        >
+                          <Card className={`overflow-hidden ${isSelected ? 'border-primary border-2' : 'border-border'}`}>
+                            <div className="flex gap-4 p-4">
+                              <button
+                                onClick={() => toggleVideoSelection(video.id)}
+                                className="flex-shrink-0 self-start mt-1 hover-elevate active-elevate-2 p-1 rounded"
+                                data-testid={`button-toggle-video-${video.id}`}
+                              >
+                                {isSelected ? (
+                                  <CheckSquare className="h-5 w-5 text-primary" />
+                                ) : (
+                                  <Square className="h-5 w-5 text-muted-foreground" />
+                                )}
+                              </button>
+                              <div className="relative flex-shrink-0 w-40 h-24 bg-muted rounded overflow-hidden group">
+                                <img
+                                  src={video.thumbnailUrl}
+                                  alt={video.title}
+                                  className="w-full h-full object-cover"
+                                />
+                                <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <Play className="h-8 w-8 text-white" />
+                                </div>
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <h4 className="font-medium text-sm line-clamp-2 mb-1">
+                                  {video.title}
+                                </h4>
+                                <p className="text-xs text-muted-foreground mb-2">
+                                  {video.channelTitle}
+                                </p>
+                                {video.duration && (
+                                  <p className="text-xs text-muted-foreground mb-2">
+                                    Duration: {formatDuration(video.duration)}
+                                  </p>
+                                )}
+                                <a
+                                  href={`https://www.youtube.com/watch?v=${video.videoId}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                                  data-testid={`link-video-${video.id}`}
+                                >
+                                  Watch on YouTube
+                                  <ExternalLink className="h-3 w-3" />
+                                </a>
+                              </div>
                             </div>
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <h4 className="font-medium text-sm line-clamp-2 mb-1">
-                              {video.title}
-                            </h4>
-                            <p className="text-xs text-muted-foreground mb-2">
-                              {video.channelTitle}
-                            </p>
-                            {video.duration && (
-                              <p className="text-xs text-muted-foreground mb-2">
-                                Duration: {formatDuration(video.duration)}
-                              </p>
-                            )}
-                            <a
-                              href={`https://www.youtube.com/watch?v=${video.videoId}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
-                              data-testid={`link-video-${video.id}`}
-                            >
-                              Watch on YouTube
-                              <ExternalLink className="h-3 w-3" />
-                            </a>
-                          </div>
+                          </Card>
                         </div>
-                      </Card>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </CardContent>
