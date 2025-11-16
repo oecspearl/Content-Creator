@@ -29,32 +29,41 @@ The application is designed to comply with WCAG 2.1 AA standards, featuring full
 ## Content Types
 
 ### Google Slides Presentations
-The Google Slides content type enables teachers to create AI-generated educational presentations on any topic:
+The Google Slides content type enables teachers to create AI-generated educational presentations and export them to actual Google Slides presentations:
 
 **Creation Process**:
 - Teachers specify topic, grade level, age range, and learning outcomes
 - Configure number of slides (5-30)
 - AI generates pedagogically sound slide content following Universal Design for Learning (UDL) principles
+- **Create in Google Slides**: One-click button to create an actual Google Slides presentation with real images
 
 **AI-Generated Content**:
 - **Title slides**: Engaging titles and subtitles
 - **Learning outcomes slides**: Clear presentation of objectives
 - **Content slides**: Structured information with 3-5 bullet points
-- **Image slides**: Suggested educational images with detailed alt text for accessibility
+- **Image slides**: Real educational images fetched from Unsplash API with proper attribution
 - **Guiding questions**: 4-6 thought-provoking questions to check understanding (recall to analysis to application)
 - **Reflection questions**: 2-3 deeper thinking prompts for learner engagement
 - **Speaker notes**: Pedagogical guidance and teaching tips for educators
+
+**Google Slides Integration**:
+- **Automatic image sourcing**: Fetches relevant educational images from Unsplash based on slide content
+- **Real presentation creation**: Uses Google Slides API to create actual presentations in teacher's Google Drive
+- **Persistent links**: Stores presentation ID and URL for future access
+- **One-click access**: "Open in Google Slides" button in both creator and player views
+- **Full editing capability**: Teachers can edit, share, and present using Google Slides' native features
 
 **Player Features**:
 - **Presentation mode**: Full-screen slide navigation with Previous/Next controls and slide indicators
 - **Grid view**: Overview of all slides as clickable thumbnails
 - **Keyboard navigation**: Support for arrow key navigation
 - **Accessible design**: Speaker notes visible to teachers, proper ARIA labels
+- **Google Slides link**: Opens the actual presentation in a new tab (when created)
 
 **Pedagogical Approach**:
 - Age-appropriate language and examples
 - Concepts broken into digestible chunks
-- Visual variety with suggested images
+- Visual variety with real, relevant images
 - Questions range from literal comprehension to deeper analysis
 - Culturally relevant and inclusive content
 - Follows instructional design best practices
@@ -63,6 +72,8 @@ The Google Slides content type enables teachers to create AI-generated education
 
 *   **AI Integration**: OpenAI API (GPT-5 model) for content generation.
 *   **OAuth Providers**: Google OAuth 2.0 (via Passport.js) and Microsoft OAuth 2.0 (via @azure/msal-node) for user authentication.
+*   **Google Slides API**: Google Slides API (via googleapis npm package) for creating actual presentations.
+*   **Unsplash API**: Unsplash API for fetching educational stock photos for presentations.
 *   **Database Service**: Neon PostgreSQL serverless database.
 *   **Font Delivery**: Google Fonts CDN for Inter and JetBrains Mono.
 *   **Development Tools**: Replit-specific plugins, TypeScript compiler.
@@ -75,8 +86,9 @@ The application supports Google and Microsoft OAuth authentication. See `OAUTH_S
 
 ### Required Secrets for Production
 - `SESSION_SECRET`: Required for secure session management
-- `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`: Optional, for Google OAuth
+- `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`: Optional, for Google OAuth (required for Google Slides API access)
 - `MICROSOFT_CLIENT_ID`, `MICROSOFT_CLIENT_SECRET`, and `MICROSOFT_TENANT_ID`: Optional, for Microsoft OAuth
+- `UNSPLASH_ACCESS_KEY`: Required for fetching educational images for Google Slides presentations
 - `DATABASE_URL`: Recommended for production (enables persistent session storage)
 
 ### OAuth Features
@@ -85,3 +97,5 @@ The application supports Google and Microsoft OAuth authentication. See `OAUTH_S
 - Secure sentinel passwords for OAuth-only accounts
 - Production-ready session persistence with PostgreSQL
 - Graceful fallback to memory sessions in development
+- **Google OAuth token storage**: Access tokens and refresh tokens stored for Google Slides API access
+- **OAuth scope management**: Requests Google Slides API scope (https://www.googleapis.com/auth/presentations) for presentation creation
