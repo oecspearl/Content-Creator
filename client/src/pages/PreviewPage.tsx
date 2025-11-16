@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Share2 } from "lucide-react";
 import type { H5pContent, QuizData, FlashcardData, InteractiveVideoData, ImageHotspotData, DragAndDropData, FillInBlanksData, MemoryGameData, InteractiveBookData, VideoFinderData, GoogleSlidesData } from "@shared/schema";
+import ShareToClassroomDialog from "@/components/ShareToClassroomDialog";
 import { QuizPlayer } from "@/components/players/QuizPlayer";
 import { FlashcardPlayer } from "@/components/players/FlashcardPlayer";
 import { VideoPlayer } from "@/components/players/VideoPlayer";
@@ -68,10 +69,19 @@ export default function PreviewPage() {
               {content.description && <p className="text-sm text-muted-foreground">{content.description}</p>}
             </div>
           </div>
-          <Button variant="outline" size="sm" onClick={() => navigate(`/share/${content.id}`)} data-testid="button-share">
-            <Share2 className="h-4 w-4 mr-2" />
-            Share
-          </Button>
+          <div className="flex gap-2">
+            {content.isPublished && (
+              <ShareToClassroomDialog
+                contentTitle={content.title}
+                contentDescription={content.description || ""}
+                materialLink={`${window.location.origin}/public/${content.id}`}
+              />
+            )}
+            <Button variant="outline" size="sm" onClick={() => navigate(`/share/${content.id}`)} data-testid="button-share">
+              <Share2 className="h-4 w-4 mr-2" />
+              Share
+            </Button>
+          </div>
         </div>
       </div>
 
