@@ -1,7 +1,7 @@
 # OECS Content Creator
 
 ## Overview
-OECS Content Creator is a full-stack web application for educators in the Organization of Eastern Caribbean States. It enables the creation, management, and sharing of interactive educational content, including quizzes, flashcards, interactive videos, image hotspots, drag and drop exercises, fill in the blanks, memory games, interactive books, video finders with pedagogical guidance, and AI-generated Google Slides presentations. The platform features AI-powered content generation using OpenAI's GPT models, real-time content preview, and public sharing capabilities to enhance learning and collaboration among educators and students.
+OECS Content Creator is a full-stack web application for educators in the Organization of Eastern Caribbean States. It enables the creation, management, and sharing of interactive educational content, including quizzes, flashcards, interactive videos, image hotspots, drag and drop exercises, fill in the blanks, memory games, interactive books, video finders with pedagogical guidance, and AI-generated Google Slides presentations. The platform features AI-powered content generation using OpenAI's GPT models, real-time content preview, public sharing capabilities, and Google Classroom integration for sharing all content types to enhance learning and collaboration among educators and students.
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
@@ -61,12 +61,15 @@ The Google Slides content type enables teachers to create AI-generated education
 - **Google Slides link**: Opens the actual presentation in a new tab (when created)
 - **Google Classroom sharing**: One-click sharing to Google Classroom as assignment or announcement
 
-**Google Classroom Integration**:
-- **Share as Assignment**: Create coursework assignments with due dates and instructions
-- **Share as Announcement**: Post announcements with presentation links
+**Google Classroom Integration** (Universal for All Content Types):
+- **Share as Assignment**: Create coursework assignments with due dates and instructions for any published content
+- **Share as Announcement**: Post announcements with content links for any published content
 - **Course Selection**: Automatic listing of teacher's active Google Classroom courses
-- **Direct Integration**: Presentations shared directly from creator or player views
-- **OAuth Scopes**: Requires Google Classroom API permissions (courses.readonly, coursework.students)
+- **Direct Integration**: All published content can be shared from creator pages and preview pages
+- **OAuth Scopes**: Requires Google Classroom API permissions (courses.readonly, coursework.students, announcements)
+- **Availability**: Share to Classroom button appears in:
+  - Creator toolbars (for all 10 content types when content is published)
+  - Preview page header (for all published content)
 
 **Pedagogical Approach**:
 - Age-appropriate language and examples
