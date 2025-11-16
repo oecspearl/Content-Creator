@@ -590,6 +590,61 @@ export default function HelpPage() {
               </AccordionContent>
             </AccordionItem>
 
+            <AccordionItem value="shared-resources">
+              <AccordionTrigger>
+                <div className="flex items-center gap-2">
+                  <Share2 className="h-5 w-5 text-primary" />
+                  <span>Shared Resources</span>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent>
+                <div className="space-y-4 pt-2">
+                  <p className="text-sm text-muted-foreground">
+                    Share your best educational content with other teachers across the Caribbean, and discover resources created by your colleagues. The Shared Resources feature helps build a collaborative community of educators.
+                  </p>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground mb-2">How to Share Your Content Publicly:</p>
+                    <ol className="text-sm text-muted-foreground list-decimal list-inside space-y-1">
+                      <li>Create and complete your content (any of the 10 content types)</li>
+                      <li>Toggle the "Published" switch to make it live</li>
+                      <li>Enable the "Share as Public Resource" toggle in the content details</li>
+                      <li>Your content will now appear in the Shared Resources page for all teachers</li>
+                    </ol>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground mb-2">How to Browse Shared Resources:</p>
+                    <ol className="text-sm text-muted-foreground list-decimal list-inside space-y-1">
+                      <li>Click the "Shared Resources" button (Users icon) in the Dashboard header</li>
+                      <li>Browse through content shared by other teachers</li>
+                      <li>Use search to find specific topics or titles</li>
+                      <li>Filter by content type (Quiz, Flashcard, etc.)</li>
+                      <li>Filter by tags to find subject-specific content</li>
+                      <li>Click "Preview & Use" to view and interact with any resource</li>
+                    </ol>
+                  </div>
+                  <div className="bg-accent/50 rounded-lg p-4">
+                    <p className="text-sm font-semibold text-foreground mb-2">Privacy & Control:</p>
+                    <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
+                      <li>Only content you explicitly mark as public will be shared</li>
+                      <li>You can unpublish or remove public sharing at any time</li>
+                      <li>Content must be published before it can be made public</li>
+                      <li>Your name and basic info appear as the creator</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground mb-2">Best Practices for Sharing:</p>
+                    <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
+                      <li>Add descriptive titles and clear descriptions</li>
+                      <li>Use relevant tags (subject, grade level, topic)</li>
+                      <li>Preview your content before making it public</li>
+                      <li>Share your best, most polished work</li>
+                      <li>Include learning outcomes in descriptions</li>
+                    </ul>
+                  </div>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+
             <AccordionItem value="progress">
               <AccordionTrigger>
                 <div className="flex items-center gap-2">
