@@ -2,19 +2,22 @@ import { useState, useEffect } from "react";
 import { useParams, useLocation, Link } from "wouter";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Loader2, ArrowLeft, Plus, Trash2, Sparkles, Globe, ExternalLink } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Loader2, ArrowLeft, Plus, Trash2, Sparkles, Globe, ExternalLink, AlertCircle } from "lucide-react";
 import type { GoogleSlidesData, SlideContent, H5pContent } from "@shared/schema";
 
 export default function GoogleSlidesCreator() {
   const { id: contentId } = useParams();
   const [, navigate] = useLocation();
   const { toast } = useToast();
+  const { user } = useAuth();
   
   const isEditing = !!contentId;
   
@@ -35,6 +38,10 @@ export default function GoogleSlidesCreator() {
   const { data: content, isLoading: isLoadingContent } = useQuery<H5pContent>({
     queryKey: [`/api/content/${contentId}`],
     enabled: isEditing,
+  });
+
+  const { data: authProviders, isLoading: isLoadingProviders } = useQuery<{ google: boolean; microsoft: boolean }>({
+    queryKey: ["/api/auth/providers"],
   });
 
   useEffect(() => {
@@ -456,7 +463,7 @@ export default function GoogleSlidesCreator() {
                   Generated Slides
                   {slides.length > 0 && ` (${slides.length} slides)`}
                 </CardTitle>
-                {slides.length > 0 && (
+                {slides.length > 0 && !isLoadingProviders && (
                   <div className="flex gap-2">
                     {presentationUrl ? (
                       <Button
@@ -468,7 +475,7 @@ export default function GoogleSlidesCreator() {
                         <ExternalLink className="h-4 w-4 mr-1" />
                         Open in Google Slides
                       </Button>
-                    ) : (
+                    ) : user?.googleAccessToken ? (
                       <Button
                         onClick={() => createPresentationMutation.mutate()}
                         size="sm"
@@ -482,12 +489,42 @@ export default function GoogleSlidesCreator() {
                         )}
                         Create in Google Slides
                       </Button>
-                    )}
+                    ) : authProviders?.google === true ? (
+                      <Button
+                        asChild
+                        size="sm"
+                        variant="outline"
+                        data-testid="button-connect-google"
+                      >
+                        <a href="/api/auth/google">
+                          <ExternalLink className="h-4 w-4 mr-1" />
+                          Connect Google Account
+                        </a>
+                      </Button>
+                    ) : null}
                   </div>
                 )}
               </div>
             </CardHeader>
             <CardContent>
+              {!isLoadingProviders && authProviders?.google === false && (
+                <Alert className="mb-4" variant="destructive" data-testid="alert-google-not-configured">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    Google Slides integration is not configured. To use this feature, the administrator needs to set up Google OAuth credentials (GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET).
+                  </AlertDescription>
+                </Alert>
+              )}
+              {!isLoadingProviders && slides.length > 0 && !presentationUrl && !user?.googleAccessToken && authProviders?.google === true && (
+                <Alert className="mb-4" data-testid="alert-google-required">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    To create actual Google Slides presentations, you need to connect your Google account. 
+                    This allows the app to create presentations in your Google Drive with real images.
+                    Click "Connect Google Account" above to get started.
+                  </AlertDescription>
+                </Alert>
+              )}
               {slides.length === 0 ? (
                 <div className="text-center py-12 text-muted-foreground">
                   <Sparkles className="h-12 w-12 mx-auto mb-4 opacity-20" />
