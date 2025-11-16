@@ -7,6 +7,7 @@ import crypto from "crypto";
 import { storage } from "./storage";
 import { 
   aiGenerationSchema, 
+  videoFinderPedagogySchema,
   insertLearnerProgressSchema, 
   insertQuizAttemptSchema, 
   insertInteractionEventSchema 
@@ -21,6 +22,7 @@ import {
   generateFillBlanksBlanks,
   generateMemoryGameCards,
   generateInteractiveBookPages,
+  generateVideoFinderPedagogy,
   getOpenAIClient
 } from "./openai";
 import { searchEducationalVideos } from "./youtube";
@@ -893,6 +895,25 @@ Be conversational, friendly, and educational. Provide specific, actionable advic
       console.error("YouTube search error:", error);
       res.status(500).json({ 
         message: error.message || "Failed to search YouTube videos. Please try again." 
+      });
+    }
+  });
+
+  // Video Finder AI pedagogy generation route
+  app.post("/api/video-finder/generate-pedagogy", requireAuth, async (req, res) => {
+    try {
+      const parsed = videoFinderPedagogySchema.parse(req.body);
+
+      const result = await generateVideoFinderPedagogy(parsed);
+
+      res.json(result);
+    } catch (error: any) {
+      console.error("Video Finder pedagogy generation error:", error);
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ message: "Invalid request data", errors: error.errors });
+      }
+      res.status(500).json({ 
+        message: error.message || "Failed to generate pedagogical content. Please try again." 
       });
     }
   });

@@ -1,6 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ExternalLink, Play, Calendar, Search as SearchIcon } from "lucide-react";
+import { ExternalLink, Play, Calendar, Search as SearchIcon, BookOpen, HelpCircle } from "lucide-react";
 import type { VideoFinderData } from "@shared/schema";
 import { useState } from "react";
 
@@ -76,6 +76,49 @@ export function VideoFinderPlayer({ data }: VideoFinderPlayerProps) {
           </div>
         </div>
       </Card>
+
+      {/* Viewing Instructions */}
+      {data.viewingInstructions && (
+        <Card className="p-6">
+          <div className="flex items-start gap-4">
+            <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+              <BookOpen className="h-5 w-5 text-primary" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold mb-2">Viewing Instructions</h3>
+              <p className="text-foreground leading-relaxed whitespace-pre-wrap">
+                {data.viewingInstructions}
+              </p>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {/* Guiding Questions */}
+      {data.guidingQuestions && data.guidingQuestions.length > 0 && (
+        <Card className="p-6">
+          <div className="flex items-start gap-4">
+            <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+              <HelpCircle className="h-5 w-5 text-primary" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold mb-3">Guiding Questions</h3>
+              <div className="space-y-2">
+                {data.guidingQuestions.map((question, index) => (
+                  <div key={index} className="flex items-start gap-3">
+                    <span className="font-semibold text-primary flex-shrink-0">
+                      {index + 1}.
+                    </span>
+                    <p className="text-foreground leading-relaxed">
+                      {question}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </Card>
+      )}
 
       {/* Video Results */}
       <div className="space-y-4">

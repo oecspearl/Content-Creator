@@ -7,7 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { ArrowLeft, Search, Globe, ExternalLink, Play } from "lucide-react";
+import { ArrowLeft, Search, Globe, ExternalLink, Play, Sparkles, X } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 import type { H5pContent, VideoFinderData, VideoResult } from "@shared/schema";
 
 export default function VideoFinderCreator() {
@@ -27,9 +28,12 @@ export default function VideoFinderCreator() {
   const [videoCount, setVideoCount] = useState(10);
   const [searchResults, setSearchResults] = useState<VideoResult[]>([]);
   const [searchDate, setSearchDate] = useState("");
+  const [viewingInstructions, setViewingInstructions] = useState("");
+  const [guidingQuestions, setGuidingQuestions] = useState<string[]>([]);
   const [isPublished, setIsPublished] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const { data: content } = useQuery<H5pContent>({
     queryKey: ["/api/content", contentId],
@@ -49,6 +53,8 @@ export default function VideoFinderCreator() {
       setVideoCount(data.searchCriteria.videoCount);
       setSearchResults(data.searchResults || []);
       setSearchDate(data.searchDate);
+      setViewingInstructions(data.viewingInstructions || "");
+      setGuidingQuestions(data.guidingQuestions || []);
       setIsPublished(content.isPublished);
     }
   }, [content]);
@@ -66,6 +72,8 @@ export default function VideoFinderCreator() {
         },
         searchResults,
         searchDate,
+        viewingInstructions: viewingInstructions || undefined,
+        guidingQuestions: guidingQuestions.length > 0 ? guidingQuestions : undefined,
       };
 
       if (isEditing) {
@@ -128,6 +136,37 @@ export default function VideoFinderCreator() {
     },
   });
 
+  const generatePedagogyMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("POST", "/api/video-finder/generate-pedagogy", {
+        subject,
+        topic,
+        learningOutcome,
+        gradeLevel,
+        ageRange,
+        videoCount,
+      });
+      return await response.json();
+    },
+    onSuccess: (data) => {
+      setViewingInstructions(data.viewingInstructions);
+      setGuidingQuestions(data.guidingQuestions);
+      setIsGenerating(false);
+      toast({
+        title: "Generated!",
+        description: "AI has created viewing instructions and guiding questions",
+      });
+    },
+    onError: (error: any) => {
+      setIsGenerating(false);
+      toast({
+        title: "Generation failed",
+        description: error.message || "Failed to generate pedagogical content. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleSearch = () => {
     if (!subject || !topic || !learningOutcome || !gradeLevel) {
       toast({
@@ -166,6 +205,33 @@ export default function VideoFinderCreator() {
     setIsSaving(true);
     setIsPublished(true);
     saveMutation.mutate(true);
+  };
+
+  const handleGeneratePedagogy = () => {
+    if (!subject || !topic || !learningOutcome || !gradeLevel) {
+      toast({
+        title: "Missing information",
+        description: "Please fill in all required search criteria fields first",
+        variant: "destructive",
+      });
+      return;
+    }
+    setIsGenerating(true);
+    generatePedagogyMutation.mutate();
+  };
+
+  const addGuidingQuestion = () => {
+    setGuidingQuestions([...guidingQuestions, ""]);
+  };
+
+  const updateGuidingQuestion = (index: number, value: string) => {
+    const updated = [...guidingQuestions];
+    updated[index] = value;
+    setGuidingQuestions(updated);
+  };
+
+  const removeGuidingQuestion = (index: number) => {
+    setGuidingQuestions(guidingQuestions.filter((_, i) => i !== index));
   };
 
   const formatDuration = (duration: string) => {
@@ -346,6 +412,93 @@ export default function VideoFinderCreator() {
                     </>
                   )}
                 </Button>
+              </CardContent>
+            </Card>
+
+            {/* Pedagogical Content Card */}
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
+                <CardTitle>Pedagogical Content</CardTitle>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleGeneratePedagogy}
+                  disabled={isGenerating || !subject || !topic || !learningOutcome || !gradeLevel}
+                  data-testid="button-generate-pedagogy"
+                >
+                  {isGenerating ? (
+                    <>Generating...</>
+                  ) : (
+                    <>
+                      <Sparkles className="mr-2 h-4 w-4" />
+                      Generate with AI
+                    </>
+                  )}
+                </Button>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="viewingInstructions">Viewing Instructions</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Provide guidance on what learners should focus on while watching
+                  </p>
+                  <Textarea
+                    id="viewingInstructions"
+                    value={viewingInstructions}
+                    onChange={(e) => setViewingInstructions(e.target.value)}
+                    placeholder="e.g., Watch these videos to understand how plants make their own food. Take notes on the inputs, outputs, and location of this process..."
+                    rows={4}
+                    data-testid="textarea-viewing-instructions"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label>Guiding Questions</Label>
+                      <p className="text-xs text-muted-foreground">
+                        Questions to help learners focus while watching
+                      </p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={addGuidingQuestion}
+                      data-testid="button-add-question"
+                    >
+                      Add Question
+                    </Button>
+                  </div>
+                  {guidingQuestions.length === 0 ? (
+                    <div className="text-center py-6 text-sm text-muted-foreground border border-dashed rounded-lg">
+                      No guiding questions yet. Click "Add Question" or generate with AI
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {guidingQuestions.map((question, index) => (
+                        <div key={index} className="flex items-start gap-2">
+                          <span className="text-sm font-medium text-muted-foreground mt-2 flex-shrink-0">
+                            {index + 1}.
+                          </span>
+                          <Input
+                            value={question}
+                            onChange={(e) => updateGuidingQuestion(index, e.target.value)}
+                            placeholder="Enter a guiding question..."
+                            data-testid={`input-question-${index}`}
+                          />
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => removeGuidingQuestion(index)}
+                            data-testid={`button-remove-question-${index}`}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </CardContent>
             </Card>
           </div>

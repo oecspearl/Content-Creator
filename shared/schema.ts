@@ -332,6 +332,8 @@ export type VideoFinderData = {
   };
   searchResults: VideoResult[];
   searchDate: string;
+  viewingInstructions?: string; // Pedagogical guidance for learners
+  guidingQuestions?: string[]; // Questions to focus learning
 };
 
 // AI Generation request
@@ -346,3 +348,15 @@ export const aiGenerationSchema = z.object({
 });
 
 export type AIGenerationRequest = z.infer<typeof aiGenerationSchema>;
+
+// Video Finder Pedagogy Generation request
+export const videoFinderPedagogySchema = z.object({
+  subject: z.string().min(1),
+  topic: z.string().min(1),
+  learningOutcome: z.string().min(1),
+  gradeLevel: z.string().min(1),
+  ageRange: z.string().optional(),
+  videoCount: z.number().min(1).max(50),
+});
+
+export type VideoFinderPedagogyRequest = z.infer<typeof videoFinderPedagogySchema>;

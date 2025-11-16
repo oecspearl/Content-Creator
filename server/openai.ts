@@ -311,3 +311,64 @@ Respond in JSON format:
   const result = JSON.parse(response.choices[0].message.content || "{}");
   return result.pages || [];
 }
+
+export async function generateVideoFinderPedagogy(params: {
+  subject: string;
+  topic: string;
+  learningOutcome: string;
+  gradeLevel: string;
+  ageRange?: string;
+  videoCount: number;
+}): Promise<{ viewingInstructions: string; guidingQuestions: string[] }> {
+  const prompt = `Generate pedagogical guidance for a video viewing activity about "${params.topic}" in ${params.subject}.
+
+Activity Details:
+- Subject: ${params.subject}
+- Topic: ${params.topic}
+- Learning Outcome: ${params.learningOutcome}
+- Grade Level: ${params.gradeLevel}
+${params.ageRange ? `- Age Range: ${params.ageRange}` : ""}
+- Number of Videos: ${params.videoCount}
+
+Generate:
+1. Viewing Instructions: A paragraph (3-5 sentences) explaining:
+   - The purpose of watching these videos
+   - What learners should focus on while watching
+   - How to actively engage with the content
+   - Any preparation or follow-up activities
+
+2. Guiding Questions: 4-6 thought-provoking questions that:
+   - Help learners focus on key concepts
+   - Encourage critical thinking
+   - Connect to the learning outcome
+   - Range from literal comprehension to deeper analysis
+
+Make the guidance age-appropriate, clear, and actionable.
+
+Respond in JSON format:
+{
+  "viewingInstructions": "clear, concise paragraph of guidance",
+  "guidingQuestions": ["question 1", "question 2", "question 3", "question 4"]
+}`;
+
+  const response = await openai.chat.completions.create({
+    model: "gpt-5",
+    messages: [
+      { role: "system", content: "You are an expert educator creating video viewing guides. Always respond with valid JSON." },
+      { role: "user", content: prompt },
+    ],
+    response_format: { type: "json_object" },
+    max_completion_tokens: 2048,
+  });
+
+  try {
+    const result = JSON.parse(response.choices[0].message.content || "{}");
+    return {
+      viewingInstructions: result.viewingInstructions || "",
+      guidingQuestions: result.guidingQuestions || [],
+    };
+  } catch (parseError) {
+    console.error("Failed to parse OpenAI response:", parseError);
+    throw new Error("Received invalid response from AI. Please try again.");
+  }
+}
