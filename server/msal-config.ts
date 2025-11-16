@@ -32,30 +32,24 @@ export function getMsalClient() {
 }
 
 export function getRedirectUri() {
-  // Domain precedence: REPLIT_DOMAINS (custom domain) → REPL_SLUG (workspace URL) → h5pcreator.org (default)
-  // Format: "domain1.com,domain2.com" - we use the first one
-  const customDomain = process.env.REPLIT_DOMAINS?.split(',')[0];
+  // Check if we're in production (Replit deployment)
+  const isProduction = process.env.NODE_ENV === 'production' || process.env.REPLIT_ENVIRONMENT === 'production';
   
-  const baseUrl = process.env.NODE_ENV === 'production'
-    ? customDomain 
-      ? `https://${customDomain}`
-      : process.env.REPL_SLUG && process.env.REPL_OWNER
-        ? `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co`
-        : 'https://h5pcreator.org' // Final fallback to production domain
+  // Always use h5pcreator.org for production deployments
+  // This ensures OAuth works with your custom domain
+  const baseUrl = isProduction
+    ? 'https://h5pcreator.org'
     : 'http://localhost:5000';
   
   return `${baseUrl}/api/auth/microsoft/callback`;
 }
 
 export function getLogoutRedirectUri() {
-  // Domain precedence: REPLIT_DOMAINS (custom domain) → REPL_SLUG (workspace URL) → h5pcreator.org (default)
-  const customDomain = process.env.REPLIT_DOMAINS?.split(',')[0];
+  // Check if we're in production (Replit deployment)
+  const isProduction = process.env.NODE_ENV === 'production' || process.env.REPLIT_ENVIRONMENT === 'production';
   
-  return process.env.NODE_ENV === 'production'
-    ? customDomain 
-      ? `https://${customDomain}`
-      : process.env.REPL_SLUG && process.env.REPL_OWNER
-        ? `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co`
-        : 'https://h5pcreator.org' // Final fallback to production domain
+  // Always use h5pcreator.org for production deployments
+  return isProduction
+    ? 'https://h5pcreator.org'
     : 'http://localhost:5000';
 }
