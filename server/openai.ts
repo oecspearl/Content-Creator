@@ -1,5 +1,5 @@
 import OpenAI from "openai";
-import type { AIGenerationRequest, QuizQuestion, FlashcardData, VideoHotspot, ImageHotspot, DragAndDropData, FillInBlanksData, MemoryGameData, InteractiveBookData, H5pContent } from "@shared/schema";
+import type { AIGenerationRequest, QuizQuestion, FlashcardData, VideoHotspot, ImageHotspot, DragAndDropData, FillInBlanksData, MemoryGameData, InteractiveBookData, H5pContent, GoogleSlidesGenerationRequest, SlideContent } from "@shared/schema";
 
 // This is using OpenAI's API, which points to OpenAI's API servers and requires your own API key.
 // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
@@ -367,6 +367,72 @@ Respond in JSON format:
       viewingInstructions: result.viewingInstructions || "",
       guidingQuestions: result.guidingQuestions || [],
     };
+  } catch (parseError) {
+    console.error("Failed to parse OpenAI response:", parseError);
+    throw new Error("Received invalid response from AI. Please try again.");
+  }
+}
+
+export async function generateGoogleSlides(request: GoogleSlidesGenerationRequest): Promise<SlideContent[]> {
+  const learningOutcomesText = request.learningOutcomes.map((o, i) => `${i + 1}. ${o}`).join('\n');
+  
+  const prompt = `Create a pedagogically sound Google Slides presentation about "${request.topic}" for grade ${request.gradeLevel} students (age ${request.ageRange}).
+
+Learning Outcomes:
+${learningOutcomesText}
+
+Create ${request.numberOfSlides} slides that follow best practices for educational presentations:
+
+Slide Structure Requirements:
+1. Title Slide: Engaging title and brief subtitle
+2. Learning Outcomes Slide: List the learning outcomes clearly
+3. Content Slides (${request.numberOfSlides - 5}): Mix of:
+   - Text-heavy slides with clear headings and 3-5 bullet points
+   - Image-focused slides with descriptive alt text and brief captions
+   - Real-world examples and applications
+4. Guiding Questions Slide: 4-6 thought-provoking questions that check understanding
+5. Reflection Slide: 2-3 reflection questions for deeper thinking
+
+Pedagogical Guidelines:
+- Use age-appropriate language and examples
+- Break complex concepts into digestible chunks
+- Include visual variety (suggest images with descriptive alt text)
+- Add speaker notes with teaching tips and explanation guidance
+- Questions should range from recall to analysis to application
+- Content should be culturally relevant and inclusive
+
+For image slides, suggest relevant, educational images and provide detailed alt text.
+
+Respond in JSON format:
+{
+  "slides": [
+    {
+      "id": "unique-id",
+      "type": "title" | "content" | "guiding-questions" | "reflection" | "image",
+      "title": "slide title",
+      "content": "main text content (optional)",
+      "bulletPoints": ["point 1", "point 2"], // for content slides
+      "imageUrl": "suggested-image-description", // for image slides
+      "imageAlt": "detailed accessibility description",
+      "questions": ["question 1", "question 2"], // for question slides
+      "notes": "speaker notes with pedagogical guidance"
+    }
+  ]
+}`;
+
+  const response = await openai.chat.completions.create({
+    model: "gpt-5",
+    messages: [
+      { role: "system", content: "You are an expert instructional designer creating educational presentations. Always respond with valid JSON and follow Universal Design for Learning (UDL) principles." },
+      { role: "user", content: prompt },
+    ],
+    response_format: { type: "json_object" },
+    max_completion_tokens: 8000,
+  });
+
+  try {
+    const result = JSON.parse(response.choices[0].message.content || "{}");
+    return result.slides || [];
   } catch (parseError) {
     console.error("Failed to parse OpenAI response:", parseError);
     throw new Error("Received invalid response from AI. Please try again.");
