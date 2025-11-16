@@ -352,6 +352,7 @@ export default function InteractiveBookCreator() {
                       <div>
                         <Label>Page Content</Label>
                         <RichTextEditor
+                          key={`editor-${currentPageIndex}-${pages[currentPageIndex].id}`}
                           content={pages[currentPageIndex].content}
                           onChange={(html) => {
                             const updated = [...pages];
