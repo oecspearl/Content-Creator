@@ -10,7 +10,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { RichTextEditor } from "@/components/RichTextEditor";
-import { ArrowLeft, Plus, Trash2, Globe, ChevronLeft, ChevronRight, Layers, X } from "lucide-react";
+import { AIGenerationModal } from "@/components/AIGenerationModal";
+import { ArrowLeft, Plus, Trash2, Globe, ChevronLeft, ChevronRight, Layers, X, Sparkles } from "lucide-react";
 import type { H5pContent, InteractiveBookData, ContentType } from "@shared/schema";
 import ShareToClassroomDialog from "@/components/ShareToClassroomDialog";
 
@@ -34,6 +35,7 @@ export default function InteractiveBookCreator() {
   const [isPublic, setIsPublic] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [showEmbedDialog, setShowEmbedDialog] = useState(false);
+  const [showAIModal, setShowAIModal] = useState(false);
 
   const { data: content } = useQuery<H5pContent>({
     queryKey: ["/api/content", contentId],
@@ -134,6 +136,56 @@ export default function InteractiveBookCreator() {
     return labels[type] || type;
   };
 
+  const handleAIGenerated = (data: any) => {
+    if (!data.pages || !Array.isArray(data.pages)) {
+      toast({
+        title: "Error",
+        description: "Invalid response from AI. Please try again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const validPages = data.pages.filter((page: any) => 
+        page != null && typeof page === 'object'
+      );
+
+      if (validPages.length === 0) {
+        toast({
+          title: "Error",
+          description: "No valid pages generated. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const normalizedPages = validPages.map((page: any, index: number) => ({
+        id: page.id || `page-${Date.now()}-${index}`,
+        title: String(page.title ?? "Untitled Page").trim(),
+        content: String(page.content ?? "").trim(),
+      }));
+      
+      setPages(prev => {
+        const firstNewPageIndex = prev.length;
+        setCurrentPageIndex(firstNewPageIndex);
+        return [...prev, ...normalizedPages];
+      });
+      
+      setShowAIModal(false);
+      toast({ 
+        title: "Pages Generated!", 
+        description: `${normalizedPages.length} pages have been added to your book.` 
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to process AI response. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <div className="border-b">
@@ -150,6 +202,14 @@ export default function InteractiveBookCreator() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => setShowAIModal(true)} 
+              data-testid="button-ai-generate"
+            >
+              <Sparkles className="h-4 w-4 mr-2" />
+              AI Generate Pages
+            </Button>
             {contentId && isPublished && (
               <ShareToClassroomDialog
                 contentTitle={title}
@@ -406,6 +466,13 @@ export default function InteractiveBookCreator() {
           </Card>
         </div>
       </div>
+
+      <AIGenerationModal
+        open={showAIModal}
+        onOpenChange={setShowAIModal}
+        contentType="interactive-book"
+        onGenerated={handleAIGenerated}
+      />
     </div>
   );
 }
