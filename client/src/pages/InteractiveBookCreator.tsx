@@ -11,7 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { RichTextEditor } from "@/components/RichTextEditor";
 import { AIGenerationModal } from "@/components/AIGenerationModal";
-import { ArrowLeft, Plus, Trash2, Globe, ChevronLeft, ChevronRight, Layers, X, Sparkles } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Globe, ChevronLeft, ChevronRight, Layers, X, Sparkles, Save } from "lucide-react";
 import type { H5pContent, InteractiveBookData, ContentType } from "@shared/schema";
 import ShareToClassroomDialog from "@/components/ShareToClassroomDialog";
 
@@ -83,6 +83,18 @@ export default function InteractiveBookCreator() {
       queryClient.invalidateQueries({ queryKey: ["/api/content/public"] });
       if (!isEditing) navigate(`/create/interactive-book/${data.id}`);
       setIsSaving(false);
+      toast({
+        title: "Saved successfully!",
+        description: "Your interactive book has been saved.",
+      });
+    },
+    onError: (error) => {
+      setIsSaving(false);
+      toast({
+        title: "Failed to save",
+        description: "There was an error saving your book. Please try again.",
+        variant: "destructive",
+      });
     },
   });
 
@@ -214,6 +226,18 @@ export default function InteractiveBookCreator() {
             >
               <Sparkles className="h-4 w-4 mr-2" />
               AI Generate Pages
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsSaving(true);
+                saveMutation.mutate(isPublished);
+              }}
+              disabled={saveMutation.isPending || !title || pages.length === 0}
+              data-testid="button-save"
+            >
+              <Save className="h-4 w-4 mr-2" />
+              {saveMutation.isPending ? "Saving..." : "Save"}
             </Button>
             {contentId && isPublished && (
               <ShareToClassroomDialog
