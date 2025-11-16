@@ -8,6 +8,7 @@ import { storage } from "./storage";
 import { 
   aiGenerationSchema, 
   videoFinderPedagogySchema,
+  googleSlidesGenerationSchema,
   insertLearnerProgressSchema, 
   insertQuizAttemptSchema, 
   insertInteractionEventSchema 
@@ -23,6 +24,7 @@ import {
   generateMemoryGameCards,
   generateInteractiveBookPages,
   generateVideoFinderPedagogy,
+  generateGoogleSlides,
   getOpenAIClient
 } from "./openai";
 import { searchEducationalVideos } from "./youtube";
@@ -914,6 +916,25 @@ Be conversational, friendly, and educational. Provide specific, actionable advic
       }
       res.status(500).json({ 
         message: error.message || "Failed to generate pedagogical content. Please try again." 
+      });
+    }
+  });
+
+  // Google Slides AI generation route
+  app.post("/api/google-slides/generate", requireAuth, async (req, res) => {
+    try {
+      const parsed = googleSlidesGenerationSchema.parse(req.body);
+
+      const slides = await generateGoogleSlides(parsed);
+
+      res.json({ slides, generatedDate: new Date().toISOString() });
+    } catch (error: any) {
+      console.error("Google Slides generation error:", error);
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ message: "Invalid request data", errors: error.errors });
+      }
+      res.status(500).json({ 
+        message: error.message || "Failed to generate slides content. Please try again." 
       });
     }
   });
