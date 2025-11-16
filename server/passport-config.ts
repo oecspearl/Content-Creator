@@ -59,6 +59,9 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
 
 // Microsoft OAuth Strategy
 if (process.env.MICROSOFT_CLIENT_ID && process.env.MICROSOFT_CLIENT_SECRET && process.env.MICROSOFT_TENANT_ID) {
+  // Get callback URL based on environment
+  // In production (Replit deployment), always use h5pcreator.org
+  // Otherwise use localhost for development
   const isProduction = process.env.NODE_ENV === 'production' || process.env.REPLIT_ENVIRONMENT === 'production';
   const callbackURL = isProduction
     ? 'https://h5pcreator.org/api/auth/microsoft/callback'
@@ -78,6 +81,7 @@ if (process.env.MICROSOFT_CLIENT_ID && process.env.MICROSOFT_CLIENT_SECRET && pr
         validateIssuer: true,
         passReqToCallback: false,
         scope: ['profile', 'email', 'openid'],
+        loggingLevel: 'info',
       },
       async (
         iss: string,
