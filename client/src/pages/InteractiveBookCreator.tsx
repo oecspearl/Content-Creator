@@ -132,6 +132,8 @@ export default function InteractiveBookCreator() {
       "fill-blanks": "Fill in the Blanks",
       "memory-game": "Memory Game",
       "interactive-book": "Interactive Book",
+      "video-finder": "Video Finder",
+      "google-slides": "Google Slides",
     };
     return labels[type] || type;
   };
