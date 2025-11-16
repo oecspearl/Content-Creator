@@ -10,6 +10,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { ArrowLeft, Search, Globe, ExternalLink, Play, Sparkles, X, CheckSquare, Square } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import type { H5pContent, VideoFinderData, VideoResult } from "@shared/schema";
+import ShareToClassroomDialog from "@/components/ShareToClassroomDialog";
 
 export default function VideoFinderCreator() {
   const params = useParams();
@@ -320,6 +321,13 @@ export default function VideoFinderCreator() {
               >
                 Save
               </Button>
+              {contentId && isPublished && (
+                <ShareToClassroomDialog
+                  contentTitle={title}
+                  contentDescription={description}
+                  materialLink={`${window.location.origin}/public/${contentId}`}
+                />
+              )}
               {isPublished ? (
                 <Button variant="default" disabled data-testid="button-published">
                   <Globe className="mr-2 h-4 w-4" />

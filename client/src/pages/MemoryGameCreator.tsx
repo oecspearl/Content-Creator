@@ -11,6 +11,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { AIGenerationModal } from "@/components/AIGenerationModal";
 import { ArrowLeft, Sparkles, Plus, Trash2, Globe } from "lucide-react";
 import type { H5pContent, MemoryGameData } from "@shared/schema";
+import ShareToClassroomDialog from "@/components/ShareToClassroomDialog";
 
 export default function MemoryGameCreator() {
   const params = useParams();
@@ -122,6 +123,13 @@ export default function MemoryGameCreator() {
               <Sparkles className="h-4 w-4 mr-2" />
               AI Generate
             </Button>
+            {contentId && isPublished && (
+              <ShareToClassroomDialog
+                contentTitle={title}
+                contentDescription={description}
+                materialLink={`${window.location.origin}/public/${contentId}`}
+              />
+            )}
             <Button
               variant={isPublished ? "default" : "outline"}
               onClick={() => {

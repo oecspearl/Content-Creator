@@ -22,6 +22,7 @@ import {
   Image as ImageIcon
 } from "lucide-react";
 import type { H5pContent, FlashcardData } from "@shared/schema";
+import ShareToClassroomDialog from "@/components/ShareToClassroomDialog";
 
 export default function FlashcardCreator() {
   const params = useParams();
@@ -171,6 +172,13 @@ export default function FlashcardCreator() {
               <Sparkles className="h-4 w-4 mr-1" />
               AI Generate
             </Button>
+            {contentId && isPublished && (
+              <ShareToClassroomDialog
+                contentTitle={title}
+                contentDescription={description}
+                materialLink={`${window.location.origin}/public/${contentId}`}
+              />
+            )}
             <Button
               variant={isPublished ? "outline" : "default"}
               size="sm"

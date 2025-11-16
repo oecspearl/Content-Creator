@@ -12,6 +12,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { AIGenerationModal } from "@/components/AIGenerationModal";
 import { ArrowLeft, Sparkles, Plus, Trash2, Globe, HelpCircle } from "lucide-react";
 import type { H5pContent, FillInBlanksData } from "@shared/schema";
+import ShareToClassroomDialog from "@/components/ShareToClassroomDialog";
 
 export default function FillBlanksCreator() {
   const params = useParams();
@@ -118,6 +119,13 @@ export default function FillBlanksCreator() {
               <Sparkles className="h-4 w-4 mr-2" />
               AI Generate
             </Button>
+            {contentId && isPublished && (
+              <ShareToClassroomDialog
+                contentTitle={title}
+                contentDescription={description}
+                materialLink={`${window.location.origin}/public/${contentId}`}
+              />
+            )}
             <Button
               variant={isPublished ? "default" : "outline"}
               onClick={() => {

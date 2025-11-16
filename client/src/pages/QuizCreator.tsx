@@ -24,6 +24,7 @@ import {
   Globe
 } from "lucide-react";
 import type { H5pContent, QuizData, QuizQuestion } from "@shared/schema";
+import ShareToClassroomDialog from "@/components/ShareToClassroomDialog";
 
 export default function QuizCreator() {
   const params = useParams();
@@ -168,6 +169,13 @@ export default function QuizCreator() {
               <Sparkles className="h-4 w-4 mr-1" />
               AI Generate
             </Button>
+            {contentId && isPublished && (
+              <ShareToClassroomDialog
+                contentTitle={title}
+                contentDescription={description}
+                materialLink={`${window.location.origin}/public/${contentId}`}
+              />
+            )}
             <Button
               variant={isPublished ? "outline" : "default"}
               size="sm"

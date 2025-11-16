@@ -12,6 +12,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { RichTextEditor } from "@/components/RichTextEditor";
 import { ArrowLeft, Plus, Trash2, Globe, ChevronLeft, ChevronRight, Layers, X } from "lucide-react";
 import type { H5pContent, InteractiveBookData, ContentType } from "@shared/schema";
+import ShareToClassroomDialog from "@/components/ShareToClassroomDialog";
 
 export default function InteractiveBookCreator() {
   const params = useParams();
@@ -146,6 +147,13 @@ export default function InteractiveBookCreator() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {contentId && isPublished && (
+              <ShareToClassroomDialog
+                contentTitle={title}
+                contentDescription={description}
+                materialLink={`${window.location.origin}/public/${contentId}`}
+              />
+            )}
             <Button
               variant={isPublished ? "default" : "outline"}
               onClick={() => {
