@@ -252,12 +252,34 @@ export default function SharedResourcesPage() {
         </CardContent>
       </Card>
 
-      {/* Results Count */}
-      <div className="mb-4 flex items-center gap-2 text-sm text-muted-foreground">
-        <Filter className="h-4 w-4" />
-        <span data-testid="text-results-count">
-          {contents.length} {contents.length === 1 ? "resource" : "resources"} found
-        </span>
+      {/* Results Count & View Toggle */}
+      <div className="mb-4 flex items-center justify-between gap-4">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Filter className="h-4 w-4" />
+          <span data-testid="text-results-count">
+            {contents.length} {contents.length === 1 ? "resource" : "resources"} found
+          </span>
+        </div>
+        <div className="flex items-center gap-1">
+          <Button
+            variant={viewMode === "grid" ? "default" : "ghost"}
+            size="icon"
+            onClick={() => setViewMode("grid")}
+            data-testid="button-view-grid"
+            aria-label="Grid view"
+          >
+            <Grid3x3 className="h-4 w-4" />
+          </Button>
+          <Button
+            variant={viewMode === "list" ? "default" : "ghost"}
+            size="icon"
+            onClick={() => setViewMode("list")}
+            data-testid="button-view-list"
+            aria-label="List view"
+          >
+            <List className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
 
       {/* Content Grid */}
@@ -293,7 +315,7 @@ export default function SharedResourcesPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className={viewMode === "grid" ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" : "flex flex-col gap-4"}>
           {contents.map((content: any) => {
             const Icon = contentTypeIcons[content.type as keyof typeof contentTypeIcons] || BookOpen;
             const typeLabel = contentTypeLabels[content.type as keyof typeof contentTypeLabels] || content.type;
@@ -302,8 +324,77 @@ export default function SharedResourcesPage() {
             const subject = content.data?.topic || content.data?.subject || null;
             const gradeLevel = content.data?.gradeLevel || null;
 
+            if (viewMode === "list") {
+              // List View Layout
+              return (
+                <Card key={content.id} className="hover-elevate" data-testid={`card-resource-${content.id}`}>
+                  <div className="flex flex-col md:flex-row gap-4 p-6">
+                    <div className="flex-1 space-y-3">
+                      <div className="flex items-start gap-3">
+                        <Badge variant="secondary" className="flex items-center gap-1">
+                          <Icon className="h-3 w-3" />
+                          {typeLabel}
+                        </Badge>
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-semibold mb-1">{content.title}</h3>
+                        {content.description && (
+                          <p className="text-sm text-muted-foreground line-clamp-2">
+                            {content.description}
+                          </p>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+                        {subject && (
+                          <div className="flex items-center gap-2 text-muted-foreground">
+                            <BookOpen className="h-3.5 w-3.5 flex-shrink-0" />
+                            <span className="truncate">{subject}</span>
+                          </div>
+                        )}
+                        {gradeLevel && (
+                          <div className="flex items-center gap-2 text-muted-foreground">
+                            <GraduationCap className="h-3.5 w-3.5 flex-shrink-0" />
+                            <span className="truncate">{gradeLevel}</span>
+                          </div>
+                        )}
+                        {content.creatorName && (
+                          <div className="flex items-center gap-2 text-muted-foreground">
+                            <User className="h-3.5 w-3.5 flex-shrink-0" />
+                            <span className="truncate">{content.creatorName}</span>
+                          </div>
+                        )}
+                      </div>
+                      {content.tags && content.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1">
+                          {content.tags.slice(0, 5).map((tag: string, idx: number) => (
+                            <Badge key={idx} variant="outline" className="text-xs">
+                              {tag}
+                            </Badge>
+                          ))}
+                          {content.tags.length > 5 && (
+                            <Badge variant="outline" className="text-xs">
+                              +{content.tags.length - 5}
+                            </Badge>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex items-center md:items-start">
+                      <Link href={`/public/${content.id}`}>
+                        <Button size="default" data-testid={`button-preview-${content.id}`}>
+                          <Eye className="h-4 w-4 mr-2" />
+                          Preview & Use
+                        </Button>
+                      </Link>
+                    </div>
+                  </div>
+                </Card>
+              );
+            }
+
+            // Grid View Layout (with aligned buttons at bottom)
             return (
-              <Card key={content.id} className="hover-elevate" data-testid={`card-resource-${content.id}`}>
+              <Card key={content.id} className="hover-elevate flex flex-col" data-testid={`card-resource-${content.id}`}>
                 <CardHeader>
                   <div className="flex items-start justify-between gap-2 mb-2">
                     <Badge variant="secondary" className="flex items-center gap-1">
@@ -318,7 +409,7 @@ export default function SharedResourcesPage() {
                     </CardDescription>
                   )}
                 </CardHeader>
-                <CardContent className="space-y-3">
+                <CardContent className="flex flex-col flex-1 space-y-3">
                   {/* Meta Information */}
                   <div className="space-y-1.5 text-sm">
                     {subject && (
@@ -355,6 +446,10 @@ export default function SharedResourcesPage() {
                       )}
                     </div>
                   )}
+                  
+                  {/* Spacer to push button to bottom */}
+                  <div className="flex-1"></div>
+                  
                   <Link href={`/public/${content.id}`}>
                     <Button className="w-full" size="sm" data-testid={`button-preview-${content.id}`}>
                       <Eye className="h-4 w-4 mr-1" />
