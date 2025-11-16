@@ -127,11 +127,14 @@ export class DbStorage implements IStorage {
   }
 
   async getPublicContent(): Promise<H5pContent[]> {
-    return await db
+    console.log('[DEBUG] getPublicContent called');
+    const results = await db
       .select()
       .from(h5pContent)
       .where(and(eq(h5pContent.isPublic, true), eq(h5pContent.isPublished, true)))
       .orderBy(desc(h5pContent.createdAt));
+    console.log(`[DEBUG] getPublicContent returned ${results.length} results`);
+    return results;
   }
 
   async createShare(insertShare: InsertContentShare): Promise<ContentShare> {

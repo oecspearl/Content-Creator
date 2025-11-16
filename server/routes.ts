@@ -446,6 +446,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { search, type, tags } = req.query;
       let contents = await storage.getPublicContent();
       
+      console.log(`[DEBUG] Public content query returned ${contents.length} items`);
+      
       // Apply search filter (title or description)
       if (search && typeof search === 'string') {
         const searchLower = search.toLowerCase();
