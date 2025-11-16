@@ -79,6 +79,47 @@ The Google Slides content type enables teachers to create AI-generated education
 - Culturally relevant and inclusive content
 - Follows instructional design best practices
 
+### Interactive Books
+The Interactive Books content type enables teachers to create multi-page educational books with rich text content and embedded interactive elements:
+
+**Creation Process**:
+- Manual creation: Add pages one at a time with custom titles and content
+- **AI Generation**: One-click AI-powered book creation from natural language prompts
+- Rich text editor with formatting, images, and media support
+- Embed other content types (quizzes, flashcards, videos, etc.) within pages
+
+**AI-Generated Books**:
+Teachers can prompt the AI to generate complete books on any topic:
+- **Story prompts**: "Create a Caribbean adventure story for Grade 3 students"
+- **Guided lessons**: "Explain photosynthesis step-by-step for middle school"
+- **Historical narratives**: "Tell the story of Caribbean independence movements"
+- **Concept explorations**: "Teach fractions through real-world examples"
+- AI generates multiple pages with titles and educational content
+- Content follows pedagogical best practices
+- Age-appropriate language based on grade level
+- Logical progression from page to page
+
+**Interactive Features**:
+- Page-by-page navigation with progress tracking
+- Embed quizzes, flashcards, or other activities within specific pages
+- Rich text formatting with images and media
+- Configurable settings (show navigation, show progress, require completion)
+- Autosave functionality
+
+**AI Generation Safety**:
+- Robust validation of AI responses
+- Automatic fallbacks for missing or malformed data
+- Error handling with user-friendly feedback
+- Unique ID generation for all pages
+- Content sanitization and normalization
+
+**Player Features**:
+- Sequential page navigation
+- Progress indicators
+- Embedded content plays inline
+- Responsive design for all devices
+- Google Classroom sharing for published books
+
 ## External Dependencies
 
 *   **AI Integration**: OpenAI API (GPT-5 model) for content generation.
