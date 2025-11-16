@@ -85,9 +85,11 @@ export default function LoginPage() {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <div className="flex items-center justify-center mb-4">
-            <div className="h-16 w-16 bg-primary rounded-xl flex items-center justify-center">
-              <GraduationCap className="h-10 w-10 text-primary-foreground" />
-            </div>
+            <img 
+              src="/favicon.png" 
+              alt="OECS Content Creator Logo" 
+              className="h-16 w-16 rounded-xl"
+            />
           </div>
           <h1 className="text-3xl font-bold text-foreground">OECS Content Creator</h1>
           <p className="text-muted-foreground mt-2">Create. Engage. Educate.</p>
