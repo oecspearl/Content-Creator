@@ -255,7 +255,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Microsoft OAuth routes
   app.get("/api/auth/microsoft", async (req, res) => {
+    console.log("Microsoft auth initiated");
+    
     if (!isMicrosoftOAuthAvailable) {
+      console.error("Microsoft OAuth not available");
       return res.status(503).json({ 
         message: "Microsoft authentication is not configured. Please set MICROSOFT_CLIENT_ID, MICROSOFT_CLIENT_SECRET, and MICROSOFT_TENANT_ID." 
       });
@@ -264,18 +267,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const msalClient = getMsalClient();
       if (!msalClient) {
+        console.error("MSAL client is null");
         return res.status(503).json({ message: "Microsoft authentication not configured" });
       }
 
+      const redirectUri = getRedirectUri();
+      console.log("Microsoft auth redirect URI:", redirectUri);
+      console.log("Environment check - NODE_ENV:", process.env.NODE_ENV, "REPLIT_ENVIRONMENT:", process.env.REPLIT_ENVIRONMENT);
+
       const authCodeUrlParameters = {
         scopes: ["user.read"],
-        redirectUri: getRedirectUri(),
+        redirectUri,
       };
 
       const authUrl = await msalClient.getAuthCodeUrl(authCodeUrlParameters);
+      console.log("Redirecting to Microsoft auth URL");
       res.redirect(authUrl);
     } catch (error: any) {
       console.error("Microsoft auth initiation error:", error);
+      console.error("Error details:", {
+        message: error.message,
+        stack: error.stack,
+      });
       res.status(500).json({ message: "Failed to initiate Microsoft authentication" });
     }
   });
