@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogFooter,
@@ -47,10 +48,11 @@ export function ImageGeneratorDialog({
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [provider, setProvider] = useState<ImageProvider>("puterjs");
+  const [openaiAvailable, setOpenaiAvailable] = useState<boolean>(true);
 
   const generateWithPuterJS = async () => {
     if (!window.puter) {
-      throw new Error("Puter.js is not loaded. Please refresh the page.");
+      throw new Error("Puter.js is not loaded. Please refresh the page or try OpenAI provider.");
     }
 
     try {
@@ -61,7 +63,7 @@ export function ImageGeneratorDialog({
       return imageElement.src;
     } catch (error: any) {
       console.error("Puter.js generation error:", error);
-      throw new Error("Failed to generate image with Puter.js. Please try again.");
+      throw new Error("Failed to generate image with Puter.js. Try refreshing the page or using OpenAI provider.");
     }
   };
 
@@ -77,6 +79,11 @@ export function ImageGeneratorDialog({
     const data = await response.json();
 
     if (!response.ok) {
+      if (response.status === 400 && data.message?.includes("not configured")) {
+        setOpenaiAvailable(false);
+        setProvider("puterjs");
+        throw new Error("OpenAI API key not configured. Switching to free Puter.js provider.");
+      }
       throw new Error(data.message || "Failed to generate image");
     }
 
@@ -100,7 +107,20 @@ export function ImageGeneratorDialog({
       let imageUrl: string;
       
       if (provider === "puterjs") {
-        imageUrl = await generateWithPuterJS();
+        try {
+          imageUrl = await generateWithPuterJS();
+        } catch (puterError: any) {
+          if (!window.puter && openaiAvailable) {
+            toast({
+              title: "Puter.js unavailable",
+              description: "Switching to OpenAI provider...",
+            });
+            setProvider("openai");
+            imageUrl = await generateWithOpenAI();
+          } else {
+            throw puterError;
+          }
+        }
       } else {
         imageUrl = await generateWithOpenAI();
       }
@@ -131,20 +151,25 @@ export function ImageGeneratorDialog({
     }
   };
 
-  const handleClose = () => {
-    setPrompt("");
-    setGeneratedImage(null);
-    onOpenChange(false);
+  const handleOpenChange = (isOpen: boolean) => {
+    if (!isOpen) {
+      setPrompt("");
+      setGeneratedImage(null);
+    }
+    onOpenChange(isOpen);
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-primary" />
             AI Image Generator
           </DialogTitle>
+          <DialogDescription>
+            Generate custom images using AI from text descriptions. Choose between free Puter.js or premium OpenAI DALL-E 3.
+          </DialogDescription>
         </DialogHeader>
         
         <div className="space-y-4 py-4">
@@ -165,10 +190,10 @@ export function ImageGeneratorDialog({
                     <span>Puter.js - Free (Recommended)</span>
                   </div>
                 </SelectItem>
-                <SelectItem value="openai">
+                <SelectItem value="openai" disabled={!openaiAvailable}>
                   <div className="flex items-center gap-2">
                     <Sparkles className="h-4 w-4 text-purple-500" />
-                    <span>OpenAI DALL-E 3 - Premium</span>
+                    <span>OpenAI DALL-E 3 - Premium{!openaiAvailable ? " (Unavailable)" : ""}</span>
                   </div>
                 </SelectItem>
               </SelectContent>
@@ -176,7 +201,9 @@ export function ImageGeneratorDialog({
             <p className="text-xs text-muted-foreground mt-1">
               {provider === "puterjs" 
                 ? "Free, unlimited image generation with no API key required"
-                : "High-quality images (requires OPENAI_API_KEY)"}
+                : openaiAvailable
+                  ? "High-quality images (requires OPENAI_API_KEY)"
+                  : "OpenAI unavailable - API key not configured"}
             </p>
           </div>
 
@@ -234,7 +261,7 @@ export function ImageGeneratorDialog({
         <DialogFooter>
           <Button
             variant="outline"
-            onClick={handleClose}
+            onClick={() => handleOpenChange(false)}
             disabled={isGenerating}
             data-testid="button-cancel"
           >

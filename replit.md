@@ -89,7 +89,9 @@ The Interactive Books content type enables teachers to create multi-page educati
 - **Image Options**: Three ways to add images to book pages:
   - **Upload**: Local image files up to 2MB (JPG, PNG, GIF, WebP, SVG, BMP)
   - **URL**: Embed images from external URLs
-  - **AI Generate**: Create custom images using OpenAI DALL-E 3 from text prompts
+  - **AI Generate**: Create custom images from text prompts with two provider options:
+    - **Puter.js** (Free, Recommended): Unlimited free image generation via browser-based AI, no API key required
+    - **OpenAI DALL-E 3** (Premium): High-quality images requiring OPENAI_API_KEY
 - Embed other content types (quizzes, flashcards, videos, etc.) within pages
 - Manual save button (removed auto-save per user preference)
 
@@ -129,7 +131,8 @@ Teachers can prompt the AI to generate complete books on any topic:
 
 *   **AI Integration**: 
     - OpenAI GPT-5 model for text content generation
-    - OpenAI DALL-E 3 for AI image generation in Interactive Books
+    - OpenAI DALL-E 3 for premium AI image generation in Interactive Books
+    - Puter.js for free, browser-based AI image generation (no API key required)
 *   **OAuth Providers**: Google OAuth 2.0 (via Passport.js) and Microsoft OAuth 2.0 (via @azure/msal-node) for user authentication.
 *   **Google Slides API**: Google Slides API (via googleapis npm package) for creating actual presentations.
 *   **Google Classroom API**: Google Classroom API (via googleapis npm package) for sharing presentations to courses.
@@ -146,7 +149,7 @@ The application supports Google and Microsoft OAuth authentication. See `OAUTH_S
 
 ### Required Secrets for Production
 - `SESSION_SECRET`: Required for secure session management
-- `OPENAI_API_KEY`: Required for AI content generation and DALL-E 3 image generation
+- `OPENAI_API_KEY`: Required for AI text content generation. Optional for image generation (Puter.js provides free alternative)
 - `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`: Optional, for Google OAuth (required for Google Slides API access)
 - `MICROSOFT_CLIENT_ID`, `MICROSOFT_CLIENT_SECRET`, and `MICROSOFT_TENANT_ID`: Optional, for Microsoft OAuth
 - `UNSPLASH_ACCESS_KEY`: Required for fetching educational images for Google Slides presentations
