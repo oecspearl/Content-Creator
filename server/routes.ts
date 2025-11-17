@@ -1063,6 +1063,51 @@ Be conversational, friendly, and educational. Provide specific, actionable advic
     }
   });
 
+  // DeepAI image generation endpoint
+  app.post("/api/deepai/generate-image", requireAuth, async (req, res) => {
+    try {
+      const { prompt } = req.body;
+      
+      if (!prompt || typeof prompt !== 'string') {
+        return res.status(400).json({ message: "Prompt is required" });
+      }
+
+      // Call DeepAI text2img API (free, no API key required for basic use)
+      const FormData = (await import('form-data')).default;
+      const fetch = (await import('node-fetch')).default;
+      
+      const formData = new FormData();
+      formData.append('text', prompt);
+
+      const response = await fetch('https://api.deepai.org/api/text2img', {
+        method: 'POST',
+        body: formData,
+        headers: formData.getHeaders(),
+      });
+
+      if (!response.ok) {
+        throw new Error(`DeepAI API returned status ${response.status}`);
+      }
+
+      const data = await response.json() as { output_url?: string; id?: string };
+      
+      if (!data.output_url) {
+        throw new Error('No image URL returned from DeepAI');
+      }
+
+      res.json({ 
+        imageUrl: data.output_url,
+        id: data.id,
+        prompt 
+      });
+    } catch (error: any) {
+      console.error("DeepAI image generation error:", error);
+      res.status(500).json({ 
+        message: error.message || "Failed to generate image with DeepAI" 
+      });
+    }
+  });
+
   // Create actual Google Slides presentation from generated content
   app.post("/api/google-slides/create-presentation", requireAuth, async (req, res) => {
     try {
