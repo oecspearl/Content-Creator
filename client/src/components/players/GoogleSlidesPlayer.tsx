@@ -74,7 +74,7 @@ export default function GoogleSlidesPlayer({ data }: GoogleSlidesPlayerProps) {
   };
 
   const renderSlideContent = (slide: SlideContent) => {
-    const isImageUrl = slide.imageUrl && slide.imageUrl.startsWith('http');
+    const isImageUrl = slide.imageUrl && (slide.imageUrl.startsWith('http') || slide.imageUrl.startsWith('data:'));
     
     return (
       <div className="space-y-6">
