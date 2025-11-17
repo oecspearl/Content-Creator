@@ -9,8 +9,27 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Loader2, Sparkles } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Loader2, Sparkles, Zap } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+
+declare global {
+  interface Window {
+    puter?: {
+      ai: {
+        txt2img: (prompt: string, options?: { model?: string }) => Promise<HTMLImageElement>;
+      };
+    };
+  }
+}
+
+type ImageProvider = "puterjs" | "openai";
 
 type ImageGeneratorDialogProps = {
   open: boolean;
@@ -27,6 +46,42 @@ export function ImageGeneratorDialog({
   const [prompt, setPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
+  const [provider, setProvider] = useState<ImageProvider>("puterjs");
+
+  const generateWithPuterJS = async () => {
+    if (!window.puter) {
+      throw new Error("Puter.js is not loaded. Please refresh the page.");
+    }
+
+    try {
+      const imageElement = await window.puter.ai.txt2img(prompt, {
+        model: "gpt-image-1"
+      });
+      
+      return imageElement.src;
+    } catch (error: any) {
+      console.error("Puter.js generation error:", error);
+      throw new Error("Failed to generate image with Puter.js. Please try again.");
+    }
+  };
+
+  const generateWithOpenAI = async () => {
+    const response = await fetch("/api/ai/generate-image", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ prompt }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || "Failed to generate image");
+    }
+
+    return data.imageUrl;
+  };
 
   const generateImage = async () => {
     if (!prompt.trim()) {
@@ -42,25 +97,19 @@ export function ImageGeneratorDialog({
     setGeneratedImage(null);
 
     try {
-      const response = await fetch("/api/ai/generate-image", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ prompt }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Failed to generate image");
+      let imageUrl: string;
+      
+      if (provider === "puterjs") {
+        imageUrl = await generateWithPuterJS();
+      } else {
+        imageUrl = await generateWithOpenAI();
       }
 
-      setGeneratedImage(data.imageUrl);
+      setGeneratedImage(imageUrl);
       
       toast({
         title: "Image generated!",
-        description: "Your AI-generated image is ready.",
+        description: `Your AI-generated image is ready.`,
       });
     } catch (error: any) {
       toast({
@@ -99,6 +148,38 @@ export function ImageGeneratorDialog({
         </DialogHeader>
         
         <div className="space-y-4 py-4">
+          <div>
+            <Label htmlFor="provider-select">AI Provider</Label>
+            <Select
+              value={provider}
+              onValueChange={(value: ImageProvider) => setProvider(value)}
+              disabled={isGenerating}
+            >
+              <SelectTrigger id="provider-select" data-testid="select-provider">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="puterjs">
+                  <div className="flex items-center gap-2">
+                    <Zap className="h-4 w-4 text-green-500" />
+                    <span>Puter.js - Free (Recommended)</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="openai">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="h-4 w-4 text-purple-500" />
+                    <span>OpenAI DALL-E 3 - Premium</span>
+                  </div>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground mt-1">
+              {provider === "puterjs" 
+                ? "Free, unlimited image generation with no API key required"
+                : "High-quality images (requires OPENAI_API_KEY)"}
+            </p>
+          </div>
+
           <div>
             <Label htmlFor="image-prompt">Describe the image you want</Label>
             <Input
@@ -142,7 +223,9 @@ export function ImageGeneratorDialog({
                 />
               </div>
               <p className="text-xs text-muted-foreground">
-                Powered by OpenAI DALL-E 3 • High-quality AI Image Generation
+                {provider === "puterjs" 
+                  ? "Powered by Puter.js • Free AI Image Generation"
+                  : "Powered by OpenAI DALL-E 3 • Premium AI Image Generation"}
               </p>
             </div>
           )}
