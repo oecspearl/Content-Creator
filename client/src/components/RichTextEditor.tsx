@@ -27,9 +27,11 @@ import {
   Heading2,
   Heading3,
   Upload,
+  Sparkles,
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { ImageGeneratorDialog } from "./ImageGeneratorDialog";
 
 type RichTextEditorProps = {
   content: string;
@@ -43,6 +45,7 @@ export function RichTextEditor({ content, onChange, placeholder }: RichTextEdito
   const { toast } = useToast();
   const [imageUrl, setImageUrl] = useState("");
   const [showImageDialog, setShowImageDialog] = useState(false);
+  const [showAIImageDialog, setShowAIImageDialog] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -142,6 +145,14 @@ export function RichTextEditor({ content, onChange, placeholder }: RichTextEdito
     reader.readAsDataURL(file);
   };
 
+  const handleAIImageGenerated = (imageUrl: string) => {
+    editor.chain().focus().setImage({ src: imageUrl }).run();
+    toast({
+      title: "Image inserted",
+      description: "Your AI-generated image has been added to the content.",
+    });
+  };
+
   return (
     <div className="border rounded-lg overflow-hidden">
       <div className="border-b bg-muted/50 p-2 flex flex-wrap gap-1">
@@ -239,9 +250,10 @@ export function RichTextEditor({ content, onChange, placeholder }: RichTextEdito
               <DialogTitle>Insert Image</DialogTitle>
             </DialogHeader>
             <Tabs defaultValue="upload" className="py-4">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="upload">Upload Image</TabsTrigger>
-                <TabsTrigger value="url">Image URL</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="upload">Upload</TabsTrigger>
+                <TabsTrigger value="url">URL</TabsTrigger>
+                <TabsTrigger value="ai">AI Generate</TabsTrigger>
               </TabsList>
               <TabsContent value="upload" className="space-y-4 pt-4">
                 <div>
@@ -286,6 +298,23 @@ export function RichTextEditor({ content, onChange, placeholder }: RichTextEdito
                   </Button>
                 </DialogFooter>
               </TabsContent>
+              <TabsContent value="ai" className="space-y-4 pt-4">
+                <div className="text-center space-y-4 py-4">
+                  <p className="text-sm text-muted-foreground">
+                    Generate custom images using AI based on your description
+                  </p>
+                  <Button
+                    onClick={() => {
+                      setShowImageDialog(false);
+                      setShowAIImageDialog(true);
+                    }}
+                    data-testid="button-open-ai-generator"
+                  >
+                    <Sparkles className="h-4 w-4 mr-2" />
+                    Open AI Image Generator
+                  </Button>
+                </div>
+              </TabsContent>
             </Tabs>
           </DialogContent>
         </Dialog>
@@ -314,6 +343,12 @@ export function RichTextEditor({ content, onChange, placeholder }: RichTextEdito
         </Button>
       </div>
       <EditorContent editor={editor} />
+      
+      <ImageGeneratorDialog
+        open={showAIImageDialog}
+        onOpenChange={setShowAIImageDialog}
+        onImageGenerated={handleAIImageGenerated}
+      />
     </div>
   );
 }
