@@ -32,6 +32,7 @@ import {
 import { useState, useRef, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { ImageGeneratorDialog } from "./ImageGeneratorDialog";
+import { ImageEditorDialog } from "./ImageEditorDialog";
 
 type RichTextEditorProps = {
   content: string;
@@ -46,6 +47,8 @@ export function RichTextEditor({ content, onChange, placeholder }: RichTextEdito
   const [imageUrl, setImageUrl] = useState("");
   const [showImageDialog, setShowImageDialog] = useState(false);
   const [showAIImageDialog, setShowAIImageDialog] = useState(false);
+  const [showImageEditorDialog, setShowImageEditorDialog] = useState(false);
+  const [pendingImageUrl, setPendingImageUrl] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -85,9 +88,10 @@ export function RichTextEditor({ content, onChange, placeholder }: RichTextEdito
 
   const addImage = () => {
     if (imageUrl) {
-      editor.chain().focus().setImage({ src: imageUrl }).run();
+      setPendingImageUrl(imageUrl);
       setImageUrl("");
       setShowImageDialog(false);
+      setShowImageEditorDialog(true);
     }
   };
 
@@ -121,13 +125,10 @@ export function RichTextEditor({ content, onChange, placeholder }: RichTextEdito
     const reader = new FileReader();
     reader.onload = (e) => {
       const base64 = e.target?.result as string;
-      editor.chain().focus().setImage({ src: base64 }).run();
+      setPendingImageUrl(base64);
       setShowImageDialog(false);
+      setShowImageEditorDialog(true);
       setIsUploading(false);
-      toast({
-        title: "Image uploaded",
-        description: "Your image has been added to the content.",
-      });
       
       // Reset file input
       if (fileInputRef.current) {
@@ -146,10 +147,16 @@ export function RichTextEditor({ content, onChange, placeholder }: RichTextEdito
   };
 
   const handleAIImageGenerated = (imageUrl: string) => {
-    editor.chain().focus().setImage({ src: imageUrl }).run();
+    setPendingImageUrl(imageUrl);
+    setShowAIImageDialog(false);
+    setShowImageEditorDialog(true);
+  };
+
+  const handleImageEdited = (editedImageUrl: string) => {
+    editor.chain().focus().setImage({ src: editedImageUrl }).run();
     toast({
       title: "Image inserted",
-      description: "Your AI-generated image has been added to the content.",
+      description: "Your image has been added to the content.",
     });
   };
 
@@ -348,6 +355,13 @@ export function RichTextEditor({ content, onChange, placeholder }: RichTextEdito
         open={showAIImageDialog}
         onOpenChange={setShowAIImageDialog}
         onImageGenerated={handleAIImageGenerated}
+      />
+
+      <ImageEditorDialog
+        open={showImageEditorDialog}
+        onOpenChange={setShowImageEditorDialog}
+        imageUrl={pendingImageUrl}
+        onImageEdited={handleImageEdited}
       />
     </div>
   );

@@ -185,14 +185,23 @@ export function ImageEditorDialog({
   const applyResize = () => {
     if (!image) return null;
 
-    const canvas = document.createElement("canvas");
-    canvas.width = width;
-    canvas.height = height;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return null;
+    try {
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return null;
 
-    ctx.drawImage(image, 0, 0, width, height);
-    return canvas.toDataURL("image/png");
+      ctx.drawImage(image, 0, 0, width, height);
+      return canvas.toDataURL("image/png");
+    } catch (error) {
+      // Canvas is tainted by CORS (external URL without proper headers)
+      toast({
+        title: "Cannot edit external image",
+        description: "This image cannot be edited due to CORS restrictions. Using original image.",
+      });
+      return imageUrl;
+    }
   };
 
   const applyCrop = () => {
@@ -216,14 +225,23 @@ export function ImageEditorDialog({
       return null;
     }
 
-    const cropCanvas = document.createElement("canvas");
-    cropCanvas.width = w;
-    cropCanvas.height = h;
-    const ctx = cropCanvas.getContext("2d");
-    if (!ctx) return null;
+    try {
+      const cropCanvas = document.createElement("canvas");
+      cropCanvas.width = w;
+      cropCanvas.height = h;
+      const ctx = cropCanvas.getContext("2d");
+      if (!ctx) return null;
 
-    ctx.drawImage(image, x, y, w, h, 0, 0, w, h);
-    return cropCanvas.toDataURL("image/png");
+      ctx.drawImage(image, x, y, w, h, 0, 0, w, h);
+      return cropCanvas.toDataURL("image/png");
+    } catch (error) {
+      // Canvas is tainted by CORS (external URL without proper headers)
+      toast({
+        title: "Cannot crop external image",
+        description: "This image cannot be cropped due to CORS restrictions. Using original image.",
+      });
+      return imageUrl;
+    }
   };
 
   const handleApply = () => {
