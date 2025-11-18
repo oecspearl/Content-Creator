@@ -557,8 +557,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`[DEBUG] User profile:`, JSON.stringify(userProfile, null, 2));
       }
       
-      const { search, type, tags, startDate, endDate } = req.query;
+      const { search, type, subject, grade, tags, startDate, endDate } = req.query;
       let contents = await storage.getContentByUserId(userId);
+      
+      // Helper function to extract subject and grade from content data
+      const extractSubjectAndGrade = (content: any): { subject: string | null; grade: string | null } => {
+        try {
+          const data = content.data;
+          
+          // Video Finder: data.searchCriteria.subject and data.searchCriteria.gradeLevel
+          if (content.type === "video-finder" && data?.searchCriteria) {
+            return {
+              subject: data.searchCriteria.subject || null,
+              grade: data.searchCriteria.gradeLevel || null,
+            };
+          }
+          
+          // Google Slides: data.gradeLevel (no subject)
+          if (content.type === "google-slides" && data) {
+            return {
+              subject: null,
+              grade: data.gradeLevel || null,
+            };
+          }
+          
+          // Other content types might have these in metadata
+          if (data?.metadata) {
+            return {
+              subject: data.metadata.subject || null,
+              grade: data.metadata.gradeLevel || data.metadata.grade || null,
+            };
+          }
+          
+          return { subject: null, grade: null };
+        } catch {
+          return { subject: null, grade: null };
+        }
+      };
       
       // Apply search filter (title or description)
       if (search && typeof search === 'string') {
@@ -572,6 +607,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Apply content type filter
       if (type && typeof type === 'string') {
         contents = contents.filter(c => c.type === type);
+      }
+      
+      // Apply subject filter
+      if (subject && typeof subject === 'string') {
+        contents = contents.filter(c => {
+          const { subject: contentSubject } = extractSubjectAndGrade(c);
+          return contentSubject && contentSubject.toLowerCase() === subject.toLowerCase();
+        });
+      }
+      
+      // Apply grade filter
+      if (grade && typeof grade === 'string') {
+        contents = contents.filter(c => {
+          const { grade: contentGrade } = extractSubjectAndGrade(c);
+          return contentGrade && contentGrade.toLowerCase() === grade.toLowerCase();
+        });
       }
       
       // Apply tags filter (comma-separated)

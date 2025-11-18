@@ -62,6 +62,8 @@ export default function Dashboard() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
+  const [subjectFilter, setSubjectFilter] = useState<string>("all");
+  const [gradeFilter, setGradeFilter] = useState<string>("all");
   const [tagFilter, setTagFilter] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -73,6 +75,8 @@ export default function Dashboard() {
   const filters: Record<string, string> = {};
   if (searchQuery) filters.search = searchQuery;
   if (typeFilter !== "all") filters.type = typeFilter;
+  if (subjectFilter !== "all") filters.subject = subjectFilter;
+  if (gradeFilter !== "all") filters.grade = gradeFilter;
   if (tagFilter) filters.tags = tagFilter;
   if (startDate) filters.startDate = startDate;
   if (endDate) filters.endDate = endDate;
@@ -83,15 +87,69 @@ export default function Dashboard() {
     queryKey: hasFilters ? ["/api/content", filters] : ["/api/content"],
   });
 
+  // Extract unique subjects and grades from content data
+  const extractSubjectAndGrade = (content: H5pContent): { subject: string | null; grade: string | null } => {
+    try {
+      const data = content.data as any;
+      
+      // Video Finder: data.searchCriteria.subject and data.searchCriteria.gradeLevel
+      if (content.type === "video-finder" && data?.searchCriteria) {
+        return {
+          subject: data.searchCriteria.subject || null,
+          grade: data.searchCriteria.gradeLevel || null,
+        };
+      }
+      
+      // Google Slides: data.gradeLevel (no subject)
+      if (content.type === "google-slides" && data) {
+        return {
+          subject: null,
+          grade: data.gradeLevel || null,
+        };
+      }
+      
+      // Other content types might have these in metadata
+      if (data?.metadata) {
+        return {
+          subject: data.metadata.subject || null,
+          grade: data.metadata.gradeLevel || data.metadata.grade || null,
+        };
+      }
+      
+      return { subject: null, grade: null };
+    } catch {
+      return { subject: null, grade: null };
+    }
+  };
+
+  // Get unique subjects and grades from all content
+  const allSubjects = Array.from(
+    new Set(
+      contents
+        ?.map(c => extractSubjectAndGrade(c).subject)
+        .filter((s): s is string => s !== null && s !== undefined)
+    )
+  ).sort();
+
+  const allGrades = Array.from(
+    new Set(
+      contents
+        ?.map(c => extractSubjectAndGrade(c).grade)
+        .filter((g): g is string => g !== null && g !== undefined)
+    )
+  ).sort();
+
   const clearFilters = () => {
     setSearchQuery("");
     setTypeFilter("all");
+    setSubjectFilter("all");
+    setGradeFilter("all");
     setTagFilter("");
     setStartDate("");
     setEndDate("");
   };
 
-  const hasActiveFilters = searchQuery || typeFilter !== "all" || tagFilter || startDate || endDate;
+  const hasActiveFilters = searchQuery || typeFilter !== "all" || subjectFilter !== "all" || gradeFilter !== "all" || tagFilter || startDate || endDate;
 
   const getInitials = (name?: string) => {
     if (!name) return "??";
@@ -329,6 +387,46 @@ export default function Dashboard() {
                         <SelectItem value="flashcard">Flashcard</SelectItem>
                         <SelectItem value="interactive-video">Interactive Video</SelectItem>
                         <SelectItem value="image-hotspot">Image Hotspot</SelectItem>
+                        <SelectItem value="drag-drop">Drag & Drop</SelectItem>
+                        <SelectItem value="fill-blanks">Fill in the Blanks</SelectItem>
+                        <SelectItem value="memory-game">Memory Game</SelectItem>
+                        <SelectItem value="interactive-book">Interactive Book</SelectItem>
+                        <SelectItem value="video-finder">Video Finder</SelectItem>
+                        <SelectItem value="google-slides">Google Slides</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium text-foreground mb-2 block">Subject</label>
+                    <Select value={subjectFilter} onValueChange={setSubjectFilter}>
+                      <SelectTrigger data-testid="select-subject-filter">
+                        <SelectValue placeholder="All subjects" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All subjects</SelectItem>
+                        {allSubjects.map((subject) => (
+                          <SelectItem key={subject} value={subject}>
+                            {subject}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium text-foreground mb-2 block">Grade</label>
+                    <Select value={gradeFilter} onValueChange={setGradeFilter}>
+                      <SelectTrigger data-testid="select-grade-filter">
+                        <SelectValue placeholder="All grades" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All grades</SelectItem>
+                        {allGrades.map((grade) => (
+                          <SelectItem key={grade} value={grade}>
+                            {grade}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
