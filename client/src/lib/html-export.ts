@@ -370,7 +370,7 @@ export function generateHTMLExport(
   <h1>${escapeHtml(title)}</h1>
   ${description ? `<div class="description">${escapeHtml(description)}</div>` : ""}
   ${bodyContent}
-  ${content.type === "interactive-book" ? generateInteractiveBookScript(data) : ""}
+  ${content.type === "interactive-book" ? generateInteractiveBookScript(contentData) : ""}
 </body>
 </html>`;
 }
