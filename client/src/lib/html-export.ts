@@ -94,6 +94,9 @@ export function generateHTMLExport(
     case "flashcard":
       bodyContent = generateFlashcardHTML(contentData);
       break;
+    case "drag-drop":
+      bodyContent = generateDragDropHTML(contentData);
+      break;
     default:
       bodyContent = `<p>Content type "${content.type}" export not yet implemented.</p>`;
   }
@@ -669,6 +672,271 @@ export function generateHTMLExport(
       border-left-color: #dc3545;
       background: #f8d7da;
     }
+    .drag-drop-activity {
+      margin: 2rem 0;
+    }
+    .drag-drop-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+      padding-bottom: 1rem;
+      border-bottom: 2px solid #ddd;
+    }
+    .drag-drop-actions {
+      display: flex;
+      gap: 1rem;
+    }
+    .reset-btn {
+      padding: 0.5rem 1.5rem;
+      background: #6c757d;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: bold;
+    }
+    .reset-btn:hover {
+      background: #5a6268;
+    }
+    .drag-drop-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      margin: 2rem 0;
+    }
+    .drag-items-area, .drop-zones-area {
+      padding: 1.5rem;
+      background: #f9f9f9;
+      border-radius: 8px;
+    }
+    .drag-items-area h3, .drop-zones-area h3 {
+      margin-bottom: 1rem;
+      font-size: 1.25rem;
+    }
+    .drag-items-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      min-height: 200px;
+    }
+    .drag-item {
+      padding: 1rem;
+      background: #fff;
+      border: 2px solid #4a90e2;
+      border-radius: 8px;
+      cursor: move;
+      font-size: 1.1rem;
+      transition: all 0.2s;
+      user-select: none;
+    }
+    .drag-item:hover {
+      background: #e7f3ff;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .drag-item.dragging {
+      opacity: 0.5;
+    }
+    .drag-item.placed {
+      opacity: 0.6;
+      border-color: #999;
+    }
+    .drop-zones-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      min-height: 300px;
+    }
+    .drop-zone {
+      min-height: 150px;
+      padding: 1.5rem;
+      background: #fff;
+      border: 3px dashed #ddd;
+      border-radius: 8px;
+      transition: all 0.2s;
+    }
+    .drop-zone.drag-over {
+      border-color: #4a90e2;
+      background: #e7f3ff;
+    }
+    .drop-zone.correct {
+      border-color: #28a745;
+      background: #d4edda;
+    }
+    .drop-zone.incorrect {
+      border-color: #dc3545;
+      background: #f8d7da;
+    }
+    .zone-label {
+      font-weight: bold;
+      font-size: 1.1rem;
+      margin-bottom: 1rem;
+      color: #4a90e2;
+    }
+    .zone-items {
+      min-height: 100px;
+    }
+    .zone-item {
+      padding: 0.75rem;
+      margin: 0.5rem 0;
+      background: #f0f0f0;
+      border-radius: 6px;
+      font-size: 1rem;
+    }
+    .zone-item.correct {
+      background: #d4edda;
+      border-left: 4px solid #28a745;
+    }
+    .zone-item.incorrect {
+      background: #f8d7da;
+      border-left: 4px solid #dc3545;
+    }
+    .drag-drop-results {
+      margin-top: 2rem;
+      padding: 2rem;
+      background: #e7f3ff;
+      border: 2px solid #4a90e2;
+      border-radius: 8px;
+    }
+    .results-header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    .results-header h2 {
+      margin-bottom: 1.5rem;
+      color: #4a90e2;
+      font-size: 2rem;
+    }
+    .score-display {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 2rem;
+      margin-bottom: 1rem;
+    }
+    .score-item {
+      text-align: center;
+    }
+    .score-value {
+      font-size: 3rem;
+      font-weight: bold;
+      line-height: 1;
+    }
+    .score-label {
+      font-size: 0.875rem;
+      color: #666;
+      margin-top: 0.5rem;
+    }
+    .score-divider {
+      width: 1px;
+      height: 4rem;
+      background: #ddd;
+    }
+    .grade-message {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-top: 1rem;
+    }
+    .score-breakdown {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin: 2rem 0;
+      padding-top: 2rem;
+      border-top: 2px solid #ddd;
+    }
+    .breakdown-item {
+      text-align: center;
+      padding: 1.5rem;
+      border-radius: 8px;
+    }
+    .breakdown-correct {
+      background: #d4edda;
+    }
+    .breakdown-incorrect {
+      background: #f8d7da;
+    }
+    .breakdown-value {
+      font-size: 2.5rem;
+      font-weight: bold;
+      margin-bottom: 0.5rem;
+    }
+    .breakdown-correct .breakdown-value {
+      color: #28a745;
+    }
+    .breakdown-incorrect .breakdown-value {
+      color: #dc3545;
+    }
+    .breakdown-label {
+      font-size: 0.875rem;
+      color: #666;
+    }
+    .detailed-feedback {
+      margin-top: 2rem;
+      padding-top: 2rem;
+      border-top: 2px solid #ddd;
+    }
+    .detailed-feedback h3 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      color: #333;
+    }
+    .feedback-list {
+      max-height: 300px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .feedback-item {
+      display: flex;
+      align-items: start;
+      gap: 0.75rem;
+      padding: 0.75rem;
+      border-radius: 6px;
+      font-size: 0.875rem;
+    }
+    .feedback-correct {
+      background: #d4edda;
+      border: 1px solid #c3e6cb;
+    }
+    .feedback-incorrect {
+      background: #f8d7da;
+      border: 1px solid #f5c6cb;
+    }
+    .feedback-icon {
+      font-size: 1.25rem;
+      font-weight: bold;
+      flex-shrink: 0;
+      margin-top: 0.125rem;
+    }
+    .feedback-correct .feedback-icon {
+      color: #28a745;
+    }
+    .feedback-incorrect .feedback-icon {
+      color: #dc3545;
+    }
+    .feedback-content {
+      flex: 1;
+      min-width: 0;
+    }
+    .feedback-item-text {
+      font-weight: 500;
+      margin-bottom: 0.25rem;
+      word-wrap: break-word;
+    }
+    .feedback-detail {
+      font-size: 0.75rem;
+      color: #666;
+    }
+    @media (max-width: 768px) {
+      .drag-drop-container {
+        grid-template-columns: 1fr;
+      }
+    }
     .audio-narration {
       margin: 1.5rem 0;
       font-size: 1.1rem;
@@ -705,6 +973,7 @@ export function generateHTMLExport(
   ${content.type === "interactive-book" ? generateInteractiveBookScript(contentData) : ""}
   ${content.type === "presentation" ? generatePresentationScript(contentData) : ""}
   ${content.type === "quiz" ? generateQuizScript(contentData) : ""}
+  ${content.type === "drag-drop" ? generateDragDropScript(contentData) : ""}
 </body>
 </html>`;
 }
@@ -1088,6 +1357,400 @@ function generateFlashcardHTML(data: FlashcardData): string {
   });
 
   return html;
+}
+
+function generateDragDropHTML(data: any): string {
+  if (!data.items || data.items.length === 0 || !data.zones || data.zones.length === 0) {
+    return "<p>No drag and drop items available.</p>";
+  }
+
+  // Generate draggable items
+  let itemsHTML = "";
+  data.items.forEach((item: any) => {
+    itemsHTML += `
+      <div 
+        class="drag-item" 
+        draggable="true" 
+        data-item-id="${item.id}"
+        data-correct-zone="${item.correctZone}"
+        id="item-${item.id}"
+      >
+        ${escapeHtml(item.content)}
+      </div>
+    `;
+  });
+
+  // Generate drop zones
+  let zonesHTML = "";
+  data.zones.forEach((zone: any) => {
+    zonesHTML += `
+      <div 
+        class="drop-zone ${zone.allowMultiple ? 'allow-multiple' : ''}"
+        data-zone-id="${zone.id}"
+        id="zone-${zone.id}"
+      >
+        <div class="zone-label">${escapeHtml(zone.label)}</div>
+        <div class="zone-items" id="zone-items-${zone.id}"></div>
+      </div>
+    `;
+  });
+
+  const html = `
+    <div class="drag-drop-activity">
+      <div class="drag-drop-header">
+        <h2>Drag and Drop Activity</h2>
+        <div class="drag-drop-actions">
+          <button id="check-answers-btn" class="check-btn" onclick="checkDragDropAnswers()">Check Answers</button>
+          <button id="reset-btn" class="reset-btn" onclick="resetDragDrop()">Reset</button>
+        </div>
+      </div>
+      
+      <div class="drag-drop-container">
+        <div class="drag-items-area">
+          <h3>Items to Drag</h3>
+          <div class="drag-items-list" id="drag-items-list">
+            ${itemsHTML}
+          </div>
+        </div>
+        
+        <div class="drop-zones-area">
+          <h3>Drop Zones</h3>
+          <div class="drop-zones-grid">
+            ${zonesHTML}
+          </div>
+        </div>
+      </div>
+      
+      <div class="drag-drop-results" id="drag-drop-results" style="display: none;"></div>
+    </div>
+  `;
+
+  return html;
+}
+
+// Generate JavaScript for drag-and-drop functionality
+function generateDragDropScript(data: any): string {
+  const itemsData = JSON.stringify(data.items || []);
+  const zonesData = JSON.stringify(data.zones || []);
+  const settings = JSON.stringify(data.settings || {});
+  
+  return `
+  <script>
+    const items = ${itemsData};
+    const zones = ${zonesData};
+    const settings = ${settings};
+    let placements = {};
+    let feedback = {};
+    let draggedItemId = null;
+    let activitySubmitted = false;
+    
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+    
+    function handleDragStart(e, itemId) {
+      draggedItemId = itemId;
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/html', itemId);
+      e.currentTarget.classList.add('dragging');
+    }
+    
+    function handleDragEnd(e) {
+      e.currentTarget.classList.remove('dragging');
+      draggedItemId = null;
+    }
+    
+    function handleDragOver(e) {
+      if (e.preventDefault) {
+        e.preventDefault();
+      }
+      e.dataTransfer.dropEffect = 'move';
+      return false;
+    }
+    
+    function handleDragEnter(e) {
+      e.currentTarget.classList.add('drag-over');
+    }
+    
+    function handleDragLeave(e) {
+      e.currentTarget.classList.remove('drag-over');
+    }
+    
+    function handleDrop(e, zoneId) {
+      if (e.stopPropagation) {
+        e.stopPropagation();
+      }
+      e.preventDefault();
+      
+      e.currentTarget.classList.remove('drag-over');
+      
+      if (!draggedItemId) return;
+      
+      const zone = zones.find(z => z.id === zoneId);
+      if (!zone) return;
+      
+      // Check if zone allows multiple items
+      if (!zone.allowMultiple) {
+        // Remove any existing item in this zone
+        const existingItem = Object.entries(placements).find(([_, z]) => z === zoneId);
+        if (existingItem && existingItem[0] !== draggedItemId) {
+          removeItemFromZone(existingItem[0]);
+        }
+      }
+      
+      // Place the item
+      placeItem(draggedItemId, zoneId);
+      
+      draggedItemId = null;
+      return false;
+    }
+    
+    function placeItem(itemId, zoneId) {
+      // Remove item from items list
+      const itemElement = document.getElementById(\`item-\${itemId}\`);
+      if (itemElement) {
+        itemElement.classList.add('placed');
+        itemElement.style.display = 'none';
+      }
+      
+      // Add to zone
+      const zoneItemsContainer = document.getElementById(\`zone-items-\${zoneId}\`);
+      if (zoneItemsContainer) {
+        const item = items.find(i => i.id === itemId);
+        if (item) {
+          const zoneItem = document.createElement('div');
+          zoneItem.className = 'zone-item';
+          zoneItem.id = \`placed-\${itemId}\`;
+          zoneItem.textContent = item.content;
+          zoneItem.setAttribute('data-item-id', itemId);
+          zoneItem.setAttribute('data-zone-id', zoneId);
+          zoneItem.onclick = () => removeItemFromZone(itemId);
+          zoneItem.style.cursor = 'pointer';
+          zoneItem.title = 'Click to remove';
+          zoneItemsContainer.appendChild(zoneItem);
+        }
+      }
+      
+      placements[itemId] = zoneId;
+      
+      // Instant feedback if enabled
+      if (settings.instantFeedback) {
+        const item = items.find(i => i.id === itemId);
+        if (item) {
+          const isCorrect = item.correctZone === zoneId;
+          feedback[itemId] = isCorrect;
+          updateItemFeedback(itemId, zoneId, isCorrect);
+        }
+      }
+    }
+    
+    function removeItemFromZone(itemId) {
+      if (activitySubmitted) return;
+      
+      const zoneId = placements[itemId];
+      if (!zoneId) return;
+      
+      // Remove from zone
+      const zoneItem = document.getElementById(\`placed-\${itemId}\`);
+      if (zoneItem) {
+        zoneItem.remove();
+      }
+      
+      // Show in items list again
+      const itemElement = document.getElementById(\`item-\${itemId}\`);
+      if (itemElement) {
+        itemElement.classList.remove('placed');
+        itemElement.style.display = 'block';
+      }
+      
+      // Remove from placements
+      delete placements[itemId];
+      delete feedback[itemId];
+      
+      // Clear zone feedback
+      const zone = document.getElementById(\`zone-\${zoneId}\`);
+      if (zone) {
+        zone.classList.remove('correct', 'incorrect');
+      }
+    }
+    
+    function updateItemFeedback(itemId, zoneId, isCorrect) {
+      const zoneItem = document.getElementById(\`placed-\${itemId}\`);
+      const zone = document.getElementById(\`zone-\${zoneId}\`);
+      
+      if (zoneItem) {
+        zoneItem.classList.remove('correct', 'incorrect');
+        zoneItem.classList.add(isCorrect ? 'correct' : 'incorrect');
+      }
+      
+      if (zone && settings.instantFeedback) {
+        // Update zone color based on all items in it
+        const allCorrect = items.filter(i => placements[i.id] === zoneId)
+          .every(i => i.correctZone === zoneId);
+        zone.classList.remove('correct', 'incorrect');
+        if (allCorrect && Object.keys(placements).some(id => placements[id] === zoneId)) {
+          zone.classList.add('correct');
+        }
+      }
+    }
+    
+    function checkDragDropAnswers() {
+      if (activitySubmitted) return;
+      
+      activitySubmitted = true;
+      
+      // Calculate feedback for all items
+      items.forEach(item => {
+        const placedZone = placements[item.id];
+        const isCorrect = placedZone === item.correctZone;
+        feedback[item.id] = isCorrect;
+        if (placedZone) {
+          updateItemFeedback(item.id, placedZone, isCorrect);
+        }
+      });
+      
+      // Update zone colors
+      zones.forEach(zone => {
+        const zoneElement = document.getElementById(\`zone-\${zone.id}\`);
+        if (zoneElement) {
+          const itemsInZone = items.filter(i => placements[i.id] === zone.id);
+          if (itemsInZone.length > 0) {
+            const allCorrect = itemsInZone.every(i => i.correctZone === zone.id);
+            zoneElement.classList.add(allCorrect ? 'correct' : 'incorrect');
+          }
+        }
+      });
+      
+      // Calculate score
+      const correctCount = Object.values(feedback).filter(Boolean).length;
+      const totalItems = items.length;
+      const percentage = Math.round((correctCount / totalItems) * 100);
+      
+      // Calculate grade
+      function getGrade(pct) {
+        if (pct >= 90) return { grade: 'A+', color: '#16a34a', message: 'Excellent! Outstanding work!' };
+        if (pct >= 80) return { grade: 'A', color: '#16a34a', message: 'Great job! Well done!' };
+        if (pct >= 70) return { grade: 'B', color: '#2563eb', message: 'Good work! Keep it up!' };
+        if (pct >= 60) return { grade: 'C', color: '#ca8a04', message: 'Not bad! Review and try again.' };
+        if (pct >= 50) return { grade: 'D', color: '#ea580c', message: 'Keep practicing! You can do better.' };
+        return { grade: 'F', color: '#dc2626', message: 'Don\\'t give up! Review the material and try again.' };
+      }
+      
+      const gradeInfo = getGrade(percentage);
+      
+      // Generate detailed feedback HTML
+      let feedbackHTML = '';
+      items.forEach(item => {
+        const isCorrect = feedback[item.id] === true;
+        const placedZone = placements[item.id];
+        const placedZoneLabel = zones.find(z => z.id === placedZone)?.label || 'Unknown';
+        const correctZone = zones.find(z => z.id === item.correctZone);
+        const correctZoneLabel = correctZone?.label || 'Unknown';
+        
+        feedbackHTML += \`
+          <div class="feedback-item \${isCorrect ? 'feedback-correct' : 'feedback-incorrect'}">
+            <div class="feedback-icon">\${isCorrect ? '✓' : '✗'}</div>
+            <div class="feedback-content">
+              <div class="feedback-item-text">\${escapeHtml(item.content)}</div>
+              <div class="feedback-detail">
+                \${isCorrect 
+                  ? \`✓ Correctly placed in "\${escapeHtml(placedZoneLabel)}"\`
+                  : \`✗ Placed in "\${escapeHtml(placedZoneLabel)}" (should be "\${escapeHtml(correctZoneLabel)}")\`
+                }
+              </div>
+            </div>
+          </div>
+        \`;
+      });
+      
+      // Show results
+      const resultsDiv = document.getElementById('drag-drop-results');
+      if (resultsDiv) {
+        resultsDiv.style.display = 'block';
+        resultsDiv.innerHTML = \`
+          <div class="results-header">
+            <h2>Activity Results</h2>
+            <div class="score-display">
+              <div class="score-item">
+                <div class="score-value">\${correctCount}/\${totalItems}</div>
+                <div class="score-label">Correct</div>
+              </div>
+              <div class="score-divider"></div>
+              <div class="score-item">
+                <div class="score-value" style="color: \${gradeInfo.color}">\${percentage}%</div>
+                <div class="score-label">Score</div>
+              </div>
+              <div class="score-divider"></div>
+              <div class="score-item">
+                <div class="score-value" style="color: \${gradeInfo.color}">\${gradeInfo.grade}</div>
+                <div class="score-label">Grade</div>
+              </div>
+            </div>
+            <div class="grade-message" style="color: \${gradeInfo.color}">\${gradeInfo.message}</div>
+          </div>
+          <div class="score-breakdown">
+            <div class="breakdown-item breakdown-correct">
+              <div class="breakdown-value">\${correctCount}</div>
+              <div class="breakdown-label">Correct</div>
+            </div>
+            <div class="breakdown-item breakdown-incorrect">
+              <div class="breakdown-value">\${totalItems - correctCount}</div>
+              <div class="breakdown-label">Incorrect</div>
+            </div>
+          </div>
+          <div class="detailed-feedback">
+            <h3>Item Feedback:</h3>
+            <div class="feedback-list">
+              \${feedbackHTML}
+            </div>
+          </div>
+        \`;
+        resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+      
+      // Disable buttons
+      const checkBtn = document.getElementById('check-answers-btn');
+      if (checkBtn) checkBtn.disabled = true;
+    }
+    
+    function resetDragDrop() {
+      if (activitySubmitted) return;
+      
+      // Clear all placements
+      Object.keys(placements).forEach(itemId => {
+        removeItemFromZone(itemId);
+      });
+      
+      placements = {};
+      feedback = {};
+    }
+    
+    // Initialize drag events for all items and drop zones
+    document.addEventListener('DOMContentLoaded', function() {
+      // Set up drag events for items
+      items.forEach(item => {
+        const itemElement = document.getElementById(\`item-\${item.id}\`);
+        if (itemElement) {
+          itemElement.addEventListener('dragstart', (e) => handleDragStart(e, item.id));
+          itemElement.addEventListener('dragend', handleDragEnd);
+        }
+      });
+      
+      // Set up drop events for zones
+      zones.forEach(zone => {
+        const zoneElement = document.getElementById(\`zone-\${zone.id}\`);
+        if (zoneElement) {
+          zoneElement.addEventListener('drop', (e) => handleDrop(e, zone.id));
+          zoneElement.addEventListener('dragover', handleDragOver);
+          zoneElement.addEventListener('dragenter', handleDragEnter);
+          zoneElement.addEventListener('dragleave', handleDragLeave);
+        }
+      });
+    });
+  </script>
+  `;
 }
 
 // Generate JavaScript for quiz functionality

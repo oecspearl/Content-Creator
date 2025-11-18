@@ -11,9 +11,10 @@ import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { AIGenerationModal } from "@/components/AIGenerationModal";
-import { ArrowLeft, Sparkles, Plus, Trash2, Globe } from "lucide-react";
+import { ArrowLeft, Sparkles, Plus, Trash2, Globe, Download } from "lucide-react";
 import type { H5pContent, DragAndDropData } from "@shared/schema";
 import ShareToClassroomDialog from "@/components/ShareToClassroomDialog";
+import { generateHTMLExport, downloadHTML } from "@/lib/html-export";
 
 export default function DragDropCreator() {
   const params = useParams();
@@ -127,6 +128,25 @@ export default function DragDropCreator() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {contentId && (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  if (!content) return;
+                  const html = generateHTMLExport(content, content.data);
+                  downloadHTML(html, title || "drag-drop");
+                  toast({
+                    title: "Download started",
+                    description: "Your drag and drop activity is being downloaded as HTML.",
+                  });
+                }}
+                disabled={!contentId || !content}
+                data-testid="button-download-html"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Download HTML
+              </Button>
+            )}
             <Button variant="outline" onClick={() => setShowAIModal(true)} data-testid="button-ai-generate">
               <Sparkles className="h-4 w-4 mr-2" />
               AI Generate
