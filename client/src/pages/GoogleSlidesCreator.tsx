@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, ArrowLeft, Plus, Trash2, Sparkles, Globe, ExternalLink, AlertCircle, Palette, Zap, Image as ImageIcon } from "lucide-react";
+import { Loader2, ArrowLeft, Plus, Trash2, Sparkles, Globe, ExternalLink, AlertCircle, Palette, Zap, Image as ImageIcon, Edit2, Save, X, GripVertical } from "lucide-react";
 import type { GoogleSlidesData, SlideContent, H5pContent } from "@shared/schema";
 import ShareToClassroomDialog from "@/components/ShareToClassroomDialog";
 
@@ -53,6 +53,8 @@ export default function GoogleSlidesCreator() {
   const [presentationUrl, setPresentationUrl] = useState<string>("");
   const [colorScheme, setColorScheme] = useState<string>("blue");
   const [imageProvider, setImageProvider] = useState<ImageProvider>("puterjs");
+  const [editingSlideId, setEditingSlideId] = useState<string | null>(null);
+  const [editedSlide, setEditedSlide] = useState<SlideContent | null>(null);
 
   const { data: content, isLoading: isLoadingContent } = useQuery<H5pContent>({
     queryKey: [`/api/content/${contentId}`],
@@ -495,6 +497,65 @@ export default function GoogleSlidesCreator() {
     const updated = [...learningOutcomes];
     updated[index] = value;
     setLearningOutcomes(updated);
+  };
+
+  const handleEditSlide = (slide: SlideContent) => {
+    setEditingSlideId(slide.id);
+    setEditedSlide({ ...slide });
+  };
+
+  const handleSaveSlide = () => {
+    if (!editedSlide || !editingSlideId) return;
+    
+    const updatedSlides = slides.map(slide => 
+      slide.id === editingSlideId ? editedSlide : slide
+    );
+    setSlides(updatedSlides);
+    setEditingSlideId(null);
+    setEditedSlide(null);
+    toast({
+      title: "Slide updated",
+      description: "Your changes have been saved.",
+    });
+  };
+
+  const handleCancelEdit = () => {
+    setEditingSlideId(null);
+    setEditedSlide(null);
+  };
+
+  const handleDeleteSlide = (slideId: string) => {
+    const updatedSlides = slides.filter(slide => slide.id !== slideId);
+    setSlides(updatedSlides);
+    toast({
+      title: "Slide deleted",
+      description: "The slide has been removed.",
+    });
+  };
+
+  const handleAddSlide = () => {
+    const newSlide: SlideContent = {
+      id: `slide-${Date.now()}`,
+      type: "content",
+      title: "New Slide",
+      content: "",
+      bulletPoints: [],
+      questions: [],
+      notes: "",
+    };
+    setSlides([...slides, newSlide]);
+    setEditingSlideId(newSlide.id);
+    setEditedSlide(newSlide);
+  };
+
+  const handleMoveSlide = (index: number, direction: "up" | "down") => {
+    if (direction === "up" && index === 0) return;
+    if (direction === "down" && index === slides.length - 1) return;
+    
+    const newIndex = direction === "up" ? index - 1 : index + 1;
+    const updatedSlides = [...slides];
+    [updatedSlides[index], updatedSlides[newIndex]] = [updatedSlides[newIndex], updatedSlides[index]];
+    setSlides(updatedSlides);
   };
 
   if (isLoadingContent) {
