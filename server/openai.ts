@@ -431,13 +431,16 @@ Respond in JSON format:
 }`;
 
   const response = await openai.chat.completions.create({
-    model: "gpt-5",
+    model: "gpt-4o", // Use gpt-4o instead of gpt-5 (which may not exist or be slower)
     messages: [
       { role: "system", content: "You are an expert instructional designer creating educational presentations. Always respond with valid JSON and follow Universal Design for Learning (UDL) principles." },
       { role: "user", content: prompt },
     ],
     response_format: { type: "json_object" },
-    max_completion_tokens: 8000,
+    max_completion_tokens: 4000, // Reduced from 8000 to speed up generation
+    temperature: 0.7,
+  }, {
+    timeout: 20000, // 20 second timeout for OpenAI API call
   });
 
   try {
