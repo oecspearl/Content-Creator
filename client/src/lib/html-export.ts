@@ -511,6 +511,164 @@ export function generateHTMLExport(
       margin-bottom: 1rem;
       color: #4a90e2;
     }
+    .quiz-navigation {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem;
+      background: #f5f5f5;
+      border-radius: 8px;
+      margin-bottom: 2rem;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .quiz-questions-container {
+      min-height: 400px;
+    }
+    .quiz-question {
+      animation: fadeIn 0.3s;
+      padding: 2rem;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      background: #fff;
+      margin-bottom: 2rem;
+      max-width: 100%;
+      overflow-x: hidden;
+    }
+    .question-text {
+      font-size: 1.2rem;
+      margin-bottom: 1.5rem;
+      line-height: 1.8;
+    }
+    .quiz-options {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      margin: 1.5rem 0;
+    }
+    .quiz-option-label {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 1rem;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 1.1rem;
+    }
+    .quiz-option-label:hover {
+      background: #f0f0f0;
+      border-color: #4a90e2;
+    }
+    .quiz-option-label input[type="radio"] {
+      cursor: pointer;
+      width: 20px;
+      height: 20px;
+    }
+    .quiz-option-label input[type="radio"]:checked + span {
+      font-weight: bold;
+      color: #4a90e2;
+    }
+    .quiz-option-label.correct {
+      background: #d4edda;
+      border-color: #28a745;
+    }
+    .quiz-option-label.incorrect {
+      background: #f8d7da;
+      border-color: #dc3545;
+    }
+    .quiz-fill-blank {
+      margin: 1.5rem 0;
+    }
+    .quiz-fill-input {
+      width: 100%;
+      padding: 1rem;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      font-size: 1.1rem;
+    }
+    .quiz-fill-input.correct {
+      border-color: #28a745;
+      background: #d4edda;
+    }
+    .quiz-fill-input.incorrect {
+      border-color: #dc3545;
+      background: #f8d7da;
+    }
+    .question-indicator {
+      font-weight: bold;
+      font-size: 1.1rem;
+    }
+    .quiz-actions {
+      text-align: center;
+      margin: 2rem 0;
+    }
+    .submit-btn {
+      padding: 1rem 2rem;
+      background: #28a745;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1.1rem;
+      font-weight: bold;
+    }
+    .submit-btn:hover {
+      background: #218838;
+    }
+    .submit-btn:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    .quiz-results {
+      margin-top: 2rem;
+      padding: 2rem;
+      background: #e7f3ff;
+      border: 2px solid #4a90e2;
+      border-radius: 8px;
+      text-align: center;
+    }
+    .quiz-results h2 {
+      margin-bottom: 1rem;
+      color: #4a90e2;
+      font-size: 2rem;
+    }
+    .quiz-results .score {
+      font-size: 2.5rem;
+      font-weight: bold;
+      margin: 1.5rem 0;
+      color: #28a745;
+    }
+    .quiz-results .percentage {
+      font-size: 1.5rem;
+      margin-bottom: 1.5rem;
+      color: #666;
+    }
+    .quiz-results .summary {
+      text-align: left;
+      margin-top: 2rem;
+      padding: 1.5rem;
+      background: white;
+      border-radius: 8px;
+    }
+    .quiz-results .summary-item {
+      padding: 0.75rem;
+      margin: 0.5rem 0;
+      border-left: 4px solid #4a90e2;
+      background: #f9f9f9;
+      border-radius: 4px;
+    }
+    .quiz-results .summary-item.correct {
+      border-left-color: #28a745;
+      background: #d4edda;
+    }
+    .quiz-results .summary-item.incorrect {
+      border-left-color: #dc3545;
+      background: #f8d7da;
+    }
     .audio-narration {
       margin: 1.5rem 0;
       font-size: 1.1rem;
@@ -546,6 +704,7 @@ export function generateHTMLExport(
   ${bodyContent}
   ${content.type === "interactive-book" ? generateInteractiveBookScript(contentData) : ""}
   ${content.type === "presentation" ? generatePresentationScript(contentData) : ""}
+  ${content.type === "quiz" ? generateQuizScript(contentData) : ""}
 </body>
 </html>`;
 }
@@ -733,41 +892,71 @@ function generateQuizHTML(data: QuizData): string {
     return "<p>No questions available.</p>";
   }
 
-  let html = "";
+  // Generate all questions as hidden divs (only first one visible)
+  let questionsHTML = "";
   data.questions.forEach((question, index) => {
-    html += `<div class="question">`;
-    html += `<h3>Question ${index + 1}</h3>`;
-    html += `<p><strong>${escapeHtml(question.question)}</strong></p>`;
+    const questionId = `q-${index}`;
+    questionsHTML += `<div class="quiz-question" data-question-index="${index}" ${index === 0 ? '' : 'style="display: none;"'}>`;
+    questionsHTML += `<h3>Question ${index + 1} of ${data.questions.length}</h3>`;
+    questionsHTML += `<p class="question-text"><strong>${escapeHtml(question.question)}</strong></p>`;
 
     if (question.type === "multiple-choice" && question.options) {
-      html += `<div class="options">`;
+      questionsHTML += `<div class="quiz-options">`;
       question.options.forEach((option, optIndex) => {
-        const isCorrect = question.correctAnswer === optIndex;
-        html += `<div class="option ${isCorrect ? "correct" : ""}">`;
-        html += `${isCorrect ? "✓ " : ""}${escapeHtml(option)}`;
-        html += `</div>`;
+        const optionId = `${questionId}-opt-${optIndex}`;
+        questionsHTML += `<label class="quiz-option-label">`;
+        questionsHTML += `<input type="radio" name="${questionId}" value="${optIndex}" data-correct="${question.correctAnswer === optIndex}" id="${optionId}">`;
+        questionsHTML += `<span>${escapeHtml(option)}</span>`;
+        questionsHTML += `</label>`;
       });
-      html += `</div>`;
+      questionsHTML += `</div>`;
     } else if (question.type === "true-false") {
-      const isCorrect = String(question.correctAnswer) === "true";
-      html += `<div class="options">`;
-      html += `<div class="option ${isCorrect ? "correct" : ""}">✓ True</div>`;
-      html += `<div class="option ${!isCorrect ? "correct" : ""}">${!isCorrect ? "✓ " : ""}False</div>`;
-      html += `</div>`;
+      const correctValue = String(question.correctAnswer) === "true";
+      questionsHTML += `<div class="quiz-options">`;
+      questionsHTML += `<label class="quiz-option-label">`;
+      questionsHTML += `<input type="radio" name="${questionId}" value="true" data-correct="${correctValue}" id="${questionId}-true">`;
+      questionsHTML += `<span>True</span>`;
+      questionsHTML += `</label>`;
+      questionsHTML += `<label class="quiz-option-label">`;
+      questionsHTML += `<input type="radio" name="${questionId}" value="false" data-correct="${!correctValue}" id="${questionId}-false">`;
+      questionsHTML += `<span>False</span>`;
+      questionsHTML += `</label>`;
+      questionsHTML += `</div>`;
     } else if (question.type === "fill-blank") {
-      html += `<div class="options">`;
-      html += `<div class="option correct">Correct Answer: ${escapeHtml(String(question.correctAnswer))}</div>`;
-      html += `</div>`;
+      questionsHTML += `<div class="quiz-fill-blank">`;
+      questionsHTML += `<input type="text" class="quiz-fill-input" data-correct="${escapeHtml(String(question.correctAnswer))}" placeholder="Enter your answer..." id="${questionId}-input">`;
+      questionsHTML += `</div>`;
     }
 
+    questionsHTML += `<div class="question-feedback" id="${questionId}-feedback" style="display: none;"></div>`;
     if (question.explanation) {
-      html += `<p style="margin-top: 0.5rem; font-style: italic; color: #666;">${escapeHtml(question.explanation)}</p>`;
+      questionsHTML += `<div class="question-explanation" id="${questionId}-explanation" style="display: none;">`;
+      questionsHTML += `<p><em>${escapeHtml(question.explanation)}</em></p>`;
+      questionsHTML += `</div>`;
     }
 
-    html += `</div>`;
+    questionsHTML += `</div>`;
   });
 
-  return html;
+  // Navigation and submit button
+  const navHTML = `
+    <div class="quiz-navigation">
+      <button id="prev-question-btn" class="nav-btn" onclick="goToQuestion(currentQuestionIndex - 1)" disabled>← Previous</button>
+      <span class="question-indicator">
+        <span id="current-question-num">1</span> / <span id="total-questions">${data.questions.length}</span>
+      </span>
+      <button id="next-question-btn" class="nav-btn" onclick="goToQuestion(currentQuestionIndex + 1)" ${data.questions.length === 1 ? 'disabled' : ''}>Next →</button>
+    </div>
+    <div class="quiz-questions-container">
+      ${questionsHTML}
+    </div>
+    <div class="quiz-actions">
+      <button id="submit-quiz-btn" class="submit-btn" onclick="submitQuiz()">Submit Quiz</button>
+    </div>
+    <div class="quiz-results" id="quiz-results" style="display: none;"></div>
+  `;
+
+  return navHTML;
 }
 
 function generateInteractiveQuizHTML(data: QuizData, quizId: number): string {
@@ -899,6 +1088,208 @@ function generateFlashcardHTML(data: FlashcardData): string {
   });
 
   return html;
+}
+
+// Generate JavaScript for quiz functionality
+function generateQuizScript(data: QuizData): string {
+  const totalQuestions = data.questions?.length || 0;
+  const questionsData = JSON.stringify(data.questions || []);
+  
+  return `
+  <script>
+    let currentQuestionIndex = 0;
+    const totalQuestions = ${totalQuestions};
+    const questions = ${questionsData};
+    let answers = {};
+    let quizSubmitted = false;
+    
+    function goToQuestion(index) {
+      if (quizSubmitted || index < 0 || index >= totalQuestions) return;
+      
+      // Save current answer before navigating
+      saveCurrentAnswer();
+      
+      // Hide current question
+      const currentQuestion = document.querySelector(\`.quiz-question[data-question-index="\${currentQuestionIndex}"]\`);
+      if (currentQuestion) {
+        currentQuestion.style.display = 'none';
+      }
+      
+      // Show new question
+      currentQuestionIndex = index;
+      const newQuestion = document.querySelector(\`.quiz-question[data-question-index="\${currentQuestionIndex}"]\`);
+      if (newQuestion) {
+        newQuestion.style.display = 'block';
+        newQuestion.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+      
+      // Load saved answer
+      loadSavedAnswer();
+      
+      // Update navigation buttons
+      updateQuestionNavigation();
+    }
+    
+    function saveCurrentAnswer() {
+      const question = questions[currentQuestionIndex];
+      if (!question) return;
+      
+      const questionId = \`q-\${currentQuestionIndex}\`;
+      
+      if (question.type === "multiple-choice" || question.type === "true-false") {
+        const selected = document.querySelector(\`input[name="\${questionId}"]:checked\`);
+        if (selected) {
+          answers[currentQuestionIndex] = selected.value;
+        }
+      } else if (question.type === "fill-blank") {
+        const input = document.getElementById(\`\${questionId}-input\`);
+        if (input) {
+          answers[currentQuestionIndex] = input.value;
+        }
+      }
+    }
+    
+    function loadSavedAnswer() {
+      const question = questions[currentQuestionIndex];
+      if (!question) return;
+      
+      const savedAnswer = answers[currentQuestionIndex];
+      if (savedAnswer === undefined) return;
+      
+      const questionId = \`q-\${currentQuestionIndex}\`;
+      
+      if (question.type === "multiple-choice" || question.type === "true-false") {
+        const radio = document.querySelector(\`input[name="\${questionId}"][value="\${savedAnswer}"]\`);
+        if (radio) {
+          radio.checked = true;
+        }
+      } else if (question.type === "fill-blank") {
+        const input = document.getElementById(\`\${questionId}-input\`);
+        if (input) {
+          input.value = savedAnswer;
+        }
+      }
+    }
+    
+    function updateQuestionNavigation() {
+      const prevBtn = document.getElementById('prev-question-btn');
+      const nextBtn = document.getElementById('next-question-btn');
+      const currentQuestionNum = document.getElementById('current-question-num');
+      const submitBtn = document.getElementById('submit-quiz-btn');
+      
+      if (prevBtn) prevBtn.disabled = currentQuestionIndex === 0 || quizSubmitted;
+      if (nextBtn) nextBtn.disabled = currentQuestionIndex === totalQuestions - 1 || quizSubmitted;
+      if (currentQuestionNum) currentQuestionNum.textContent = currentQuestionIndex + 1;
+      if (submitBtn) submitBtn.disabled = quizSubmitted;
+    }
+    
+    function submitQuiz() {
+      if (quizSubmitted) return;
+      
+      // Save current answer
+      saveCurrentAnswer();
+      
+      quizSubmitted = true;
+      
+      // Hide all questions and show results
+      document.querySelectorAll('.quiz-question').forEach(q => {
+        q.style.display = 'none';
+      });
+      
+      // Calculate results
+      let correctCount = 0;
+      let totalAnswered = 0;
+      const results = [];
+      
+      questions.forEach((question, index) => {
+        const userAnswer = answers[index];
+        let isCorrect = false;
+        
+        if (question.type === "multiple-choice") {
+          const correctIndex = question.correctAnswer;
+          isCorrect = userAnswer !== undefined && parseInt(userAnswer) === correctIndex;
+        } else if (question.type === "true-false") {
+          const correctValue = String(question.correctAnswer);
+          isCorrect = userAnswer === correctValue;
+        } else if (question.type === "fill-blank") {
+          const correctAnswer = String(question.correctAnswer).toLowerCase().trim();
+          isCorrect = userAnswer && userAnswer.toLowerCase().trim() === correctAnswer;
+        }
+        
+        if (userAnswer !== undefined) {
+          totalAnswered++;
+          if (isCorrect) correctCount++;
+        }
+        
+        results.push({
+          question: question.question,
+          userAnswer: userAnswer || "Not answered",
+          correctAnswer: question.correctAnswer,
+          isCorrect: isCorrect,
+          explanation: question.explanation
+        });
+      });
+      
+      const percentage = totalAnswered > 0 ? Math.round((correctCount / totalQuestions) * 100) : 0;
+      
+      // Display results
+      const resultsDiv = document.getElementById('quiz-results');
+      if (resultsDiv) {
+        resultsDiv.style.display = 'block';
+        
+        let resultsHTML = \`
+          <h2>Quiz Results</h2>
+          <div class="score">\${correctCount} / \${totalQuestions}</div>
+          <div class="percentage">\${percentage}% Correct</div>
+          <div class="summary">
+            <h3>Question Review</h3>
+        \`;
+        
+        results.forEach((result, index) => {
+          const resultClass = result.isCorrect ? 'correct' : 'incorrect';
+          const icon = result.isCorrect ? '✓' : '✗';
+          resultsHTML += \`
+            <div class="summary-item \${resultClass}">
+              <strong>\${icon} Question \${index + 1}:</strong> \${escapeHtml(result.question)}<br>
+              <strong>Your Answer:</strong> \${escapeHtml(String(result.userAnswer))}<br>
+              <strong>Correct Answer:</strong> \${escapeHtml(String(result.correctAnswer))}
+              \${result.explanation ? '<br><em>' + escapeHtml(result.explanation) + '</em>' : ''}
+            </div>
+          \`;
+        });
+        
+        resultsHTML += \`</div>\`;
+        resultsDiv.innerHTML = resultsHTML;
+      }
+      
+      // Hide navigation and submit button
+      document.querySelector('.quiz-navigation').style.display = 'none';
+      document.querySelector('.quiz-actions').style.display = 'none';
+      
+      // Scroll to results
+      resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    
+    function escapeHtml(text) {
+      const div = document.createElement("div");
+      div.textContent = text;
+      return div.innerHTML;
+    }
+    
+    // Keyboard navigation
+    document.addEventListener('keydown', function(e) {
+      if (quizSubmitted) return;
+      if (e.key === 'ArrowLeft') {
+        goToQuestion(currentQuestionIndex - 1);
+      } else if (e.key === 'ArrowRight') {
+        goToQuestion(currentQuestionIndex + 1);
+      }
+    });
+    
+    // Initialize
+    updateQuestionNavigation();
+  </script>
+  `;
 }
 
 // Generate JavaScript for presentation functionality
