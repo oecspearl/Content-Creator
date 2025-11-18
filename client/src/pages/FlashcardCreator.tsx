@@ -21,10 +21,12 @@ import {
   GripVertical, 
   Settings,
   Globe,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Download
 } from "lucide-react";
 import type { H5pContent, FlashcardData } from "@shared/schema";
 import ShareToClassroomDialog from "@/components/ShareToClassroomDialog";
+import { generateHTMLExport, downloadHTML } from "@/lib/html-export";
 
 export default function FlashcardCreator() {
   const params = useParams();
@@ -183,6 +185,26 @@ export default function FlashcardCreator() {
               <Settings className="h-4 w-4 mr-1" />
               Settings
             </Button>
+            {contentId && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  if (!content) return;
+                  const html = generateHTMLExport(content, content.data);
+                  downloadHTML(html, title || "flashcards");
+                  toast({
+                    title: "Download started",
+                    description: "Your flashcards are being downloaded as HTML.",
+                  });
+                }}
+                disabled={!contentId || !content}
+                data-testid="button-download-html"
+              >
+                <Download className="h-4 w-4 mr-1" />
+                Download HTML
+              </Button>
+            )}
             <Button variant="outline" size="sm" onClick={() => setShowAIModal(true)} data-testid="button-ai-generate">
               <Sparkles className="h-4 w-4 mr-1" />
               AI Generate

@@ -23,10 +23,12 @@ import {
   GripVertical, 
   Settings,
   Eye,
-  Globe
+  Globe,
+  Download
 } from "lucide-react";
 import type { H5pContent, QuizData, QuizQuestion } from "@shared/schema";
 import ShareToClassroomDialog from "@/components/ShareToClassroomDialog";
+import { generateHTMLExport, downloadHTML } from "@/lib/html-export";
 
 export default function QuizCreator() {
   const params = useParams();
@@ -175,6 +177,26 @@ export default function QuizCreator() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {contentId && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  if (!content) return;
+                  const html = generateHTMLExport(content, content.data);
+                  downloadHTML(html, title || "quiz");
+                  toast({
+                    title: "Download started",
+                    description: "Your quiz is being downloaded as HTML.",
+                  });
+                }}
+                disabled={!contentId || !content}
+                data-testid="button-download-html"
+              >
+                <Download className="h-4 w-4 mr-1" />
+                Download HTML
+              </Button>
+            )}
             <Button variant="outline" size="sm" onClick={() => setShowSettings(!showSettings)} data-testid="button-settings">
               <Settings className="h-4 w-4 mr-1" />
               Settings

@@ -14,13 +14,14 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { RichTextEditor } from "@/components/RichTextEditor";
 import { AIGenerationModal } from "@/components/AIGenerationModal";
-import { ArrowLeft, Plus, Trash2, Globe, ChevronLeft, ChevronRight, Layers, X, Sparkles, Save, Video, Image, FileQuestion, ArrowUp, ArrowDown, GripVertical } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Globe, ChevronLeft, ChevronRight, Layers, X, Sparkles, Save, Video, Image, FileQuestion, ArrowUp, ArrowDown, GripVertical, Download } from "lucide-react";
 import type { H5pContent, InteractiveBookData, ContentType, BookPageType, VideoPageData, QuizPageData, ImagePageData } from "@shared/schema";
 import ShareToClassroomDialog from "@/components/ShareToClassroomDialog";
 import { VideoPageEditor } from "@/components/book-pages/VideoPageEditor";
 import { QuizPageEditor } from "@/components/book-pages/QuizPageEditor";
 import { ImagePageEditor } from "@/components/book-pages/ImagePageEditor";
 import { AudioRecorder } from "@/components/book-pages/AudioRecorder";
+import { generateHTMLExport, downloadHTML } from "@/lib/html-export";
 
 export default function InteractiveBookCreator() {
   const params = useParams();
@@ -259,6 +260,25 @@ export default function InteractiveBookCreator() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {contentId && (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  if (!content) return;
+                  const html = generateHTMLExport(content, content.data);
+                  downloadHTML(html, title || "interactive-book");
+                  toast({
+                    title: "Download started",
+                    description: "Your interactive book is being downloaded as HTML.",
+                  });
+                }}
+                disabled={!contentId || !content}
+                data-testid="button-download-html"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Download HTML
+              </Button>
+            )}
             <Button 
               variant="outline" 
               onClick={() => setShowAIModal(true)} 

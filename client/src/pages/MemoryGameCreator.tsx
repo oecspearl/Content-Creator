@@ -14,9 +14,10 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { AIGenerationModal } from "@/components/AIGenerationModal";
 import { ImageGeneratorDialog } from "@/components/ImageGeneratorDialog";
-import { ArrowLeft, Sparkles, Plus, Trash2, Globe, Image as ImageIcon, Upload, X } from "lucide-react";
+import { ArrowLeft, Sparkles, Plus, Trash2, Globe, Image as ImageIcon, Upload, X, Download } from "lucide-react";
 import type { H5pContent, MemoryGameData, MemoryCard } from "@shared/schema";
 import ShareToClassroomDialog from "@/components/ShareToClassroomDialog";
+import { generateHTMLExport, downloadHTML } from "@/lib/html-export";
 
 type CardPairEditorProps = {
   card1: MemoryCard;
@@ -373,6 +374,25 @@ export default function MemoryGameCreator() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {contentId && (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  if (!content) return;
+                  const html = generateHTMLExport(content, content.data);
+                  downloadHTML(html, title || "memory-game");
+                  toast({
+                    title: "Download started",
+                    description: "Your memory game is being downloaded as HTML.",
+                  });
+                }}
+                disabled={!contentId || !content}
+                data-testid="button-download-html"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Download HTML
+              </Button>
+            )}
             <Button variant="outline" onClick={() => setShowAIModal(true)} data-testid="button-ai-generate">
               <Sparkles className="h-4 w-4 mr-2" />
               AI Generate

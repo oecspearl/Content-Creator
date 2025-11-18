@@ -12,9 +12,10 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, ArrowLeft, Plus, Trash2, Sparkles, Globe, ExternalLink, AlertCircle, Palette, Zap, Image as ImageIcon, Edit2, Save, X, GripVertical } from "lucide-react";
+import { Loader2, ArrowLeft, Plus, Trash2, Sparkles, Globe, ExternalLink, AlertCircle, Palette, Zap, Image as ImageIcon, Edit2, Save, X, GripVertical, Download } from "lucide-react";
 import type { PresentationData, SlideContent, H5pContent } from "@shared/schema";
 import ShareToClassroomDialog from "@/components/ShareToClassroomDialog";
+import { generateHTMLExport, downloadHTML } from "@/lib/html-export";
 
 declare global {
   interface Window {
@@ -580,6 +581,25 @@ export default function PresentationCreator() {
           </h1>
         </div>
         <div className="flex gap-2">
+          {contentId && (
+            <Button
+              variant="outline"
+              onClick={() => {
+                if (!content) return;
+                const html = generateHTMLExport(content, content.data);
+                downloadHTML(html, title || "presentation");
+                toast({
+                  title: "Download started",
+                  description: "Your presentation is being downloaded as HTML.",
+                });
+              }}
+              disabled={!contentId || !content}
+              data-testid="button-download-html"
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Download HTML
+            </Button>
+          )}
           {contentId && presentationUrl && (
             <ShareToClassroomDialog
               contentTitle={title}
