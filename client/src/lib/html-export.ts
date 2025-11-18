@@ -168,11 +168,62 @@ export function generateHTMLExport(
     }
     .slide {
       margin-bottom: 2rem;
-      padding: 1.5rem;
+      padding: 2rem;
       border: 1px solid #ddd;
       border-radius: 8px;
       background: #fff;
       page-break-after: always;
+    }
+    .slide-content {
+      font-size: 1.1rem;
+      line-height: 1.8;
+      margin: 1rem 0;
+    }
+    .slide-content p {
+      font-size: 1.1rem;
+      margin-bottom: 1rem;
+      line-height: 1.8;
+    }
+    .bullet-points {
+      margin: 1.5rem 0;
+      padding-left: 2rem;
+      font-size: 1.1rem;
+      line-height: 1.8;
+    }
+    .bullet-points li {
+      margin-bottom: 0.75rem;
+      list-style-type: disc;
+    }
+    .slide-questions {
+      margin: 1.5rem 0;
+      padding: 1.5rem;
+      background: #e7f3ff;
+      border-left: 4px solid #4a90e2;
+      border-radius: 4px;
+    }
+    .slide-questions h4 {
+      margin-bottom: 1rem;
+      color: #4a90e2;
+    }
+    .question-list {
+      margin: 0;
+      padding-left: 2rem;
+      font-size: 1.1rem;
+      line-height: 1.8;
+    }
+    .question-list li {
+      margin-bottom: 0.75rem;
+      list-style-type: disc;
+    }
+    .speaker-notes {
+      margin-top: 1.5rem;
+      padding: 1rem;
+      background: #f9f9f9;
+      border-left: 3px solid #999;
+      border-radius: 4px;
+      font-size: 0.95rem;
+      color: #666;
+      font-style: italic;
     }
     .question {
       margin-bottom: 1.5rem;
@@ -505,14 +556,64 @@ function generatePresentationHTML(data: any): string {
 
   let html = "";
   data.slides.forEach((slide: any, index: number) => {
-    html += `
-      <div class="slide">
-        <h2>Slide ${index + 1}</h2>
-        ${slide.title ? `<h3>${escapeHtml(slide.title)}</h3>` : ""}
-        ${slide.content ? `<div>${slide.content}</div>` : ""}
-        ${slide.imageUrl ? generateImageHtml(slide.imageUrl, slide.imageAlt || `Slide ${index + 1} image`) : ""}
-      </div>
-    `;
+    html += `<div class="slide">`;
+    html += `<h2>Slide ${index + 1}</h2>`;
+    
+    // Slide title
+    if (slide.title) {
+      html += `<h3>${escapeHtml(slide.title)}</h3>`;
+    }
+    
+    // Slide content (can be HTML or plain text)
+    if (slide.content) {
+      // Check if content is HTML (contains tags)
+      if (slide.content.includes('<') && slide.content.includes('>')) {
+        // It's HTML, include it directly but sanitize
+        html += `<div class="slide-content">${slide.content}</div>`;
+      } else {
+        // It's plain text, escape and format
+        html += `<div class="slide-content"><p>${escapeHtml(slide.content)}</p></div>`;
+      }
+    }
+    
+    // Bullet points
+    if (slide.bulletPoints && Array.isArray(slide.bulletPoints) && slide.bulletPoints.length > 0) {
+      html += `<ul class="bullet-points">`;
+      slide.bulletPoints.forEach((point: string) => {
+        if (point && point.trim()) {
+          html += `<li>${escapeHtml(point)}</li>`;
+        }
+      });
+      html += `</ul>`;
+    }
+    
+    // Questions (for guiding-questions slide type)
+    if (slide.questions && Array.isArray(slide.questions) && slide.questions.length > 0) {
+      html += `<div class="slide-questions">`;
+      html += `<h4>Questions:</h4>`;
+      html += `<ul class="question-list">`;
+      slide.questions.forEach((question: string) => {
+        if (question && question.trim()) {
+          html += `<li>${escapeHtml(question)}</li>`;
+        }
+      });
+      html += `</ul>`;
+      html += `</div>`;
+    }
+    
+    // Image (display after content)
+    if (slide.imageUrl) {
+      html += generateImageHtml(slide.imageUrl, slide.imageAlt || slide.title || `Slide ${index + 1} image`);
+    }
+    
+    // Speaker notes (optional, shown in smaller text)
+    if (slide.notes) {
+      html += `<div class="speaker-notes">`;
+      html += `<strong>Notes:</strong> ${escapeHtml(slide.notes)}`;
+      html += `</div>`;
+    }
+    
+    html += `</div>`;
   });
 
   return html;
