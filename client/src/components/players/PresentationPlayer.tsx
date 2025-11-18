@@ -53,8 +53,32 @@ export default function PresentationPlayer({ data }: PresentationPlayerProps) {
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   const [viewMode, setViewMode] = useState<"presentation" | "grid">("presentation");
   
+  // Defensive checks for data structure
+  if (!data || !data.slides || !Array.isArray(data.slides) || data.slides.length === 0) {
+    return (
+      <Card className="min-h-[400px]">
+        <CardContent className="p-8 lg:p-12">
+          <div className="max-w-3xl mx-auto text-center">
+            <div className="mb-4">
+              <Presentation className="h-16 w-16 text-muted-foreground mx-auto" />
+            </div>
+            <h2 className="text-2xl font-bold text-foreground mb-2">No Slides Available</h2>
+            <p className="text-muted-foreground">
+              This presentation doesn't have any slides yet. Please contact the content creator.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+  
   const currentSlide = data.slides[currentSlideIndex];
   const theme = colorSchemes[data.colorScheme as keyof typeof colorSchemes] || colorSchemes.blue;
+  
+  // Ensure currentSlideIndex is within bounds
+  if (currentSlideIndex >= data.slides.length) {
+    setCurrentSlideIndex(0);
+  }
   
   const goToNextSlide = () => {
     if (currentSlideIndex < data.slides.length - 1) {
@@ -73,7 +97,15 @@ export default function PresentationPlayer({ data }: PresentationPlayerProps) {
     setViewMode("presentation");
   };
 
-  const renderSlideContent = (slide: SlideContent) => {
+  const renderSlideContent = (slide: SlideContent | undefined) => {
+    if (!slide) {
+      return (
+        <div className="text-center text-muted-foreground">
+          <p>Slide content is not available.</p>
+        </div>
+      );
+    }
+    
     const isImageUrl = slide.imageUrl && (slide.imageUrl.startsWith('http') || slide.imageUrl.startsWith('data:'));
     
     return (
@@ -288,7 +320,7 @@ export default function PresentationPlayer({ data }: PresentationPlayerProps) {
         </Button>
       </div>
 
-      {currentSlide.notes && (
+      {currentSlide?.notes && (
         <Card className="bg-muted/50">
           <CardContent className="p-4">
             <div className="text-sm font-medium mb-2">Speaker Notes:</div>

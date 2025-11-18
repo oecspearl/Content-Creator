@@ -131,7 +131,24 @@ export default function PublicPreviewPage() {
         {content.type === "memory-game" && <MemoryGamePlayer data={content.data as MemoryGameData} contentId={content.id} />}
         {content.type === "interactive-book" && <InteractiveBookPlayer data={content.data as InteractiveBookData} contentId={content.id} />}
         {content.type === "video-finder" && <VideoFinderPlayer data={content.data as VideoFinderData} />}
-        {content.type === "presentation" && <PresentationPlayer data={content.data as PresentationData} />}
+        {content.type === "presentation" && content.data && typeof content.data === 'object' && 'slides' in content.data && (
+          <PresentationPlayer data={content.data as PresentationData} />
+        )}
+        {content.type === "presentation" && (!content.data || typeof content.data !== 'object' || !('slides' in content.data)) && (
+          <Card className="min-h-[400px]">
+            <CardContent className="p-8 lg:p-12">
+              <div className="max-w-3xl mx-auto text-center">
+                <div className="mb-4">
+                  <Presentation className="h-16 w-16 text-muted-foreground mx-auto" />
+                </div>
+                <h2 className="text-2xl font-bold text-foreground mb-2">Presentation Data Not Available</h2>
+                <p className="text-muted-foreground">
+                  The presentation data could not be loaded. Please try again later.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </main>
 
       {/* Footer */}
