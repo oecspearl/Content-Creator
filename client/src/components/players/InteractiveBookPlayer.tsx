@@ -67,7 +67,7 @@ export function InteractiveBookPlayer({ data, contentId }: InteractiveBookPlayer
   }
   
   const { data: embeddedContent, isLoading: isLoadingEmbedded, error: embeddedError } = useQuery<H5pContent>({
-    queryKey: ["/api/content", currentPage.embeddedContentId],
+    queryKey: ["/api/content", currentPage?.embeddedContentId],
     enabled: !!currentPage?.embeddedContentId,
   });
 
