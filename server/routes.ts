@@ -332,17 +332,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/auth/microsoft/callback", async (req, res) => {
+    console.log("Microsoft OAuth callback: Request received", {
+      query: req.query,
+      hasCode: !!req.query.code,
+      hasError: !!req.query.error
+    });
+
     if (!isMicrosoftOAuthAvailable) {
+      console.error("Microsoft OAuth: Not configured");
       return res.redirect("/login?error=microsoft_not_configured");
+    }
+
+    if (req.query.error) {
+      console.error("Microsoft OAuth: Error in callback", req.query.error, req.query.error_description);
+      return res.redirect(`/login?error=${req.query.error}`);
+    }
+
+    if (!req.query.code) {
+      console.error("Microsoft OAuth: No authorization code in callback");
+      return res.redirect("/login?error=no_code");
     }
 
     try {
       const msalClient = getMsalClient();
       if (!msalClient) {
+        console.error("Microsoft OAuth: MSAL client not available");
         return res.redirect("/login?error=microsoft_not_configured");
       }
 
       const redirectUri = getRedirectUri(req);
+      console.log("Microsoft OAuth: Redirect URI:", redirectUri);
+      
       const tokenRequest = {
         code: req.query.code as string,
         scopes: ["user.read"],
@@ -435,31 +455,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const returnTo = req.session.oauthReturnTo;
       delete req.session.oauthReturnTo;
       
-      // Regenerate session ID to prevent session fixation attacks
-      req.session.regenerate((regenerateErr) => {
-        if (regenerateErr) {
-          console.error("Session regenerate error:", regenerateErr);
-          // Continue anyway - the session might still work
+      // Save session before redirecting
+      req.session.save((err) => {
+        if (err) {
+          console.error("Microsoft OAuth: Session save error:", err);
+          return res.redirect("/login?error=session_failed");
         }
         
-        // Set userId again after regeneration
-        req.session.userId = user.id;
+        console.log("Microsoft OAuth: Session saved successfully, userId:", req.session.userId);
+        console.log("Microsoft OAuth: Redirecting to dashboard");
         
-        req.session.save((err) => {
-          if (err) {
-            console.error("Session save error:", err);
-            return res.redirect("/login?error=session_failed");
-          }
-          
-          console.log("Microsoft OAuth: Session saved successfully, redirecting to dashboard");
-          
-          // Redirect to stored return URL or dashboard
-          if (returnTo && returnTo.startsWith('/') && !returnTo.includes('//')) {
-            res.redirect(returnTo + '?microsoftAuthSuccess=true');
-          } else {
-            res.redirect("/dashboard?microsoftAuthSuccess=true");
-          }
-        });
+        // Redirect to stored return URL or dashboard
+        if (returnTo && returnTo.startsWith('/') && !returnTo.includes('//')) {
+          res.redirect(returnTo + '?microsoftAuthSuccess=true');
+        } else {
+          res.redirect("/dashboard?microsoftAuthSuccess=true");
+        }
       });
     } catch (error) {
       console.error("Microsoft OAuth callback error:", error);
