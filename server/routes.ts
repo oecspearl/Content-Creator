@@ -57,11 +57,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   if (process.env.DATABASE_URL) {
     // Use PostgreSQL session store (recommended for production)
     const PgSession = connectPgSimple(session);
+    // Parse connection string to handle SSL properly
+    const isSupabase = process.env.DATABASE_URL?.includes("supabase");
+    const isNeon = process.env.DATABASE_URL?.includes("neon");
+    
+    // Remove sslmode from connection string - we'll handle SSL in Pool config
+    let connectionString = process.env.DATABASE_URL.replace(/[?&]sslmode=[^&]*/g, '');
+    
     const pgPool = new Pool({
-      connectionString: process.env.DATABASE_URL,
-      ssl: {
+      connectionString: connectionString,
+      ssl: (isSupabase || isNeon) ? {
         rejectUnauthorized: false,
-      },
+      } : false,
       max: 20,
       idleTimeoutMillis: 30000,
       connectionTimeoutMillis: 10000, // Increased timeout for Neon cold starts
