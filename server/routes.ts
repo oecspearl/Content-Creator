@@ -48,12 +48,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     throw new Error("SESSION_SECRET environment variable is required");
   }
 
-  // Trust proxy for deployed apps (Replit uses reverse proxy)
-  // This is critical for secure cookies to work properly
-  if (process.env.NODE_ENV === "production") {
-    app.set("trust proxy", 1);
-  }
-
   // Configure session store (PostgreSQL or memory fallback)
   let sessionStore: session.Store | undefined;
   
