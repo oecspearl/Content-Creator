@@ -51,7 +51,7 @@ export function ImageGeneratorDialog({
   const [openaiAvailable, setOpenaiAvailable] = useState<boolean>(true);
 
   const generateWithPuterJS = async () => {
-    if (!window.puter) {
+    if (!window.puter || !window.puter.ai) {
       throw new Error("Puter.js is not loaded. Please refresh the page or try OpenAI provider.");
     }
 

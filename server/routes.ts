@@ -306,6 +306,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: "Microsoft authentication is not configured. Please set MICROSOFT_CLIENT_ID, MICROSOFT_CLIENT_SECRET, and MICROSOFT_TENANT_ID." 
       });
     }
+    
+    // Store return URL in session if provided
+    const returnTo = req.query.returnTo as string;
+    if (returnTo && returnTo.startsWith('/')) {
+      req.session.oauthReturnTo = returnTo;
+    }
 
     try {
       const msalClient = getMsalClient();
@@ -380,8 +386,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       req.session.userId = user.id;
-      req.session.save(() => {
-        res.redirect("/dashboard");
+      
+      // Get return URL from session (validate it's a safe relative path)
+      const returnTo = req.session.oauthReturnTo;
+      delete req.session.oauthReturnTo;
+      
+      req.session.save((err) => {
+        if (err) {
+          console.error("Session save error:", err);
+          return res.redirect("/login?error=session_failed");
+        }
+        
+        // Redirect to stored return URL or dashboard
+        if (returnTo && returnTo.startsWith('/') && !returnTo.includes('//')) {
+          res.redirect(returnTo + '?microsoftAuthSuccess=true');
+        } else {
+          res.redirect("/dashboard?microsoftAuthSuccess=true");
+        }
       });
     } catch (error) {
       console.error("Microsoft OAuth callback error:", error);

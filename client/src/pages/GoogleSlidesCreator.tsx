@@ -192,7 +192,7 @@ export default function GoogleSlidesCreator() {
               try {
                 if (imageProvider === "puterjs") {
                   // Use Puter.js AI image generation
-                  if (window.puter) {
+                  if (window.puter && window.puter.ai) {
                     try {
                       const imageElement = await window.puter.ai.txt2img(originalPrompt, {
                         model: "gpt-image-1"
