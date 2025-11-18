@@ -1212,17 +1212,52 @@ Be conversational, friendly, and educational. Provide specific, actionable advic
 
   // Google Slides AI generation route
   app.post("/api/google-slides/generate", requireAuth, async (req, res) => {
+    // Set a timeout to prevent Heroku's 30-second limit from causing issues
+    const timeout = setTimeout(() => {
+      if (!res.headersSent) {
+        res.status(504).json({ 
+          message: "Request timeout - The AI generation is taking longer than expected. Please try again with fewer slides or simpler content." 
+        });
+      }
+    }, 25000); // 25 seconds to give us buffer before Heroku's 30s limit
+
     try {
       const parsed = googleSlidesGenerationSchema.parse(req.body);
+      
+      console.log("Google Slides generation started:", {
+        topic: parsed.topic,
+        numberOfSlides: parsed.numberOfSlides,
+        gradeLevel: parsed.gradeLevel
+      });
 
       const slides = await generateGoogleSlides(parsed);
 
-      res.json({ slides, generatedDate: new Date().toISOString() });
+      clearTimeout(timeout);
+      
+      if (!res.headersSent) {
+        console.log("Google Slides generation completed:", slides.length, "slides");
+        res.json({ slides, generatedDate: new Date().toISOString() });
+      }
     } catch (error: any) {
+      clearTimeout(timeout);
+      
       console.error("Google Slides generation error:", error);
+      
+      if (res.headersSent) {
+        return; // Response already sent
+      }
+      
       if (error.name === 'ZodError') {
         return res.status(400).json({ message: "Invalid request data", errors: error.errors });
       }
+      
+      // Check if it's a timeout error
+      if (error.message?.includes('timeout') || error.code === 'ETIMEDOUT') {
+        return res.status(504).json({ 
+          message: "Request timeout - The AI generation took too long. Please try again with fewer slides." 
+        });
+      }
+      
       res.status(500).json({ 
         message: error.message || "Failed to generate slides content. Please try again." 
       });
