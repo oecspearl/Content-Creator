@@ -189,11 +189,178 @@ export function generateHTMLExport(
       padding: 1rem;
       margin: 1rem 0;
     }
+    .book-navigation {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem;
+      background: #f5f5f5;
+      border-radius: 8px;
+      margin-bottom: 2rem;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .nav-btn {
+      padding: 0.5rem 1rem;
+      background: #4a90e2;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+    .nav-btn:hover:not(:disabled) {
+      background: #357abd;
+    }
+    .nav-btn:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    .page-indicator {
+      font-weight: bold;
+      font-size: 1.1rem;
+    }
+    .book-pages-container {
+      min-height: 400px;
+    }
+    .book-page {
+      animation: fadeIn 0.3s;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    .interactive-quiz {
+      border: 2px solid #4a90e2;
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin: 1rem 0;
+      background: #f9f9f9;
+    }
+    .quiz-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 2px solid #ddd;
+    }
+    .check-btn {
+      padding: 0.5rem 1.5rem;
+      background: #28a745;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: bold;
+    }
+    .check-btn:hover {
+      background: #218838;
+    }
+    .interactive-options {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .option-label {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem;
+      border: 2px solid #ddd;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .option-label:hover {
+      background: #f0f0f0;
+      border-color: #4a90e2;
+    }
+    .option-label input[type="radio"] {
+      cursor: pointer;
+    }
+    .option-label input[type="radio"]:checked + span {
+      font-weight: bold;
+      color: #4a90e2;
+    }
+    .option-label.correct {
+      background: #d4edda;
+      border-color: #28a745;
+    }
+    .option-label.incorrect {
+      background: #f8d7da;
+      border-color: #dc3545;
+    }
+    .fill-blank-answer {
+      margin: 1rem 0;
+    }
+    .fill-blank-input {
+      width: 100%;
+      padding: 0.75rem;
+      border: 2px solid #ddd;
+      border-radius: 4px;
+      font-size: 1rem;
+    }
+    .fill-blank-input.correct {
+      border-color: #28a745;
+      background: #d4edda;
+    }
+    .fill-blank-input.incorrect {
+      border-color: #dc3545;
+      background: #f8d7da;
+    }
+    .question-feedback {
+      margin-top: 1rem;
+      padding: 1rem;
+      border-radius: 4px;
+    }
+    .question-feedback.correct {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #28a745;
+    }
+    .question-feedback.incorrect {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #dc3545;
+    }
+    .question-explanation {
+      margin-top: 0.5rem;
+      padding: 0.75rem;
+      background: #e7f3ff;
+      border-left: 4px solid #4a90e2;
+      border-radius: 4px;
+    }
+    .quiz-results {
+      margin-top: 2rem;
+      padding: 1.5rem;
+      background: #e7f3ff;
+      border: 2px solid #4a90e2;
+      border-radius: 8px;
+      text-align: center;
+    }
+    .quiz-results h3 {
+      margin-bottom: 1rem;
+      color: #4a90e2;
+    }
+    .audio-narration {
+      margin: 1rem 0;
+    }
     @media print {
       body {
         padding: 1rem;
       }
       .slide {
+        page-break-after: always;
+      }
+      .book-navigation {
+        display: none;
+      }
+      .book-page {
+        display: block !important;
         page-break-after: always;
       }
     }
@@ -203,6 +370,7 @@ export function generateHTMLExport(
   <h1>${escapeHtml(title)}</h1>
   ${description ? `<div class="description">${escapeHtml(description)}</div>` : ""}
   ${bodyContent}
+  ${content.type === "interactive-book" ? generateInteractiveBookScript(data) : ""}
 </body>
 </html>`;
 }
@@ -238,41 +406,56 @@ function generateInteractiveBookHTML(data: InteractiveBookData): string {
     return "<p>No pages available.</p>";
   }
 
-  let html = "";
+  // Generate all pages as hidden divs
+  let pagesHTML = "";
   data.pages.forEach((page, index) => {
-    html += `<div class="page">`;
-    html += `<h2>${escapeHtml(page.title || `Page ${index + 1}`)}</h2>`;
+    pagesHTML += `<div class="book-page" data-page-index="${index}" ${index === 0 ? '' : 'style="display: none;"'}>`;
+    pagesHTML += `<h2>${escapeHtml(page.title || `Page ${index + 1}`)}</h2>`;
 
     // Page content based on type
     if (!page.pageType || page.pageType === "content") {
       if (page.content) {
-        html += `<div>${page.content}</div>`;
+        pagesHTML += `<div class="page-content">${page.content}</div>`;
       }
     } else if (page.pageType === "video" && page.videoData) {
-      html += `<h3>Video: ${escapeHtml(page.videoData.title)}</h3>`;
-      html += generateVideoHtml(page.videoData.videoId, page.videoData.title);
+      pagesHTML += `<h3>Video: ${escapeHtml(page.videoData.title)}</h3>`;
+      pagesHTML += generateVideoHtml(page.videoData.videoId, page.videoData.title);
       if (page.videoData.instructions) {
-        html += `<div class="instructions"><strong>Instructions:</strong> ${escapeHtml(page.videoData.instructions)}</div>`;
+        pagesHTML += `<div class="instructions"><strong>Instructions:</strong> ${escapeHtml(page.videoData.instructions)}</div>`;
       }
     } else if (page.pageType === "quiz" && page.quizData) {
-      html += generateQuizHTML(page.quizData);
+      pagesHTML += generateInteractiveQuizHTML(page.quizData, index);
     } else if (page.pageType === "image" && page.imageData) {
-      html += generateImageHtml(page.imageData.imageUrl, page.imageData.imageAlt || "Page image");
+      pagesHTML += generateImageHtml(page.imageData.imageUrl, page.imageData.imageAlt || "Page image");
       if (page.imageData.instructions) {
-        html += `<div class="instructions"><strong>Instructions:</strong> ${escapeHtml(page.imageData.instructions)}</div>`;
+        pagesHTML += `<div class="instructions"><strong>Instructions:</strong> ${escapeHtml(page.imageData.instructions)}</div>`;
       }
     }
 
     // Audio narration
     if (page.audioUrl) {
-      html += `<div><strong>Narration:</strong></div>`;
-      html += generateAudioHtml(page.audioUrl);
+      pagesHTML += `<div class="audio-narration"><strong>Narration:</strong></div>`;
+      pagesHTML += generateAudioHtml(page.audioUrl);
     }
 
-    html += `</div>`;
+    pagesHTML += `</div>`;
   });
 
-  return html;
+  // Navigation controls
+  const navHTML = `
+    <div class="book-navigation">
+      <button id="prev-page-btn" class="nav-btn" onclick="goToPage(currentPageIndex - 1)" disabled>← Previous</button>
+      <span class="page-indicator">
+        <span id="current-page-num">1</span> / <span id="total-pages">${data.pages.length}</span>
+      </span>
+      <button id="next-page-btn" class="nav-btn" onclick="goToPage(currentPageIndex + 1)" ${data.pages.length === 1 ? 'disabled' : ''}>Next →</button>
+    </div>
+    <div class="book-pages-container">
+      ${pagesHTML}
+    </div>
+  `;
+
+  return navHTML;
 }
 
 function generateQuizHTML(data: QuizData): string {
@@ -313,6 +496,65 @@ function generateQuizHTML(data: QuizData): string {
 
     html += `</div>`;
   });
+
+  return html;
+}
+
+function generateInteractiveQuizHTML(data: QuizData, quizId: number): string {
+  if (!data.questions || data.questions.length === 0) {
+    return "<p>No questions available.</p>";
+  }
+
+  let html = `<div class="interactive-quiz" data-quiz-id="${quizId}">`;
+  html += `<div class="quiz-header"><h3>Quiz</h3><button onclick="checkQuiz(${quizId})" class="check-btn">Check Answers</button></div>`;
+  
+  data.questions.forEach((question, index) => {
+    const questionId = `quiz-${quizId}-q-${index}`;
+    html += `<div class="question interactive-question" data-question-id="${questionId}">`;
+    html += `<h4>Question ${index + 1}</h4>`;
+    html += `<p><strong>${escapeHtml(question.question)}</strong></p>`;
+
+    if (question.type === "multiple-choice" && question.options) {
+      html += `<div class="options interactive-options">`;
+      question.options.forEach((option, optIndex) => {
+        const optionId = `${questionId}-opt-${optIndex}`;
+        const isCorrect = question.correctAnswer === optIndex;
+        html += `<label class="option-label">`;
+        html += `<input type="radio" name="${questionId}" value="${optIndex}" data-correct="${isCorrect}" id="${optionId}">`;
+        html += `<span>${escapeHtml(option)}</span>`;
+        html += `</label>`;
+      });
+      html += `</div>`;
+    } else if (question.type === "true-false") {
+      const correctValue = String(question.correctAnswer) === "true" ? "true" : "false";
+      html += `<div class="options interactive-options">`;
+      html += `<label class="option-label">`;
+      html += `<input type="radio" name="${questionId}" value="true" data-correct="${correctValue === 'true'}" id="${questionId}-true">`;
+      html += `<span>True</span>`;
+      html += `</label>`;
+      html += `<label class="option-label">`;
+      html += `<input type="radio" name="${questionId}" value="false" data-correct="${correctValue === 'false'}" id="${questionId}-false">`;
+      html += `<span>False</span>`;
+      html += `</label>`;
+      html += `</div>`;
+    } else if (question.type === "fill-blank") {
+      html += `<div class="fill-blank-answer">`;
+      html += `<input type="text" class="fill-blank-input" data-correct="${escapeHtml(String(question.correctAnswer))}" placeholder="Enter your answer">`;
+      html += `</div>`;
+    }
+
+    html += `<div class="question-feedback" id="${questionId}-feedback" style="display: none;"></div>`;
+    if (question.explanation) {
+      html += `<div class="question-explanation" id="${questionId}-explanation" style="display: none;">`;
+      html += `<p><em>${escapeHtml(question.explanation)}</em></p>`;
+      html += `</div>`;
+    }
+
+    html += `</div>`;
+  });
+
+  html += `<div class="quiz-results" id="quiz-${quizId}-results" style="display: none;"></div>`;
+  html += `</div>`;
 
   return html;
 }
@@ -387,6 +629,147 @@ function generateFlashcardHTML(data: FlashcardData): string {
   });
 
   return html;
+}
+
+// Generate JavaScript for interactive book functionality
+function generateInteractiveBookScript(data: InteractiveBookData): string {
+  const totalPages = data.pages.length;
+  
+  return `
+  <script>
+    let currentPageIndex = 0;
+    const totalPages = ${totalPages};
+    
+    function goToPage(index) {
+      if (index < 0 || index >= totalPages) return;
+      
+      // Hide current page
+      const currentPage = document.querySelector(\`.book-page[data-page-index="\${currentPageIndex}"]\`);
+      if (currentPage) {
+        currentPage.style.display = 'none';
+      }
+      
+      // Show new page
+      currentPageIndex = index;
+      const newPage = document.querySelector(\`.book-page[data-page-index="\${currentPageIndex}"]\`);
+      if (newPage) {
+        newPage.style.display = 'block';
+        newPage.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+      
+      // Update navigation buttons
+      updateNavigation();
+      
+      // Stop any playing audio
+      stopAllAudio();
+    }
+    
+    function updateNavigation() {
+      const prevBtn = document.getElementById('prev-page-btn');
+      const nextBtn = document.getElementById('next-page-btn');
+      const currentPageNum = document.getElementById('current-page-num');
+      
+      if (prevBtn) prevBtn.disabled = currentPageIndex === 0;
+      if (nextBtn) nextBtn.disabled = currentPageIndex === totalPages - 1;
+      if (currentPageNum) currentPageNum.textContent = currentPageIndex + 1;
+    }
+    
+    function stopAllAudio() {
+      const audios = document.querySelectorAll('audio');
+      audios.forEach(audio => {
+        audio.pause();
+        audio.currentTime = 0;
+      });
+    }
+    
+    // Quiz checking functions
+    function checkQuiz(quizId) {
+      const quiz = document.querySelector(\`.interactive-quiz[data-quiz-id="\${quizId}"]\`);
+      if (!quiz) return;
+      
+      const questions = quiz.querySelectorAll('.interactive-question');
+      let correctCount = 0;
+      let totalQuestions = questions.length;
+      
+      questions.forEach((question, index) => {
+        const questionId = question.getAttribute('data-question-id');
+        const feedback = document.getElementById(\`\${questionId}-feedback\`);
+        const explanation = document.getElementById(\`\${questionId}-explanation\`);
+        
+        let isCorrect = false;
+        
+        // Check multiple choice or true/false
+        const selectedRadio = question.querySelector('input[type="radio"]:checked');
+        if (selectedRadio) {
+          isCorrect = selectedRadio.getAttribute('data-correct') === 'true';
+          
+          // Mark options
+          const options = question.querySelectorAll('.option-label');
+          options.forEach(opt => {
+            const radio = opt.querySelector('input[type="radio"]');
+            if (radio) {
+              const isOptionCorrect = radio.getAttribute('data-correct') === 'true';
+              if (radio.checked) {
+                opt.classList.add(isOptionCorrect ? 'correct' : 'incorrect');
+              } else if (isOptionCorrect) {
+                opt.classList.add('correct');
+              }
+            }
+          });
+        }
+        
+        // Check fill in the blank
+        const fillInput = question.querySelector('.fill-blank-input');
+        if (fillInput) {
+          const userAnswer = fillInput.value.trim().toLowerCase();
+          const correctAnswer = fillInput.getAttribute('data-correct').toLowerCase();
+          isCorrect = userAnswer === correctAnswer;
+          
+          fillInput.classList.add(isCorrect ? 'correct' : 'incorrect');
+        }
+        
+        // Show feedback
+        if (feedback) {
+          feedback.style.display = 'block';
+          feedback.className = 'question-feedback ' + (isCorrect ? 'correct' : 'incorrect');
+          feedback.textContent = isCorrect ? '✓ Correct!' : '✗ Incorrect';
+        }
+        
+        // Show explanation if available
+        if (explanation && !isCorrect) {
+          explanation.style.display = 'block';
+        }
+        
+        if (isCorrect) correctCount++;
+      });
+      
+      // Show results
+      const resultsDiv = document.getElementById(\`quiz-\${quizId}-results\`);
+      if (resultsDiv) {
+        resultsDiv.style.display = 'block';
+        const percentage = Math.round((correctCount / totalQuestions) * 100);
+        resultsDiv.innerHTML = \`
+          <h3>Quiz Results</h3>
+          <p style="font-size: 1.5rem; font-weight: bold; margin: 1rem 0;">
+            \${correctCount} / \${totalQuestions} Correct (\${percentage}%)
+          </p>
+        \`;
+      }
+    }
+    
+    // Keyboard navigation
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'ArrowLeft') {
+        goToPage(currentPageIndex - 1);
+      } else if (e.key === 'ArrowRight') {
+        goToPage(currentPageIndex + 1);
+      }
+    });
+    
+    // Initialize
+    updateNavigation();
+  </script>
+  `;
 }
 
 // Download function
