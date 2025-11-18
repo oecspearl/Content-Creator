@@ -206,7 +206,17 @@ export function MemoryGamePlayer({ data, contentId }: MemoryGamePlayerProps) {
             >
               <CardContent className="h-full flex items-center justify-center p-2">
                 {isFlipped ? (
-                  <p className="text-center text-sm font-medium break-words">{card.content}</p>
+                  card.type === "image" && card.imageUrl ? (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <img
+                        src={card.imageUrl}
+                        alt={card.content || "Memory card"}
+                        className="max-w-full max-h-full object-contain rounded"
+                      />
+                    </div>
+                  ) : (
+                    <p className="text-center text-sm font-medium break-words">{card.content}</p>
+                  )
                 ) : (
                   <p className="text-muted-foreground">?</p>
                 )}

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useLocation } from "wouter";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { useBreadcrumbs } from "@/hooks/useBreadcrumbs";
@@ -8,11 +8,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { AIGenerationModal } from "@/components/AIGenerationModal";
-import { ArrowLeft, Sparkles, Plus, Trash2, Globe } from "lucide-react";
-import type { H5pContent, MemoryGameData } from "@shared/schema";
+import { ImageGeneratorDialog } from "@/components/ImageGeneratorDialog";
+import { ArrowLeft, Sparkles, Plus, Trash2, Globe, Image as ImageIcon, Upload, X } from "lucide-react";
+import type { H5pContent, MemoryGameData, MemoryCard } from "@shared/schema";
 import ShareToClassroomDialog from "@/components/ShareToClassroomDialog";
 
 export default function MemoryGameCreator() {
@@ -95,6 +98,47 @@ export default function MemoryGameCreator() {
       { id: `${matchId}-1`, content: "", matchId, type: "text" },
       { id: `${matchId}-2`, content: "", matchId, type: "text" },
     ]);
+  };
+
+  const handleImageUpload = (cardId: string, file: File) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const imageUrl = e.target?.result as string;
+      const updated = cards.map(c => 
+        c.id === cardId 
+          ? { ...c, type: "image" as const, imageUrl, content: "" }
+          : c
+      );
+      setCards(updated);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleImageUrl = (cardId: string, url: string) => {
+    const updated = cards.map(c => 
+      c.id === cardId 
+        ? { ...c, type: "image" as const, imageUrl: url, content: "" }
+        : c
+    );
+    setCards(updated);
+  };
+
+  const handleImageGenerated = (cardId: string, imageUrl: string) => {
+    const updated = cards.map(c => 
+      c.id === cardId 
+        ? { ...c, type: "image" as const, imageUrl, content: "" }
+        : c
+    );
+    setCards(updated);
+  };
+
+  const removeImage = (cardId: string) => {
+    const updated = cards.map(c => 
+      c.id === cardId 
+        ? { ...c, type: "text" as const, imageUrl: undefined, content: "" }
+        : c
+    );
+    setCards(updated);
   };
 
   const handleAIGenerated = (data: any) => {
@@ -212,49 +256,29 @@ export default function MemoryGameCreator() {
             </CardHeader>
             <CardContent className="space-y-4">
               {pairs.map(([card1, card2], idx) => (
-                <div key={card1.matchId} className="border rounded-lg p-4 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <Label>Pair {idx + 1}</Label>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setCards(cards.filter(c => c.matchId !== card1.matchId))}
-                      data-testid={`button-remove-pair-${idx}`}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label>Card 1</Label>
-                      <Input
-                        value={card1.content}
-                        onChange={(e) => {
-                          const updated = [...cards];
-                          const index = updated.findIndex(c => c.id === card1.id);
-                          updated[index] = { ...updated[index], content: e.target.value };
-                          setCards(updated);
-                        }}
-                        placeholder="Card content"
-                        data-testid={`input-card1-${idx}`}
-                      />
-                    </div>
-                    <div>
-                      <Label>Card 2</Label>
-                      <Input
-                        value={card2.content}
-                        onChange={(e) => {
-                          const updated = [...cards];
-                          const index = updated.findIndex(c => c.id === card2.id);
-                          updated[index] = { ...updated[index], content: e.target.value };
-                          setCards(updated);
-                        }}
-                        placeholder="Matching content"
-                        data-testid={`input-card2-${idx}`}
-                      />
-                    </div>
-                  </div>
-                </div>
+                <CardPairEditor
+                  key={card1.matchId}
+                  card1={card1}
+                  card2={card2}
+                  pairIndex={idx}
+                  onCard1Update={(updates) => {
+                    const updated = [...cards];
+                    const index = updated.findIndex(c => c.id === card1.id);
+                    updated[index] = { ...updated[index], ...updates };
+                    setCards(updated);
+                  }}
+                  onCard2Update={(updates) => {
+                    const updated = [...cards];
+                    const index = updated.findIndex(c => c.id === card2.id);
+                    updated[index] = { ...updated[index], ...updates };
+                    setCards(updated);
+                  }}
+                  onRemove={() => setCards(cards.filter(c => c.matchId !== card1.matchId))}
+                  onImageUpload={handleImageUpload}
+                  onImageUrl={handleImageUrl}
+                  onImageGenerated={handleImageGenerated}
+                  onRemoveImage={removeImage}
+                />
               ))}
             </CardContent>
           </Card>
