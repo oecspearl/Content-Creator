@@ -40,6 +40,9 @@ declare module "express-session" {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Trust Heroku's proxy (required for secure cookies and correct IP addresses)
+  app.set('trust proxy', 1);
+  
   // Validate required environment variables
   if (!process.env.SESSION_SECRET) {
     throw new Error("SESSION_SECRET environment variable is required");
@@ -352,32 +355,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
         redirectUri,
       };
 
+      console.log("Microsoft OAuth: Starting token acquisition...");
       const response = await msalClient.acquireTokenByCode(tokenRequest);
       
       if (!response || !response.account) {
-        console.error("Microsoft OAuth: No account in response");
+        console.error("Microsoft OAuth: No account in response", response);
         return res.redirect("/login?error=microsoft_no_account");
       }
 
-      // MSAL account object structure:
-      // - username: email address
-      // - name: display name (may not always be present)
-      // - homeAccountId: unique identifier for the account
-      const account = response.account;
-      const email = account.username;
-      const name = account.name || account.username?.split('@')[0] || 'User';
-      const microsoftId = account.homeAccountId;
+      console.log("Microsoft OAuth: Token acquired, fetching user info from Graph API...");
+      
+      // Fetch user info from Microsoft Graph API
+      // The account object may not have email/name directly, so we use the access token
+      const accessToken = response.accessToken;
+      let email: string | null = null;
+      let name: string | null = null;
+      
+      try {
+        const graphResponse = await fetch("https://graph.microsoft.com/v1.0/me", {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        });
+        
+        if (graphResponse.ok) {
+          const userInfo = await graphResponse.json();
+          email = userInfo.mail || userInfo.userPrincipalName || userInfo.email;
+          name = userInfo.displayName || userInfo.givenName || userInfo.name;
+          console.log("Microsoft OAuth: Graph API response:", { email, name, userInfo });
+        } else {
+          console.error("Microsoft OAuth: Graph API error", await graphResponse.text());
+        }
+      } catch (graphError) {
+        console.error("Microsoft OAuth: Graph API fetch error", graphError);
+      }
+      
+      // Fallback to account object if Graph API didn't provide email
+      if (!email) {
+        const account = response.account;
+        email = account.username || account.localAccountId;
+        name = name || account.name || account.username?.split('@')[0] || 'User';
+        console.log("Microsoft OAuth: Using account object fallback:", { email, name });
+      }
+      
+      const microsoftId = response.account.homeAccountId;
 
-      console.log("Microsoft OAuth callback - Account info:", {
+      console.log("Microsoft OAuth callback - Final account info:", {
         email,
         name,
         microsoftId,
-        accountId: account.localAccountId,
-        tenantId: account.tenantId
+        accountId: response.account.localAccountId,
+        tenantId: response.account.tenantId
       });
 
       if (!email) {
-        console.error("Microsoft OAuth: No email in account", account);
+        console.error("Microsoft OAuth: No email found in account or Graph API", response.account);
         return res.redirect("/login?error=microsoft_no_email");
       }
 
