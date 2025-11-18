@@ -45,7 +45,11 @@ In your Replit project, check that these secrets are set:
 
 - `MICROSOFT_CLIENT_ID` - Your Application (client) ID
 - `MICROSOFT_CLIENT_SECRET` - Your client secret value
-- `MICROSOFT_TENANT_ID` - Usually `common` for multi-tenant, or your specific tenant ID
+- `MICROSOFT_TENANT_ID` - **Optional**: 
+  - **Recommended**: `common` (multi-tenant - allows both personal Microsoft accounts and work/school accounts from any Azure AD tenant)
+  - `organizations` (work/school accounts only from any Azure AD tenant)
+  - Specific tenant ID (single-tenant access only)
+  - **If not set, defaults to `common` for multi-tenant support**
 - `SESSION_SECRET` - Required for sessions
 - `DATABASE_URL` - Required for production
 

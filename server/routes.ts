@@ -109,10 +109,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const isGoogleOAuthAvailable = !!(
     process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
   );
+  // Microsoft OAuth is available if CLIENT_ID and CLIENT_SECRET are set
+  // TENANT_ID is optional - defaults to "common" for multi-tenant support
   const isMicrosoftOAuthAvailable = !!(
     process.env.MICROSOFT_CLIENT_ID && 
-    process.env.MICROSOFT_CLIENT_SECRET && 
-    process.env.MICROSOFT_TENANT_ID
+    process.env.MICROSOFT_CLIENT_SECRET
   );
   
   console.log('OAuth providers:', {
@@ -303,7 +304,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/auth/microsoft", async (req, res) => {
     if (!isMicrosoftOAuthAvailable) {
       return res.status(503).json({ 
-        message: "Microsoft authentication is not configured. Please set MICROSOFT_CLIENT_ID, MICROSOFT_CLIENT_SECRET, and MICROSOFT_TENANT_ID." 
+        message: "Microsoft authentication is not configured. Please set MICROSOFT_CLIENT_ID and MICROSOFT_CLIENT_SECRET. MICROSOFT_TENANT_ID is optional (defaults to 'common' for multi-tenant)." 
       });
     }
     

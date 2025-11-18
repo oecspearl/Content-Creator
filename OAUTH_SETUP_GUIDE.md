@@ -133,7 +133,10 @@ Add these secrets to your Replit project (Tools → Secrets):
 3. Add:
    - Key: `MICROSOFT_CLIENT_ID`, Value: [paste Application (client) ID]
    - Key: `MICROSOFT_CLIENT_SECRET`, Value: [paste the secret value]
-   - Key: `MICROSOFT_TENANT_ID`, Value: `common` (or your specific tenant ID)
+   - Key: `MICROSOFT_TENANT_ID`, Value: `common` (recommended for multi-tenant - allows both personal and work/school accounts)
+     - Optional: If not set, defaults to `common` for multi-tenant support
+     - Use `organizations` for work/school accounts only
+     - Use a specific tenant ID for single-tenant access
 
 ---
 
