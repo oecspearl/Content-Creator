@@ -175,9 +175,13 @@ export function DragDropPlayer({ data, contentId }: DragDropPlayerProps) {
           </p>
         </div>
         <div className="flex gap-2">
-          {!data.settings.instantFeedback && !showResults && (
-            <Button onClick={checkAnswers} disabled={Object.keys(placements).length !== total} data-testid="button-check">
-              Check Answers
+          {!showResults && (
+            <Button 
+              onClick={checkAnswers} 
+              disabled={Object.keys(placements).length !== total} 
+              data-testid="button-check"
+            >
+              {data.settings.instantFeedback ? "View Results" : "Check Answers"}
             </Button>
           )}
           {showResults && data.settings.allowRetry && (
