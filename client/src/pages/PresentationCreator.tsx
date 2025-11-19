@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, ArrowLeft, Plus, Trash2, Sparkles, Globe, ExternalLink, AlertCircle, Palette, Zap, Image as ImageIcon, Edit2, Save, X, GripVertical, Download } from "lucide-react";
+import { Loader2, ArrowLeft, Plus, Trash2, Sparkles, Globe, ExternalLink, AlertCircle, Palette, Zap, Image as ImageIcon, Edit2, Save, X, GripVertical, Download, Settings } from "lucide-react";
 import type { PresentationData, SlideContent, H5pContent } from "@shared/schema";
 import ShareToClassroomDialog from "@/components/ShareToClassroomDialog";
 import { generateHTMLExport, downloadHTML } from "@/lib/html-export";
@@ -51,6 +51,7 @@ export default function PresentationCreator() {
   const [generatedDate, setGeneratedDate] = useState("");
   const [isPublished, setIsPublished] = useState(false);
   const [isPublic, setIsPublic] = useState(false);
+  const [autosave, setAutosave] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [presentationId, setPresentationId] = useState<string>("");
   const [presentationUrl, setPresentationUrl] = useState<string>("");
@@ -169,6 +170,39 @@ export default function PresentationCreator() {
       });
     },
   });
+
+  useEffect(() => {
+    if (!autosave) return; // Skip autosave if disabled
+    if (!title || slides.length === 0) return;
+    
+    const timer = setTimeout(() => {
+      setIsSaving(true);
+      saveMutation.mutate({ publish: isPublished });
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, [title, description, subject, gradeLevel, ageRange, topic, learningOutcomes, customInstructions, slides, colorScheme, imageProvider, isPublic, autosave, isPublished]);
+  
+  const handleManualSave = () => {
+    if (!title) {
+      toast({
+        title: "Missing title",
+        description: "Please provide a title before saving",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (slides.length === 0) {
+      toast({
+        title: "No slides",
+        description: "Please generate slides before saving",
+        variant: "destructive",
+      });
+      return;
+    }
+    setIsSaving(true);
+    saveMutation.mutate({ publish: isPublished });
+  };
 
   const generateMutation = useMutation({
     mutationFn: async () => {
@@ -435,26 +469,6 @@ export default function PresentationCreator() {
     },
   });
 
-  const handleSave = () => {
-    if (!title) {
-      toast({
-        title: "Missing title",
-        description: "Please provide a title before saving",
-        variant: "destructive",
-      });
-      return;
-    }
-    if (slides.length === 0) {
-      toast({
-        title: "No slides",
-        description: "Please generate slides before saving",
-        variant: "destructive",
-      });
-      return;
-    }
-    setIsSaving(true);
-    saveMutation.mutate({ publish: isPublished });
-  };
 
   const handlePublish = () => {
     if (!title) {
@@ -619,14 +633,16 @@ export default function PresentationCreator() {
               materialLink={presentationUrl}
             />
           )}
-          <Button
-            onClick={handleSave}
-            disabled={isSaving || !title || slides.length === 0}
-            data-testid="button-save"
-          >
-            {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-            Save
-          </Button>
+          {!autosave && (
+            <Button
+              onClick={handleManualSave}
+              disabled={isSaving || !title || slides.length === 0}
+              data-testid="button-save"
+            >
+              {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+              {isSaving ? "Saving..." : "Save"}
+            </Button>
+          )}
           <Button
             onClick={handlePublish}
             disabled={isSaving || !title || slides.length === 0}
@@ -693,6 +709,32 @@ export default function PresentationCreator() {
                     }
                   }}
                   data-testid="switch-public"
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Settings */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Settings className="h-5 w-5" />
+                Settings
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label htmlFor="autosave" className="text-base">Autosave</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Automatically save changes after 2 seconds
+                  </p>
+                </div>
+                <Switch
+                  id="autosave"
+                  checked={autosave}
+                  onCheckedChange={setAutosave}
+                  data-testid="switch-autosave"
                 />
               </div>
             </CardContent>

@@ -232,6 +232,8 @@ export function FlashcardPlayer({ data, contentId }: FlashcardPlayerProps) {
           minHeight: "400px",
           height: "400px",
           maxHeight: "500px",
+          perspective: "1000px",
+          WebkitPerspective: "1000px",
         }}
         onClick={() => setIsFlipped(!isFlipped)}
         data-testid="flashcard"
@@ -243,8 +245,6 @@ export function FlashcardPlayer({ data, contentId }: FlashcardPlayerProps) {
             WebkitTransformStyle: "preserve-3d",
             transform: isFlipped ? "rotateY(180deg)" : "rotateY(0deg)",
             WebkitTransform: isFlipped ? "rotateY(180deg)" : "rotateY(0deg)",
-            perspective: "1000px",
-            WebkitPerspective: "1000px",
             width: "100%",
             height: "100%",
           }}

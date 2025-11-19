@@ -11,7 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { ArrowLeft, Search, Globe, ExternalLink, Play, Sparkles, X, CheckSquare, Square } from "lucide-react";
+import { ArrowLeft, Search, Globe, ExternalLink, Play, Sparkles, X, CheckSquare, Square, Save, Settings } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import type { H5pContent, VideoFinderData, VideoResult } from "@shared/schema";
 import ShareToClassroomDialog from "@/components/ShareToClassroomDialog";
@@ -40,6 +40,7 @@ export default function VideoFinderCreator() {
   const [guidingQuestions, setGuidingQuestions] = useState<string[]>([]);
   const [isPublished, setIsPublished] = useState(false);
   const [isPublic, setIsPublic] = useState(false);
+  const [autosave, setAutosave] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -126,6 +127,40 @@ export default function VideoFinderCreator() {
     },
   });
 
+  useEffect(() => {
+    if (!autosave) return; // Skip autosave if disabled
+    if (!title) return;
+    if (searchResults.length > 0 && selectedVideoIds.length === 0) return;
+    
+    const timer = setTimeout(() => {
+      setIsSaving(true);
+      saveMutation.mutate({ publish: isPublished, selectedIds: selectedVideoIds });
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, [title, description, subject, topic, learningOutcome, gradeLevel, ageRange, videoCount, selectedVideoIds, viewingInstructions, guidingQuestions, isPublic, autosave, isPublished]);
+  
+  const handleManualSave = () => {
+    if (!title) {
+      toast({
+        title: "Missing title",
+        description: "Please provide a title for this content",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (searchResults.length > 0 && selectedVideoIds.length === 0) {
+      toast({
+        title: "No videos selected",
+        description: "Please select at least one video to save",
+        variant: "destructive",
+      });
+      return;
+    }
+    setIsSaving(true);
+    saveMutation.mutate({ publish: isPublished, selectedIds: selectedVideoIds });
+  };
+
   const searchMutation = useMutation({
     mutationFn: async () => {
       const response = await apiRequest("POST", "/api/youtube/search", {
@@ -203,26 +238,6 @@ export default function VideoFinderCreator() {
     searchMutation.mutate();
   };
 
-  const handleSave = () => {
-    if (!title) {
-      toast({
-        title: "Missing title",
-        description: "Please provide a title for this content",
-        variant: "destructive",
-      });
-      return;
-    }
-    if (searchResults.length > 0 && selectedVideoIds.length === 0) {
-      toast({
-        title: "No videos selected",
-        description: "Please select at least one video to save",
-        variant: "destructive",
-      });
-      return;
-    }
-    setIsSaving(true);
-    saveMutation.mutate({ publish: isPublished, selectedIds: selectedVideoIds });
-  };
 
   const handlePublish = async () => {
     if (!title) {
@@ -330,14 +345,17 @@ export default function VideoFinderCreator() {
               </h1>
             </div>
             <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                onClick={handleSave}
-                disabled={isSaving || !title}
-                data-testid="button-save"
-              >
-                Save
-              </Button>
+              {!autosave && (
+                <Button
+                  variant="default"
+                  onClick={handleManualSave}
+                  disabled={isSaving || !title}
+                  data-testid="button-save"
+                >
+                  <Save className="h-4 w-4 mr-2" />
+                  {isSaving ? "Saving..." : "Save"}
+                </Button>
+              )}
               {contentId && isPublished && (
                 <ShareToClassroomDialog
                   contentTitle={title}
@@ -420,6 +438,32 @@ export default function VideoFinderCreator() {
                       }
                     }}
                     data-testid="switch-public"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Settings */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Settings className="h-5 w-5" />
+                  Settings
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="autosave" className="text-base">Autosave</Label>
+                    <p className="text-xs text-muted-foreground">
+                      Automatically save changes after 2 seconds
+                    </p>
+                  </div>
+                  <Switch
+                    id="autosave"
+                    checked={autosave}
+                    onCheckedChange={setAutosave}
+                    data-testid="switch-autosave"
                   />
                 </div>
               </CardContent>
