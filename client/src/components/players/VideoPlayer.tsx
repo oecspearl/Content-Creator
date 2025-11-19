@@ -195,8 +195,12 @@ export function VideoPlayer({ data, contentId }: VideoPlayerProps) {
   };
 
   const checkForHotspots = (time: number) => {
+    // Don't check if there's already a hotspot showing
+    if (currentHotspot) return;
+    
+    // Find a hotspot that matches the current time and hasn't been completed
     const hotspot = data.hotspots.find(
-      (h) => Math.abs(h.timestamp - time) < 0.5 && !completedHotspots.has(h.id) && !currentHotspot
+      (h) => Math.abs(h.timestamp - time) < 0.5 && !completedHotspots.has(h.id)
     );
 
     if (hotspot) {
@@ -255,24 +259,45 @@ export function VideoPlayer({ data, contentId }: VideoPlayerProps) {
   const handleContinue = () => {
     if (!currentHotspot) return;
     
+    // Capture hotspot data before clearing state
+    const hotspotId = currentHotspot.id;
+    const hotspotTimestamp = currentHotspot.timestamp;
+    const hotspotType = currentHotspot.type;
+    const hotspotCorrectAnswer = currentHotspot.correctAnswer;
+    
     // Log hotspot interaction
     logInteraction("hotspot_completed", {
-      hotspotId: currentHotspot.id,
-      hotspotType: currentHotspot.type,
-      timestamp: currentHotspot.timestamp,
-      ...(currentHotspot.type === "question" && {
+      hotspotId: hotspotId,
+      hotspotType: hotspotType,
+      timestamp: hotspotTimestamp,
+      ...(hotspotType === "question" && {
         selectedAnswer,
-        isCorrect: currentHotspot.correctAnswer === selectedAnswer,
+        isCorrect: hotspotCorrectAnswer === selectedAnswer,
       }),
     });
     
-    setCompletedHotspots(prev => new Set(Array.from(prev).concat(currentHotspot.id)));
+    // Mark hotspot as completed BEFORE clearing currentHotspot
+    setCompletedHotspots(prev => {
+      const newSet = new Set(prev);
+      newSet.add(hotspotId);
+      return newSet;
+    });
+    
+    // Clear current hotspot and reset state
     setCurrentHotspot(null);
     setSelectedAnswer(null);
     setShowFeedback(false);
-    if (playerRef.current) {
-      playerRef.current.playVideo();
-    }
+    
+    // Small delay before resuming to ensure state updates are processed
+    // This prevents the hotspot from being re-triggered immediately
+    setTimeout(() => {
+      if (playerRef.current) {
+        // Seek slightly past the hotspot timestamp to avoid re-triggering
+        const seekTime = hotspotTimestamp + 1;
+        playerRef.current.seekTo(seekTime, true);
+        playerRef.current.playVideo();
+      }
+    }, 100);
   };
 
   const formatTime = (seconds: number) => {
