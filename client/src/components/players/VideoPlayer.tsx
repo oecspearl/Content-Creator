@@ -274,9 +274,9 @@ export function VideoPlayer({ data, contentId }: VideoPlayerProps) {
     
     if (currentQuizIndex < currentHotspot.questions.length - 1) {
       setCurrentQuizIndex(currentQuizIndex + 1);
-      setQuizShowFeedback(false);
+      // Don't reset feedback - keep it shown if quiz was already submitted
     } else {
-      // Quiz complete, show results
+      // Quiz complete, show results for all questions
       setQuizShowFeedback(true);
     }
   };
@@ -284,7 +284,7 @@ export function VideoPlayer({ data, contentId }: VideoPlayerProps) {
   const handleQuizPrevious = () => {
     if (currentQuizIndex > 0) {
       setCurrentQuizIndex(currentQuizIndex - 1);
-      setQuizShowFeedback(false);
+      // Don't reset feedback - keep it shown if quiz was already submitted
     }
   };
 
@@ -415,6 +415,13 @@ export function VideoPlayer({ data, contentId }: VideoPlayerProps) {
                           </span>
                         )}
                       </div>
+                      {quizShowFeedback && (
+                        <div className="p-3 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200 dark:border-blue-800">
+                          <p className="text-sm text-blue-900 dark:text-blue-100">
+                            ✓ Quiz submitted! You can navigate between questions to review feedback on all answers.
+                          </p>
+                        </div>
+                      )}
                       
                       {(() => {
                         const question = currentHotspot.questions[currentQuizIndex];
@@ -596,6 +603,15 @@ export function VideoPlayer({ data, contentId }: VideoPlayerProps) {
                             Next
                           </Button>
                         ) : null}
+                        {quizShowFeedback && currentQuizIndex === currentHotspot.questions.length - 1 && (
+                          <Button
+                            variant="outline"
+                            onClick={() => setCurrentQuizIndex(0)}
+                            data-testid="button-review-all"
+                          >
+                            Review All Questions
+                          </Button>
+                        )}
                       </div>
                     )}
                     <div className="flex gap-2 ml-auto">
