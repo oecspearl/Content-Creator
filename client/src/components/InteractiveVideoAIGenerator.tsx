@@ -20,6 +20,10 @@ type VideoResult = {
   channelTitle: string;
   publishedAt: string;
   duration: string;
+  tags?: string[];
+  categoryId?: string;
+  viewCount?: number;
+  likeCount?: number;
 };
 
 type InteractiveVideoAIGeneratorProps = {
@@ -118,6 +122,8 @@ export function InteractiveVideoAIGenerator({
         videoTitle: selectedVideo.title,
         videoDescription: selectedVideo.description,
         videoDuration: selectedVideo.duration,
+        videoTags: (selectedVideo as any).tags || [],
+        channelTitle: selectedVideo.channelTitle,
       });
 
       const data = await response.json();

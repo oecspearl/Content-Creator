@@ -110,6 +110,8 @@ export async function generateVideoHotspots(
     videoTitle?: string;
     videoDescription?: string;
     videoDuration?: string;
+    videoTags?: string[];
+    channelTitle?: string;
   }
 ): Promise<VideoHotspot[]> {
   // Parse duration to get total seconds
@@ -124,39 +126,143 @@ export async function generateVideoHotspots(
     }
   }
 
-  const videoInfo = videoMetadata
-    ? `\n\nVideo Information:
-- Title: ${videoMetadata.videoTitle || "Not provided"}
-- Description: ${videoMetadata.videoDescription?.substring(0, 500) || "Not provided"}
-- Duration: ${Math.floor(totalSeconds / 60)} minutes ${totalSeconds % 60} seconds
-Use this information to create relevant, context-aware hotspots that align with the actual video content.`
+  // Calculate intelligent timestamp distribution
+  const calculateTimestamps = (count: number, duration: number): number[] => {
+    if (count <= 0 || duration <= 0) return [];
+    
+    const timestamps: number[] = [];
+    const segments = count;
+    
+    // Use a distribution that focuses on key learning moments:
+    // - Introduction (first 10-15%)
+    // - Main content sections (distributed throughout middle 60-70%)
+    // - Summary/Conclusion (last 10-15%)
+    
+    if (count === 1) {
+      timestamps.push(Math.floor(duration * 0.5)); // Middle of video
+    } else if (count === 2) {
+      timestamps.push(Math.floor(duration * 0.3)); // Early
+      timestamps.push(Math.floor(duration * 0.7)); // Late
+    } else if (count === 3) {
+      timestamps.push(Math.floor(duration * 0.15)); // Introduction
+      timestamps.push(Math.floor(duration * 0.5)); // Middle
+      timestamps.push(Math.floor(duration * 0.85)); // Conclusion
+    } else {
+      // For 4+ hotspots, distribute intelligently
+      const introEnd = Math.floor(duration * 0.15);
+      const conclusionStart = Math.floor(duration * 0.85);
+      const middleStart = introEnd;
+      const middleEnd = conclusionStart;
+      const middleRange = middleEnd - middleStart;
+      
+      // First hotspot in introduction
+      timestamps.push(Math.floor(duration * 0.1));
+      
+      // Distribute remaining hotspots in middle section
+      const middleHotspots = count - 2; // -2 for intro and conclusion
+      for (let i = 1; i <= middleHotspots; i++) {
+        const position = middleStart + (middleRange * i / (middleHotspots + 1));
+        timestamps.push(Math.floor(position));
+      }
+      
+      // Last hotspot near conclusion
+      timestamps.push(Math.floor(duration * 0.9));
+    }
+    
+    return timestamps.sort((a, b) => a - b);
+  };
+
+  const suggestedTimestamps = calculateTimestamps(request.numberOfItems, totalSeconds);
+  const timestampGuidance = suggestedTimestamps.length > 0
+    ? `\nSuggested timestamp distribution (in seconds): ${suggestedTimestamps.join(", ")}. Use these as a guide, but adjust based on the actual video content structure.`
     : "";
 
-  const prompt = `Generate ${request.numberOfItems} interactive hotspots for a video about "${request.topic}" at ${request.difficulty} difficulty level${request.gradeLevel ? ` for ${request.gradeLevel}` : ""}.
+  // Extract key information from description
+  const description = videoMetadata?.videoDescription || "";
+  const descriptionPreview = description.length > 1000 
+    ? description.substring(0, 1000) + "... [truncated]"
+    : description;
 
-Requirements:
-- Mix of question, information, and navigation hotspots
-- Each hotspot should have a timestamp (in seconds), title, and content
-- Question hotspots should include options and correct answer
-- Distribute timestamps evenly throughout the video (total duration: ${Math.floor(totalSeconds / 60)} minutes)
-- Base questions and information on the actual video content when available
-- Ensure timestamps are within the video duration (0 to ${totalSeconds} seconds)
-${request.additionalContext ? `\nAdditional context: ${request.additionalContext}` : ""}${videoInfo}
+  const tagsInfo = videoMetadata?.videoTags && videoMetadata.videoTags.length > 0
+    ? `\n- Tags: ${videoMetadata.videoTags.slice(0, 10).join(", ")}`
+    : "";
+
+  const channelInfo = videoMetadata?.channelTitle
+    ? `\n- Channel: ${videoMetadata.channelTitle}`
+    : "";
+
+  const videoInfo = videoMetadata
+    ? `\n\nVIDEO ANALYSIS:
+- Title: ${videoMetadata.videoTitle || "Not provided"}${channelInfo}
+- Duration: ${Math.floor(totalSeconds / 60)} minutes ${totalSeconds % 60} seconds
+- Description: ${descriptionPreview || "Not provided"}${tagsInfo}
+
+ANALYSIS INSTRUCTIONS:
+1. Carefully read the video title and description to understand the main topics and learning objectives.
+2. Identify key concepts, definitions, examples, or important points mentioned in the description.
+3. Use the tags (if available) to understand the video's focus areas.
+4. Create hotspots that:
+   - Test understanding of main concepts mentioned in the description
+   - Provide additional context or information about key topics
+   - Guide learners through the video's learning progression
+   - Align with the educational topic: "${request.topic}"
+5. Place hotspots at logical points where concepts are likely to be introduced or explained.
+6. Ensure questions are answerable based on the video content described.`
+    : "";
+
+  const prompt = `You are an expert educational content creator. Generate ${request.numberOfItems} high-quality interactive hotspots for an educational video.
+
+CONTEXT:
+- Topic: "${request.topic}"
+- Difficulty Level: ${request.difficulty}${request.gradeLevel ? `\n- Grade Level: ${request.gradeLevel}` : ""}
+- Video Duration: ${Math.floor(totalSeconds / 60)} minutes ${totalSeconds % 60} seconds${timestampGuidance}
+${request.additionalContext ? `\n- Additional Requirements: ${request.additionalContext}` : ""}${videoInfo}
+
+HOTSPOT REQUIREMENTS:
+1. **Type Distribution**: 
+   - ${Math.ceil(request.numberOfItems * 0.6)}-${Math.floor(request.numberOfItems * 0.7)} question hotspots (test understanding)
+   - ${Math.floor(request.numberOfItems * 0.2)}-${Math.ceil(request.numberOfItems * 0.3)} information hotspots (provide context)
+   - ${Math.max(1, Math.floor(request.numberOfItems * 0.1))} navigation hotspot (if applicable)
+
+2. **Question Hotspots**:
+   - Must have 3-4 multiple-choice options
+   - Correct answer should be clearly identifiable from the video content
+   - Questions should test understanding of key concepts, not trivial details
+   - Make questions age-appropriate for ${request.gradeLevel || "the specified grade level"}
+
+3. **Information Hotspots**:
+   - Provide relevant context, definitions, or additional information
+   - Should enhance understanding of the video content
+   - Keep concise but informative
+
+4. **Timestamp Placement**:
+   - Place hotspots at natural learning moments (introduction of concepts, examples, summaries)
+   - Use the suggested timestamps as a guide, but adjust based on content flow
+   - Ensure all timestamps are within 0 to ${totalSeconds} seconds
+   - Space hotspots appropriately to avoid clustering
+
+5. **Content Quality**:
+   - All content must be directly related to the video's topic and description
+   - Questions should be answerable based on what the video likely covers
+   - Use clear, age-appropriate language
+   - Make content engaging and educational
 
 Respond in JSON format:
 {
   "hotspots": [
     {
-      "id": "unique-id",
+      "id": "unique-id-1",
       "timestamp": 60,
       "type": "question" | "info" | "navigation",
-      "title": "hotspot title",
-      "content": "description or question",
-      "options": ["option1", "option2", "option3"], // only for questions
-      "correctAnswer": 0 // only for questions
+      "title": "Concise, descriptive title (max 50 chars)",
+      "content": "Question text or information description",
+      "options": ["option1", "option2", "option3", "option4"], // only for questions (3-4 options)
+      "correctAnswer": 0 // only for questions (0-based index)
     }
   ]
-}`;
+}
+
+IMPORTANT: Ensure all timestamps are valid (0 to ${totalSeconds} seconds) and hotspots are distributed throughout the video duration.`;
 
   const response = await openai.chat.completions.create({
     model: "gpt-4o",

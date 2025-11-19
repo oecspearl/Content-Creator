@@ -1,7 +1,7 @@
 import { google } from 'googleapis';
 
 // Get YouTube client using Google API Key
-function getYouTubeClient() {
+export function getYouTubeClient() {
   // Accept both YOUTUBE_API_KEY and GOOGLE_API_KEY for flexibility
   const apiKey = process.env.YOUTUBE_API_KEY || process.env.GOOGLE_API_KEY;
   
@@ -52,9 +52,9 @@ export async function searchEducationalVideos(params: YouTubeSearchParams) {
       .map(item => item.id?.videoId)
       .filter((id): id is string => !!id);
 
-    // Fetch video details including duration
+    // Fetch video details including duration, tags, category, and statistics
     const videosResponse = await youtube.videos.list({
-      part: ['contentDetails', 'snippet'],
+      part: ['contentDetails', 'snippet', 'statistics'],
       id: videoIds,
     });
 
@@ -68,6 +68,10 @@ export async function searchEducationalVideos(params: YouTubeSearchParams) {
       channelTitle: video.snippet?.channelTitle || '',
       publishedAt: video.snippet?.publishedAt || '',
       duration: video.contentDetails?.duration || '',
+      tags: video.snippet?.tags || [],
+      categoryId: video.snippet?.categoryId || '',
+      viewCount: video.statistics?.viewCount ? parseInt(video.statistics.viewCount) : 0,
+      likeCount: video.statistics?.likeCount ? parseInt(video.statistics.likeCount) : 0,
     })) || [];
 
     return results;

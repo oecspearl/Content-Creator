@@ -1057,11 +1057,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
         videoTitle,
         videoDescription,
         videoDuration,
+        videoTags,
+        channelTitle,
       } = req.body;
 
       if (!topic || !videoId) {
         clearTimeout(timeout);
         return res.status(400).json({ message: "Topic and videoId are required" });
+      }
+
+      // If video metadata is incomplete, try to fetch more details from YouTube API
+      let enhancedMetadata = {
+        videoTitle,
+        videoDescription,
+        videoDuration,
+        videoTags: videoTags || [],
+        channelTitle: channelTitle || "",
+      };
+
+      // Fetch enhanced metadata if we have basic info but missing tags/channel
+      if (videoId && (!videoTags || videoTags.length === 0 || !channelTitle)) {
+        try {
+          const { getYouTubeClient } = await import('./youtube');
+          const youtube = getYouTubeClient();
+          
+          const videoResponse = await youtube.videos.list({
+            part: ['snippet'],
+            id: [videoId],
+          });
+          
+          if (videoResponse.data.items && videoResponse.data.items.length > 0) {
+            const video = videoResponse.data.items[0];
+            enhancedMetadata = {
+              videoTitle: video.snippet?.title || videoTitle,
+              videoDescription: video.snippet?.description || videoDescription,
+              videoDuration: videoDuration,
+              videoTags: video.snippet?.tags || videoTags || [],
+              channelTitle: video.snippet?.channelTitle || channelTitle || "",
+            };
+          }
+        } catch (error) {
+          console.warn("Could not fetch enhanced video metadata:", error);
+          // Continue with provided metadata
+        }
       }
 
       const request = {
@@ -1072,13 +1110,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         additionalContext: additionalContext || "",
       };
 
-      const videoMetadata = {
-        videoTitle,
-        videoDescription,
-        videoDuration,
-      };
-
-      const hotspots = await generateVideoHotspots(request, videoMetadata);
+      const hotspots = await generateVideoHotspots(request, enhancedMetadata);
       const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
 
       clearTimeout(timeout);
