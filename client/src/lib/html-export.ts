@@ -524,6 +524,7 @@ export function generateHTMLExport(
       line-height: 1.6;
       word-wrap: break-word;
       overflow-wrap: break-word;
+      color: #1a1a1a;
     }
     .flashcard-hint {
       font-size: 0.875rem;
@@ -1810,6 +1811,9 @@ function generateFlashcardScript(data: FlashcardData): string {
       if (card.front) {
         frontHtml += \`<p>\${escapeHtml(card.front)}</p>\`;
       }
+      if (card.category) {
+        frontHtml += \`<div style="display: inline-block; padding: 0.25rem 0.75rem; border-radius: 9999px; background: rgba(74, 144, 226, 0.1); color: #4a90e2; font-size: 0.75rem; font-weight: 500; margin-top: 0.5rem;">\${escapeHtml(card.category)}</div>\`;
+      }
       frontContent.innerHTML = frontHtml;
       
       // Update back
@@ -1822,6 +1826,9 @@ function generateFlashcardScript(data: FlashcardData): string {
       }
       if (card.back) {
         backHtml += \`<p>\${escapeHtml(card.back)}</p>\`;
+      }
+      if (card.category) {
+        backHtml += \`<div style="display: inline-block; padding: 0.25rem 0.75rem; border-radius: 9999px; background: rgba(74, 144, 226, 0.1); color: #4a90e2; font-size: 0.75rem; font-weight: 500; margin-top: 0.5rem;">\${escapeHtml(card.category)}</div>\`;
       }
       backContent.innerHTML = backHtml;
       
