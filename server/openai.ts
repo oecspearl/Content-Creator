@@ -104,15 +104,44 @@ Respond in JSON format:
   }
 }
 
-export async function generateVideoHotspots(request: AIGenerationRequest): Promise<VideoHotspot[]> {
+export async function generateVideoHotspots(
+  request: AIGenerationRequest,
+  videoMetadata?: {
+    videoTitle?: string;
+    videoDescription?: string;
+    videoDuration?: string;
+  }
+): Promise<VideoHotspot[]> {
+  // Parse duration to get total seconds
+  let totalSeconds = 900; // Default to 15 minutes
+  if (videoMetadata?.videoDuration) {
+    const match = videoMetadata.videoDuration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+    if (match) {
+      const hours = parseInt(match[1] || "0");
+      const minutes = parseInt(match[2] || "0");
+      const seconds = parseInt(match[3] || "0");
+      totalSeconds = hours * 3600 + minutes * 60 + seconds;
+    }
+  }
+
+  const videoInfo = videoMetadata
+    ? `\n\nVideo Information:
+- Title: ${videoMetadata.videoTitle || "Not provided"}
+- Description: ${videoMetadata.videoDescription?.substring(0, 500) || "Not provided"}
+- Duration: ${Math.floor(totalSeconds / 60)} minutes ${totalSeconds % 60} seconds
+Use this information to create relevant, context-aware hotspots that align with the actual video content.`
+    : "";
+
   const prompt = `Generate ${request.numberOfItems} interactive hotspots for a video about "${request.topic}" at ${request.difficulty} difficulty level${request.gradeLevel ? ` for ${request.gradeLevel}` : ""}.
 
 Requirements:
 - Mix of question, information, and navigation hotspots
 - Each hotspot should have a timestamp (in seconds), title, and content
 - Question hotspots should include options and correct answer
-- Distribute timestamps evenly throughout a typical educational video (assume 10-15 minutes)
-${request.additionalContext ? `\nAdditional context: ${request.additionalContext}` : ""}
+- Distribute timestamps evenly throughout the video (total duration: ${Math.floor(totalSeconds / 60)} minutes)
+- Base questions and information on the actual video content when available
+- Ensure timestamps are within the video duration (0 to ${totalSeconds} seconds)
+${request.additionalContext ? `\nAdditional context: ${request.additionalContext}` : ""}${videoInfo}
 
 Respond in JSON format:
 {
@@ -132,7 +161,7 @@ Respond in JSON format:
   const response = await openai.chat.completions.create({
     model: "gpt-4o",
     messages: [
-      { role: "system", content: "You are an expert educator creating interactive video content. Always respond with valid JSON." },
+      { role: "system", content: "You are an expert educator creating interactive video content. Always respond with valid JSON. Ensure all timestamps are within the video duration." },
       { role: "user", content: prompt },
     ],
     response_format: { type: "json_object" },
@@ -144,7 +173,13 @@ Respond in JSON format:
 
   try {
     const result = JSON.parse(response.choices[0].message.content || "{}");
-    return result.hotspots || [];
+    const hotspots = result.hotspots || [];
+    
+    // Validate and clamp timestamps to video duration
+    return hotspots.map((hotspot: VideoHotspot) => ({
+      ...hotspot,
+      timestamp: Math.min(Math.max(0, hotspot.timestamp), totalSeconds),
+    }));
   } catch (parseError) {
     console.error("Failed to parse OpenAI response for video hotspots:", parseError);
     throw new Error("Received invalid response from AI. Please try again.");

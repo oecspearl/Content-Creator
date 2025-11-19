@@ -16,6 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { youtubeLoader } from "@/lib/youtube-loader";
 import { AIGenerationModal } from "@/components/AIGenerationModal";
+import { InteractiveVideoAIGenerator } from "@/components/InteractiveVideoAIGenerator";
 import { 
   ArrowLeft, 
   Sparkles, 
@@ -50,6 +51,7 @@ export default function InteractiveVideoCreator() {
   const [isPublic, setIsPublic] = useState(false);
   const [autosave, setAutosave] = useState(true);
   const [showAIModal, setShowAIModal] = useState(false);
+  const [showEnhancedAIModal, setShowEnhancedAIModal] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [videoDuration, setVideoDuration] = useState(0);
@@ -170,6 +172,11 @@ export default function InteractiveVideoCreator() {
     }
   };
 
+  const handleEnhancedAIGenerated = (videoUrl: string, hotspots: VideoHotspot[]) => {
+    setVideoUrl(videoUrl);
+    setHotspots(hotspots);
+  };
+
   const handlePublish = async () => {
     setIsPublished(!isPublished);
     await saveMutation.mutateAsync(!isPublished);
@@ -272,9 +279,13 @@ export default function InteractiveVideoCreator() {
                 {isSaving ? "Saving..." : "Save"}
               </Button>
             )}
+            <Button variant="outline" size="sm" onClick={() => setShowEnhancedAIModal(true)} data-testid="button-ai-generate-enhanced">
+              <Sparkles className="h-4 w-4 mr-1" />
+              AI Generate (YouTube Search)
+            </Button>
             <Button variant="outline" size="sm" onClick={() => setShowAIModal(true)} data-testid="button-ai-generate">
               <Sparkles className="h-4 w-4 mr-1" />
-              AI Generate
+              AI Generate Hotspots
             </Button>
             {contentId && isPublished && (
               <ShareToClassroomDialog
@@ -600,6 +611,14 @@ export default function InteractiveVideoCreator() {
         onOpenChange={setShowAIModal}
         contentType="interactive-video"
         onGenerated={handleAIGenerated}
+      />
+      <InteractiveVideoAIGenerator
+        open={showEnhancedAIModal}
+        onOpenChange={setShowEnhancedAIModal}
+        onGenerated={handleEnhancedAIGenerated}
+        subject={subject}
+        gradeLevel={gradeLevel}
+        ageRange={ageRange}
       />
     </div>
   );
