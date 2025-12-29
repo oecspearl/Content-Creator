@@ -31,9 +31,49 @@ export function QuizPlayer({ data, contentId }: QuizPlayerProps) {
   const pendingMilestoneRef = useRef<number | null>(null);
   const pendingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const previousAuthRef = useRef<boolean>(isAuthenticated);
+  const initializedOrderingQuestionsRef = useRef<Set<number>>(new Set());
 
   const currentQuestion = data.questions[currentIndex];
   const progressPercentage = ((currentIndex + 1) / data.questions.length) * 100;
+
+  // Shuffle array function (Fisher-Yates algorithm)
+  const shuffleArray = <T,>(array: T[]): T[] => {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+  };
+
+  // Initialize ordering questions with shuffled items if not already answered
+  useEffect(() => {
+    // Reset initialized questions when moving to a new question
+    if (!initializedOrderingQuestionsRef.current.has(currentIndex)) {
+      if (currentQuestion.type === "ordering" && currentQuestion.items) {
+        const originalOrder = currentQuestion.items;
+        const correctOrder = (currentQuestion.correctAnswer as string[]) || originalOrder;
+        
+        // Shuffle until we get an order different from the correct order
+        let shuffledOrder = shuffleArray(originalOrder);
+        let attempts = 0;
+        while (JSON.stringify(shuffledOrder) === JSON.stringify(correctOrder) && attempts < 10) {
+          shuffledOrder = shuffleArray(originalOrder);
+          attempts++;
+        }
+        
+        // Set the shuffled order as the initial answer
+        setAnswers(prev => {
+          const newAnswers = [...prev];
+          newAnswers[currentIndex] = shuffledOrder;
+          return newAnswers;
+        });
+        
+        // Mark this question as initialized
+        initializedOrderingQuestionsRef.current.add(currentIndex);
+      }
+    }
+  }, [currentIndex, currentQuestion.type, currentQuestion.items, currentQuestion.correctAnswer]);
 
   // Reset initialization when auth changes from false → true
   useEffect(() => {
@@ -108,11 +148,9 @@ export function QuizPlayer({ data, contentId }: QuizPlayerProps) {
       if (!answerArray || answerArray.length !== question.items?.length) return false;
       // Check that all items are present and non-empty
       if (!answerArray.every(item => item.trim())) return false;
-      // Check that the order is different from the initial order (user has actually reordered)
-      // If items are the same as the original, it means user hasn't interacted yet
-      const originalOrder = question.items || [];
-      const hasChanged = JSON.stringify(answerArray) !== JSON.stringify(originalOrder);
-      return hasChanged;
+      // For ordering questions, any answer array with all items means it's complete
+      // (The items are already shuffled on initialization, so we don't need to check against original)
+      return true;
     }
     
     if (question.type === "drag-drop") {
@@ -298,6 +336,7 @@ export function QuizPlayer({ data, contentId }: QuizPlayerProps) {
     setAnswers(new Array(data.questions.length).fill(null));
     setShowResults(false);
     setShowExplanation(false);
+    initializedOrderingQuestionsRef.current.clear(); // Reset initialized questions
     logInteraction("quiz_restarted");
   };
 
@@ -536,13 +575,36 @@ export function QuizPlayer({ data, contentId }: QuizPlayerProps) {
           {currentQuestion.type === "drag-drop" && currentQuestion.zones && currentQuestion.dragItems && (
             <div className="space-y-4">
               <p className="text-sm text-muted-foreground">
-                Drag items to their correct zones
+                Drag items to their correct zones. You can move items back to the "Items to Drag" area if needed.
               </p>
               <div className="grid grid-cols-2 gap-4">
                 {/* Drag Items */}
                 <div>
                   <h4 className="text-sm font-medium mb-2">Items to Drag</h4>
-                  <div className="space-y-2 min-h-[200px] p-3 border rounded-lg bg-muted/50">
+                  <div
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      if (!showExplanation) {
+                        e.currentTarget.classList.add("border-primary", "bg-primary/5");
+                      }
+                    }}
+                    onDragLeave={(e) => {
+                      e.currentTarget.classList.remove("border-primary", "bg-primary/5");
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      e.currentTarget.classList.remove("border-primary", "bg-primary/5");
+                      if (!draggedItem || showExplanation) return;
+                      
+                      const placements = (answers[currentIndex] as Record<string, string>) || {};
+                      const newPlacements = { ...placements };
+                      // Remove the item from placements (move it back to drag area)
+                      delete newPlacements[draggedItem];
+                      handleAnswer(newPlacements);
+                      setDraggedItem(null);
+                    }}
+                    className="space-y-2 min-h-[200px] p-3 border-2 border-dashed rounded-lg bg-muted/50"
+                  >
                     {currentQuestion.dragItems
                       .filter((item: any) => {
                         const placements = (answers[currentIndex] as Record<string, string>) || {};
@@ -560,6 +622,14 @@ export function QuizPlayer({ data, contentId }: QuizPlayerProps) {
                           {item.content}
                         </div>
                       ))}
+                    {currentQuestion.dragItems.filter((item: any) => {
+                      const placements = (answers[currentIndex] as Record<string, string>) || {};
+                      return !placements[item.id];
+                    }).length === 0 && (
+                      <p className="text-sm text-muted-foreground text-center py-4">
+                        All items have been placed. Drag items from zones to move them back.
+                      </p>
+                    )}
                   </div>
                 </div>
                 
@@ -615,15 +685,22 @@ export function QuizPlayer({ data, contentId }: QuizPlayerProps) {
                               return (
                                 <div
                                   key={item.id}
-                                  className={`p-2 bg-background border rounded text-sm ${
+                                  draggable={!showExplanation}
+                                  onDragStart={() => setDraggedItem(item.id)}
+                                  className={`p-2 bg-background border rounded text-sm cursor-move hover:bg-muted ${
+                                    showExplanation ? "cursor-default" : ""
+                                  } ${
                                     isCorrect === true ? "border-green-600 bg-green-50 dark:bg-green-950" :
                                     isCorrect === false ? "border-destructive bg-destructive/10" : ""
                                   }`}
                                 >
                                   <div className="flex items-center justify-between">
                                     <span>{item.content}</span>
-                                    {isCorrect === true && <CheckCircle2 className="h-4 w-4 text-green-600" />}
-                                    {isCorrect === false && <XCircle className="h-4 w-4 text-destructive" />}
+                                    <div className="flex items-center gap-2">
+                                      {isCorrect === true && <CheckCircle2 className="h-4 w-4 text-green-600" />}
+                                      {isCorrect === false && <XCircle className="h-4 w-4 text-destructive" />}
+                                      {!showExplanation && <GripVertical className="h-4 w-4 text-muted-foreground" />}
+                                    </div>
                                   </div>
                                 </div>
                               );
