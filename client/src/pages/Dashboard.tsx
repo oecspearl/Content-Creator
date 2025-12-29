@@ -239,7 +239,7 @@ export default function Dashboard() {
   }, {} as Record<ContentType, H5pContent[]>);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen" style={{ backgroundColor: '#E5EDD3' }}>
       {/* Skip to main content for keyboard navigation */}
       <a href="#main-content" className="skip-to-content">
         Skip to main content

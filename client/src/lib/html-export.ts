@@ -870,6 +870,148 @@ export function generateHTMLExport(
       border-color: #dc3545;
       background: #f8d7da;
     }
+    .quiz-ordering {
+      margin: 1.5rem 0;
+    }
+    .ordering-items {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    .ordering-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 1rem;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      background: #fff;
+      cursor: move;
+      transition: all 0.2s;
+      font-size: 1.1rem;
+    }
+    .ordering-item:hover {
+      background: #f0f0f0;
+      border-color: #4a90e2;
+    }
+    .ordering-item.dragging {
+      opacity: 0.5;
+    }
+    .ordering-handle {
+      font-size: 1.25rem;
+      color: #999;
+      cursor: grab;
+      user-select: none;
+    }
+    .ordering-handle:active {
+      cursor: grabbing;
+    }
+    .ordering-content {
+      flex: 1;
+    }
+    .ordering-position {
+      font-size: 0.875rem;
+      color: #666;
+      font-weight: 600;
+    }
+    .quiz-drag-drop {
+      margin: 1.5rem 0;
+    }
+    .quiz-drag-drop .drag-drop-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      margin: 1.5rem 0;
+    }
+    .quiz-drag-drop .drag-items-area,
+    .quiz-drag-drop .drop-zones-area {
+      padding: 1.5rem;
+      background: #f9f9f9;
+      border-radius: 8px;
+    }
+    .quiz-drag-drop .drag-items-area h4,
+    .quiz-drag-drop .drop-zones-area h4 {
+      margin-bottom: 1rem;
+      font-size: 1.1rem;
+    }
+    .quiz-drag-drop .drag-items-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      min-height: 200px;
+    }
+    .quiz-drag-drop .drag-item {
+      padding: 1rem;
+      background: #fff;
+      border: 2px solid #4a90e2;
+      border-radius: 8px;
+      cursor: move;
+      font-size: 1.1rem;
+      transition: all 0.2s;
+      user-select: none;
+    }
+    .quiz-drag-drop .drag-item:hover {
+      background: #e7f3ff;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .quiz-drag-drop .drag-item.dragging {
+      opacity: 0.5;
+    }
+    .quiz-drag-drop .drag-item.placed {
+      opacity: 0.6;
+      border-color: #999;
+    }
+    .quiz-drag-drop .drop-zones-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      min-height: 300px;
+    }
+    .quiz-drag-drop .drop-zone {
+      min-height: 150px;
+      padding: 1.5rem;
+      background: #fff;
+      border: 3px dashed #ddd;
+      border-radius: 8px;
+      transition: all 0.2s;
+    }
+    .quiz-drag-drop .drop-zone.drag-over {
+      border-color: #4a90e2;
+      background: #e7f3ff;
+    }
+    .quiz-drag-drop .drop-zone.correct {
+      border-color: #28a745;
+      background: #d4edda;
+    }
+    .quiz-drag-drop .drop-zone.incorrect {
+      border-color: #dc3545;
+      background: #f8d7da;
+    }
+    .quiz-drag-drop .zone-label {
+      font-weight: bold;
+      font-size: 1.1rem;
+      margin-bottom: 1rem;
+      color: #4a90e2;
+    }
+    .quiz-drag-drop .zone-items {
+      min-height: 100px;
+    }
+    .quiz-drag-drop .zone-item {
+      padding: 0.75rem;
+      margin: 0.5rem 0;
+      background: #f0f0f0;
+      border-radius: 6px;
+      font-size: 1rem;
+    }
+    .quiz-drag-drop .zone-item.correct {
+      background: #d4edda;
+      border-left: 4px solid #28a745;
+    }
+    .quiz-drag-drop .zone-item.incorrect {
+      background: #f8d7da;
+      border-left: 4px solid #dc3545;
+    }
     .question-indicator {
       font-weight: bold;
       font-size: 1.1rem;
@@ -1605,7 +1747,51 @@ function generateQuizHTML(data: QuizData): string {
       questionsHTML += `</div>`;
     } else if (question.type === "fill-blank") {
       questionsHTML += `<div class="quiz-fill-blank">`;
-      questionsHTML += `<input type="text" class="quiz-fill-input" data-correct="${escapeHtml(String(question.correctAnswer))}" placeholder="Enter your answer..." id="${questionId}-input">`;
+      const correctAnswer = String(question.correctAnswer);
+      const acceptableAnswers = question.acceptableAnswers ? JSON.stringify(question.acceptableAnswers) : JSON.stringify([correctAnswer]);
+      const caseSensitive = question.caseSensitive || false;
+      questionsHTML += `<input type="text" class="quiz-fill-input" data-correct="${escapeHtml(correctAnswer)}" data-acceptable="${escapeHtml(acceptableAnswers)}" data-case-sensitive="${caseSensitive}" placeholder="Enter your answer..." id="${questionId}-input">`;
+      questionsHTML += `</div>`;
+    } else if (question.type === "ordering" && question.items) {
+      questionsHTML += `<div class="quiz-ordering" id="${questionId}-ordering">`;
+      questionsHTML += `<p class="text-sm text-muted-foreground mb-3">Drag items to arrange them in the correct order</p>`;
+      questionsHTML += `<div class="ordering-items" id="${questionId}-items">`;
+      const currentOrder = question.items || [];
+      currentOrder.forEach((item, itemIndex) => {
+        questionsHTML += `<div class="ordering-item" data-item-index="${itemIndex}" draggable="true" id="${questionId}-item-${itemIndex}">`;
+        questionsHTML += `<span class="ordering-handle">☰</span>`;
+        questionsHTML += `<span class="ordering-content">${escapeHtml(item)}</span>`;
+        questionsHTML += `<span class="ordering-position">#${itemIndex + 1}</span>`;
+        questionsHTML += `</div>`;
+      });
+      questionsHTML += `</div>`;
+      questionsHTML += `<input type="hidden" id="${questionId}-order" data-correct="${escapeHtml(JSON.stringify(question.correctAnswer || question.items))}">`;
+      questionsHTML += `</div>`;
+    } else if (question.type === "drag-drop" && question.zones && question.dragItems) {
+      questionsHTML += `<div class="quiz-drag-drop" id="${questionId}-dragdrop">`;
+      questionsHTML += `<p class="text-sm text-muted-foreground mb-3">Drag items to their correct zones</p>`;
+      questionsHTML += `<div class="drag-drop-container">`;
+      questionsHTML += `<div class="drag-items-area">`;
+      questionsHTML += `<h4>Items to Drag</h4>`;
+      questionsHTML += `<div class="drag-items-list" id="${questionId}-items">`;
+      question.dragItems.forEach((item: any) => {
+        questionsHTML += `<div class="drag-item" draggable="true" data-item-id="${item.id}" id="${questionId}-item-${item.id}">${escapeHtml(item.content)}</div>`;
+      });
+      questionsHTML += `</div>`;
+      questionsHTML += `</div>`;
+      questionsHTML += `<div class="drop-zones-area">`;
+      questionsHTML += `<h4>Drop Zones</h4>`;
+      questionsHTML += `<div class="drop-zones-grid" id="${questionId}-zones">`;
+      question.zones.forEach((zone: any) => {
+        questionsHTML += `<div class="drop-zone" data-zone-id="${zone.id}" id="${questionId}-zone-${zone.id}">`;
+        questionsHTML += `<div class="zone-label">${escapeHtml(zone.label)}</div>`;
+        questionsHTML += `<div class="zone-items" id="${questionId}-zone-${zone.id}-items"></div>`;
+        questionsHTML += `</div>`;
+      });
+      questionsHTML += `</div>`;
+      questionsHTML += `</div>`;
+      questionsHTML += `</div>`;
+      questionsHTML += `<input type="hidden" id="${questionId}-placements" data-correct="${escapeHtml(JSON.stringify(question.correctAnswer || {}))}">`;
       questionsHTML += `</div>`;
     }
 
@@ -2658,6 +2844,30 @@ function generateQuizScript(data: QuizData): string {
         if (input) {
           answers[currentQuestionIndex] = input.value;
         }
+      } else if (question.type === "ordering") {
+        const itemsContainer = document.getElementById(\`\${questionId}-items\`);
+        if (itemsContainer) {
+          const items = Array.from(itemsContainer.children);
+          const currentOrder = items.map(item => {
+            const contentSpan = item.querySelector('.ordering-content');
+            return contentSpan ? contentSpan.textContent : '';
+          }).filter(Boolean);
+          answers[currentQuestionIndex] = currentOrder;
+        }
+      } else if (question.type === "drag-drop") {
+        const placements = {};
+        if (question.dragItems) {
+          question.dragItems.forEach(item => {
+            const zoneItems = document.querySelectorAll(\`[data-zone-id] .zone-item[data-item-id="\${item.id}"]\`);
+            if (zoneItems.length > 0) {
+              const zoneElement = zoneItems[0].closest('.drop-zone');
+              if (zoneElement) {
+                placements[item.id] = zoneElement.getAttribute('data-zone-id');
+              }
+            }
+          });
+        }
+        answers[currentQuestionIndex] = placements;
       }
     }
     
@@ -2680,6 +2890,23 @@ function generateQuizScript(data: QuizData): string {
         if (input) {
           input.value = savedAnswer;
         }
+      } else if (question.type === "ordering" && Array.isArray(savedAnswer)) {
+        // Restore order - this would need to be handled by reordering the DOM elements
+        // For now, we'll just mark that an answer exists
+      } else if (question.type === "drag-drop" && typeof savedAnswer === 'object') {
+        // Restore placements
+        Object.keys(savedAnswer).forEach(itemId => {
+          const zoneId = savedAnswer[itemId];
+          const itemEl = document.getElementById(\`\${questionId}-item-\${itemId}\`);
+          const zoneEl = document.getElementById(\`\${questionId}-zone-\${zoneId}\`);
+          if (itemEl && zoneEl) {
+            const zoneItems = zoneEl.querySelector('.zone-items');
+            if (zoneItems) {
+              itemEl.classList.add('placed');
+              zoneItems.appendChild(itemEl);
+            }
+          }
+        });
       }
     }
     
@@ -2716,27 +2943,69 @@ function generateQuizScript(data: QuizData): string {
       questions.forEach((question, index) => {
         const userAnswer = answers[index];
         let isCorrect = false;
+        let answerDisplay = "Not answered";
         
         if (question.type === "multiple-choice") {
           const correctIndex = question.correctAnswer;
           isCorrect = userAnswer !== undefined && parseInt(userAnswer) === correctIndex;
+          if (userAnswer !== undefined && question.options) {
+            answerDisplay = question.options[parseInt(userAnswer)] || userAnswer;
+          }
         } else if (question.type === "true-false") {
           const correctValue = String(question.correctAnswer);
           isCorrect = userAnswer === correctValue;
+          answerDisplay = userAnswer || "Not answered";
         } else if (question.type === "fill-blank") {
           const correctAnswer = String(question.correctAnswer).toLowerCase().trim();
-          isCorrect = userAnswer && userAnswer.toLowerCase().trim() === correctAnswer;
+          const userAnswerLower = userAnswer ? userAnswer.toLowerCase().trim() : "";
+          const acceptableAnswers = question.acceptableAnswers || [correctAnswer];
+          const caseSensitive = question.caseSensitive || false;
+          
+          if (caseSensitive) {
+            isCorrect = acceptableAnswers.some(acc => userAnswer && userAnswer.trim() === acc.trim());
+          } else {
+            isCorrect = acceptableAnswers.some(acc => userAnswerLower === acc.toLowerCase().trim());
+          }
+          answerDisplay = userAnswer || "Not answered";
+        } else if (question.type === "ordering") {
+          const correctOrder = Array.isArray(question.correctAnswer) ? question.correctAnswer : question.items || [];
+          const userOrder = Array.isArray(userAnswer) ? userAnswer : [];
+          isCorrect = JSON.stringify(userOrder) === JSON.stringify(correctOrder);
+          answerDisplay = userOrder.length > 0 ? userOrder.join(" → ") : "Not answered";
+        } else if (question.type === "drag-drop") {
+          const correctPlacements = question.correctAnswer || {};
+          const userPlacements = typeof userAnswer === 'object' ? userAnswer : {};
+          if (question.dragItems) {
+            isCorrect = question.dragItems.every(item => {
+              return userPlacements[item.id] === item.correctZone;
+            });
+            answerDisplay = Object.keys(userPlacements).length > 0 
+              ? question.dragItems.map(item => {
+                  const zone = question.zones.find(z => z.id === userPlacements[item.id]);
+                  return zone ? \`\${item.content} → \${zone.label}\` : '';
+                }).filter(Boolean).join(", ")
+              : "Not answered";
+          }
         }
         
-        if (userAnswer !== undefined) {
+        if (userAnswer !== undefined && userAnswer !== null && (typeof userAnswer !== 'object' || Object.keys(userAnswer).length > 0 || Array.isArray(userAnswer))) {
           totalAnswered++;
           if (isCorrect) correctCount++;
         }
         
+        const correctAnswerDisplay = question.type === "ordering" 
+          ? (Array.isArray(question.correctAnswer) ? question.correctAnswer.join(" → ") : String(question.correctAnswer))
+          : question.type === "drag-drop"
+          ? (question.dragItems ? question.dragItems.map(item => {
+              const zone = question.zones.find(z => z.id === item.correctZone);
+              return \`\${item.content} → \${zone ? zone.label : item.correctZone}\`;
+            }).join(", ") : String(question.correctAnswer))
+          : String(question.correctAnswer);
+        
         results.push({
           question: question.question,
-          userAnswer: userAnswer || "Not answered",
-          correctAnswer: question.correctAnswer,
+          userAnswer: answerDisplay,
+          correctAnswer: correctAnswerDisplay,
           isCorrect: isCorrect,
           explanation: question.explanation
         });
@@ -2787,6 +3056,173 @@ function generateQuizScript(data: QuizData): string {
       div.textContent = text;
       return div.innerHTML;
     }
+    
+    // Initialize drag and drop for ordering questions
+    function initializeOrderingQuestion(questionIndex) {
+      const question = questions[questionIndex];
+      if (question.type !== "ordering" || !question.items) return;
+      
+      const questionId = \`q-\${questionIndex}\`;
+      const itemsContainer = document.getElementById(\`\${questionId}-items\`);
+      if (!itemsContainer) return;
+      
+      let draggedIndex = null;
+      
+      const items = Array.from(itemsContainer.children);
+      items.forEach((item, index) => {
+        item.setAttribute('draggable', 'true');
+        item.addEventListener('dragstart', (e) => {
+          draggedIndex = index;
+          item.classList.add('dragging');
+        });
+        item.addEventListener('dragend', () => {
+          item.classList.remove('dragging');
+          draggedIndex = null;
+        });
+        item.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          if (draggedIndex === null || draggedIndex === index) return;
+          item.style.borderColor = '#4a90e2';
+        });
+        item.addEventListener('dragleave', () => {
+          item.style.borderColor = '#ddd';
+        });
+        item.addEventListener('drop', (e) => {
+          e.preventDefault();
+          item.style.borderColor = '#ddd';
+          if (draggedIndex === null || draggedIndex === index) return;
+          
+          const itemsArray = Array.from(itemsContainer.children);
+          const draggedItem = itemsArray[draggedIndex];
+          itemsArray.splice(draggedIndex, 1);
+          itemsArray.splice(index, 0, draggedItem);
+          
+          itemsArray.forEach((it, idx) => {
+            const positionSpan = it.querySelector('.ordering-position');
+            if (positionSpan) positionSpan.textContent = \`#\${idx + 1}\`;
+          });
+          
+          itemsContainer.innerHTML = '';
+          itemsArray.forEach(it => itemsContainer.appendChild(it));
+          
+          // Re-initialize event listeners
+          initializeOrderingQuestion(questionIndex);
+          saveCurrentAnswer();
+        });
+      });
+    }
+    
+    // Initialize drag and drop for drag-drop questions
+    function initializeDragDropQuestion(questionIndex) {
+      const question = questions[questionIndex];
+      if (question.type !== "drag-drop" || !question.zones || !question.dragItems) return;
+      
+      const questionId = \`q-\${questionIndex}\`;
+      let draggedItemId = null;
+      
+      // Set up drag items
+      question.dragItems.forEach(item => {
+        const itemEl = document.getElementById(\`\${questionId}-item-\${item.id}\`);
+        if (!itemEl) return;
+        
+        itemEl.addEventListener('dragstart', (e) => {
+          draggedItemId = item.id;
+          itemEl.classList.add('dragging');
+        });
+        itemEl.addEventListener('dragend', () => {
+          itemEl.classList.remove('dragging');
+          draggedItemId = null;
+        });
+      });
+      
+      // Set up drop zones
+      question.zones.forEach(zone => {
+        const zoneEl = document.getElementById(\`\${questionId}-zone-\${zone.id}\`);
+        if (!zoneEl) return;
+        
+        const zoneItems = zoneEl.querySelector('.zone-items');
+        if (!zoneItems) return;
+        
+        zoneEl.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          if (!draggedItemId) return;
+          zoneEl.classList.add('drag-over');
+        });
+        zoneEl.addEventListener('dragleave', () => {
+          zoneEl.classList.remove('drag-over');
+        });
+        zoneEl.addEventListener('drop', (e) => {
+          e.preventDefault();
+          zoneEl.classList.remove('drag-over');
+          if (!draggedItemId) return;
+          
+          const itemEl = document.getElementById(\`\${questionId}-item-\${draggedItemId}\`);
+          if (!itemEl) return;
+          
+          // Remove from current location
+          itemEl.remove();
+          itemEl.classList.add('placed');
+          
+          // Add to zone
+          const zoneItem = document.createElement('div');
+          zoneItem.className = 'zone-item';
+          zoneItem.setAttribute('data-item-id', draggedItemId);
+          zoneItem.textContent = itemEl.textContent;
+          zoneItems.appendChild(zoneItem);
+          
+          // Re-initialize to set up new drag handlers
+          initializeDragDropQuestion(questionIndex);
+          saveCurrentAnswer();
+        });
+      });
+    }
+    
+    // Initialize questions when displayed
+    function initializeCurrentQuestion() {
+      const question = questions[currentQuestionIndex];
+      if (question.type === "ordering") {
+        initializeOrderingQuestion(currentQuestionIndex);
+      } else if (question.type === "drag-drop") {
+        initializeDragDropQuestion(currentQuestionIndex);
+      }
+    }
+    
+    // Override goToQuestion to initialize after navigation
+    const originalGoToQuestion = goToQuestion;
+    goToQuestion = function(index) {
+      if (quizSubmitted || index < 0 || index >= totalQuestions) return;
+      
+      // Save current answer before navigating
+      saveCurrentAnswer();
+      
+      // Hide current question
+      const currentQuestion = document.querySelector(\`.quiz-question[data-question-index="\${currentQuestionIndex}"]\`);
+      if (currentQuestion) {
+        currentQuestion.style.display = 'none';
+      }
+      
+      // Show new question
+      currentQuestionIndex = index;
+      const newQuestion = document.querySelector(\`.quiz-question[data-question-index="\${currentQuestionIndex}"]\`);
+      if (newQuestion) {
+        newQuestion.style.display = 'block';
+        newQuestion.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+      
+      // Load saved answer
+      loadSavedAnswer();
+      
+      // Update navigation buttons
+      updateQuestionNavigation();
+      
+      // Initialize interactive elements
+      setTimeout(initializeCurrentQuestion, 100);
+    };
+    
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      initializeCurrentQuestion();
+    });
     
     // Keyboard navigation
     document.addEventListener('keydown', function(e) {
