@@ -177,9 +177,9 @@ export function AssignToClassDialog({ contentId, children }: AssignToClassDialog
                   </SelectTrigger>
                   <SelectContent>
                     {availableClasses.length === 0 ? (
-                      <SelectItem value="" disabled>
+                      <div className="px-2 py-1.5 text-sm text-muted-foreground">
                         No available classes
-                      </SelectItem>
+                      </div>
                     ) : (
                       availableClasses.map((class_) => (
                         <SelectItem key={class_.id} value={class_.id}>

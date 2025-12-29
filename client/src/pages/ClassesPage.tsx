@@ -319,10 +319,10 @@ export default function ClassesPage() {
       });
       return;
     }
-    bulkUploadMutation.mutate({
-      csvData,
-      classId: csvClassId || undefined,
-    });
+      bulkUploadMutation.mutate({
+        csvData,
+        classId: csvClassId && csvClassId !== "create-new" ? csvClassId : undefined,
+      });
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -506,21 +506,30 @@ Science 101,Basic Science,Science,Grade 5,student1@example.com,student2@example.
                   </div>
                   <div>
                     <Label>Or Enroll in Existing Class</Label>
-                    <Select value={csvClassId} onValueChange={setCsvClassId}>
+                    <Select value={csvClassId || "create-new"} onValueChange={(value) => setCsvClassId(value === "create-new" ? "" : value)}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select class (optional)" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Create new classes</SelectItem>
-                        {classes?.map((c) => (
-                          <SelectItem key={c.id} value={c.id}>
-                            {c.name}
-                          </SelectItem>
-                        ))}
+                        <SelectItem value="create-new">Create new classes</SelectItem>
+                        {classes && classes.length > 0 && (
+                          <>
+                            {classes.map((c) => (
+                              <SelectItem key={c.id} value={c.id}>
+                                {c.name}
+                              </SelectItem>
+                            ))}
+                          </>
+                        )}
+                        {(!classes || classes.length === 0) && (
+                          <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                            No classes available to enroll in
+                          </div>
+                        )}
                       </SelectContent>
                     </Select>
                     <p className="text-xs text-muted-foreground mt-1">
-                      If selected, students will be enrolled in this class instead of creating new ones
+                      If a class is selected, students will be enrolled in that class. Otherwise, new classes will be created.
                     </p>
                   </div>
                   <div>
