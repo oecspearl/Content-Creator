@@ -100,6 +100,23 @@ export function QuizPlayer({ data, contentId }: QuizPlayerProps) {
     }
   }, [currentIndex, answers, lastSentProgress, isProgressInitialized, isAuthenticated]);
 
+  const isQuestionComplete = (question: any, answer: string | number | string[] | Record<string, string> | null): boolean => {
+    if (answer === null) return false;
+    
+    if (question.type === "ordering") {
+      const answerArray = answer as string[];
+      return answerArray && answerArray.length === question.items?.length && answerArray.every(item => item.trim());
+    }
+    
+    if (question.type === "drag-drop") {
+      const placements = answer as Record<string, string>;
+      return question.dragItems && question.dragItems.every((item: any) => placements[item.id]);
+    }
+    
+    // For other question types, any answer means it's complete
+    return true;
+  };
+
   const handleAnswer = (answer: string | number | string[] | Record<string, string>) => {
     // Don't allow changing answers after explanation is shown
     if (showExplanation) return;
@@ -111,19 +128,38 @@ export function QuizPlayer({ data, contentId }: QuizPlayerProps) {
     // Log interaction
     logInteraction("answered");
     
-    // If immediate feedback is enabled, show explanation
-    if (data.settings.showCorrectAnswers && currentQuestion.explanation) {
-      setShowExplanation(true);
-    }
+    // Check if question is complete
+    const isComplete = isQuestionComplete(currentQuestion, answer);
     
-    // Screen reader announcement
-    const isCorrect = checkAnswerCorrectness(currentQuestion, answer);
-    announce(
-      isCorrect 
-        ? "Correct! " + (currentQuestion.explanation || "")
-        : "Incorrect. " + (currentQuestion.explanation || ""),
-      "assertive"
-    );
+    // Only show explanation if:
+    // 1. Immediate feedback is enabled
+    // 2. Question has an explanation
+    // 3. Question is complete (for ordering/drag-drop, this means all items are placed)
+    if (data.settings.showCorrectAnswers && currentQuestion.explanation && isComplete) {
+      setShowExplanation(true);
+      
+      // Screen reader announcement
+      const isCorrect = checkAnswerCorrectness(currentQuestion, answer);
+      announce(
+        isCorrect 
+          ? "Correct! " + (currentQuestion.explanation || "")
+          : "Incorrect. " + (currentQuestion.explanation || ""),
+        "assertive"
+      );
+    } else if (!isComplete) {
+      // For incomplete ordering/drag-drop questions, provide progress feedback
+      if (currentQuestion.type === "ordering") {
+        const answerArray = answer as string[];
+        const completed = answerArray?.filter(item => item.trim()).length || 0;
+        const total = currentQuestion.items?.length || 0;
+        announce(`Ordered ${completed} of ${total} items`, "polite");
+      } else if (currentQuestion.type === "drag-drop") {
+        const placements = answer as Record<string, string>;
+        const placed = Object.keys(placements).length;
+        const total = currentQuestion.dragItems?.length || 0;
+        announce(`Placed ${placed} of ${total} items`, "polite");
+      }
+    }
   };
 
   const checkAnswerCorrectness = (question: any, answer: string | number | string[] | Record<string, string> | null): boolean => {
@@ -174,19 +210,27 @@ export function QuizPlayer({ data, contentId }: QuizPlayerProps) {
     
     // For ordering and drag-drop, check if answer is complete
     const currentQ = data.questions[currentIndex];
-    if (currentQ.type === "ordering") {
-      const answer = answers[currentIndex] as string[] | null;
-      if (!answer || answer.length !== currentQ.items?.length || answer.some(a => !a.trim())) {
+    if (!isQuestionComplete(currentQ, answers[currentIndex])) {
+      if (currentQ.type === "ordering") {
         announce("Please arrange all items in order before continuing", "assertive");
-        return;
-      }
-    }
-    if (currentQ.type === "drag-drop") {
-      const answer = answers[currentIndex] as Record<string, string> | null;
-      if (!answer || !currentQ.dragItems || currentQ.dragItems.some((item: any) => !answer[item.id])) {
+      } else if (currentQ.type === "drag-drop") {
         announce("Please place all items in their correct zones before continuing", "assertive");
-        return;
       }
+      return;
+    }
+    
+    // Show explanation when clicking Next if not already shown and feedback is enabled
+    if (data.settings.showCorrectAnswers && currentQ.explanation && !showExplanation) {
+      setShowExplanation(true);
+      const isCorrect = checkAnswerCorrectness(currentQ, answers[currentIndex]);
+      announce(
+        isCorrect 
+          ? "Correct! " + (currentQ.explanation || "")
+          : "Incorrect. " + (currentQ.explanation || ""),
+        "assertive"
+      );
+      // Don't proceed immediately - let user see the feedback
+      return;
     }
     
     setShowExplanation(false);
@@ -597,11 +641,14 @@ export function QuizPlayer({ data, contentId }: QuizPlayerProps) {
           </Button>
           <Button
             onClick={handleNext}
-            disabled={answers[currentIndex] === null}
+            disabled={(() => {
+              if (answers[currentIndex] === null) return true;
+              return !isQuestionComplete(currentQuestion, answers[currentIndex]);
+            })()}
             data-testid="button-next"
             aria-label={currentIndex === data.questions.length - 1 ? "Finish quiz" : "Go to next question"}
           >
-            {currentIndex === data.questions.length - 1 ? "Finish" : "Next"}
+            {showExplanation ? "Continue" : currentIndex === data.questions.length - 1 ? "Finish" : "Next"}
           </Button>
         </CardFooter>
       </Card>
