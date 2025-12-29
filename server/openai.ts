@@ -3,14 +3,17 @@ import type { AIGenerationRequest, QuizQuestion, FlashcardData, VideoHotspot, Im
 
 // This is using OpenAI's API, which points to OpenAI's API servers and requires your own API key.
 // Using gpt-4o as the default model (latest and most capable model as of 2024)
-const openai = new OpenAI({ 
-  apiKey: process.env.OPENAI_API_KEY,
-  timeout: 30000, // 30 second timeout for all requests
-});
+let openai: OpenAI | null = null;
 
 export function getOpenAIClient() {
   if (!process.env.OPENAI_API_KEY) {
     throw new Error("OPENAI_API_KEY is not set. Please configure it in your environment variables.");
+  }
+  if (!openai) {
+    openai = new OpenAI({ 
+      apiKey: process.env.OPENAI_API_KEY,
+      timeout: 30000, // 30 second timeout for all requests
+    });
   }
   return openai;
 }
@@ -38,7 +41,7 @@ Respond in JSON format with an array of questions following this structure:
   ]
 }`;
 
-  const response = await openai.chat.completions.create({
+  const response = await getOpenAIClient().chat.completions.create({
     model: "gpt-4o",
     messages: [
       { role: "system", content: "You are an expert educator creating quiz questions. Always respond with valid JSON." },
@@ -82,7 +85,7 @@ Respond in JSON format:
   ]
 }`;
 
-  const response = await openai.chat.completions.create({
+  const response = await getOpenAIClient().chat.completions.create({
     model: "gpt-4o",
     messages: [
       { role: "system", content: "You are an expert educator creating flashcards. Always respond with valid JSON." },
@@ -290,7 +293,7 @@ Respond in JSON format:
 
 IMPORTANT: Ensure all timestamps are valid (0 to ${totalSeconds} seconds) and hotspots are distributed throughout the video duration.`;
 
-  const response = await openai.chat.completions.create({
+  const response = await getOpenAIClient().chat.completions.create({
     model: "gpt-4o",
     messages: [
       { role: "system", content: "You are an expert educator creating interactive video content. Always respond with valid JSON. Ensure all timestamps are within the video duration." },
@@ -341,7 +344,7 @@ Respond in JSON format:
   ]
 }`;
 
-  const response = await openai.chat.completions.create({
+  const response = await getOpenAIClient().chat.completions.create({
     model: "gpt-4o",
     messages: [
       { role: "system", content: "You are an expert educator creating interactive image content. Always respond with valid JSON." },
@@ -390,7 +393,7 @@ Respond in JSON format:
   ]
 }`;
 
-  const response = await openai.chat.completions.create({
+  const response = await getOpenAIClient().chat.completions.create({
     model: "gpt-4o",
     messages: [
       { role: "system", content: "You are an expert educator creating interactive drag-and-drop activities. Always respond with valid JSON." },
@@ -435,7 +438,7 @@ Respond in JSON format:
   ]
 }`;
 
-  const response = await openai.chat.completions.create({
+  const response = await getOpenAIClient().chat.completions.create({
     model: "gpt-4o",
     messages: [
       { role: "system", content: "You are an expert educator creating fill-in-the-blanks exercises. Always respond with valid JSON." },
@@ -484,7 +487,7 @@ Respond in JSON format:
   ]
 }`;
 
-  const response = await openai.chat.completions.create({
+  const response = await getOpenAIClient().chat.completions.create({
     model: "gpt-4o",
     messages: [
       { role: "system", content: "You are an expert educator creating memory game cards. Always respond with valid JSON." },
@@ -527,7 +530,7 @@ Respond in JSON format:
   ]
 }`;
 
-  const response = await openai.chat.completions.create({
+  const response = await getOpenAIClient().chat.completions.create({
     model: "gpt-4o",
     messages: [
       { role: "system", content: "You are an expert educator creating interactive educational books. Always respond with valid JSON." },
@@ -588,7 +591,7 @@ Respond in JSON format:
   "guidingQuestions": ["question 1", "question 2", "question 3", "question 4"]
 }`;
 
-  const response = await openai.chat.completions.create({
+  const response = await getOpenAIClient().chat.completions.create({
     model: "gpt-4o",
     messages: [
       { role: "system", content: "You are an expert educator creating video viewing guides. Always respond with valid JSON." },
@@ -670,7 +673,7 @@ Respond in JSON format:
   ]
 }`;
 
-  const response = await openai.chat.completions.create({
+  const response = await getOpenAIClient().chat.completions.create({
     model: "gpt-4o", // Use gpt-4o instead of gpt-5 (which may not exist or be slower)
     messages: [
       { role: "system", content: "You are an expert instructional designer creating educational presentations. Always respond with valid JSON and follow Universal Design for Learning (UDL) principles." },

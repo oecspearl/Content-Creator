@@ -1,5 +1,5 @@
 import { db } from "../db";
-import { profiles, h5pContent, contentShares, learnerProgress, quizAttempts, interactionEvents, chatMessages } from "@shared/schema";
+import { profiles, h5pContent, contentShares, learnerProgress, quizAttempts, interactionEvents, chatMessages, classes, classEnrollments, contentAssignments } from "@shared/schema";
 import type { 
   Profile, InsertProfile, 
   H5pContent, InsertH5pContent, 
@@ -7,9 +7,12 @@ import type {
   LearnerProgress, InsertLearnerProgress,
   QuizAttempt, InsertQuizAttempt,
   InteractionEvent, InsertInteractionEvent,
-  ChatMessage, InsertChatMessage
+  ChatMessage, InsertChatMessage,
+  Class, InsertClass,
+  ClassEnrollment, InsertClassEnrollment,
+  ContentAssignment, InsertContentAssignment
 } from "@shared/schema";
-import { eq, and, desc, sql, count, avg, sum } from "drizzle-orm";
+import { eq, and, desc, sql, count, avg, sum, inArray } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 
 export interface IStorage {
@@ -56,6 +59,27 @@ export interface IStorage {
   createChatMessage(message: InsertChatMessage): Promise<ChatMessage>;
   getChatHistory(userId: string, limit?: number): Promise<ChatMessage[]>;
   deleteChatHistory(userId: string): Promise<void>;
+  
+  // Class methods
+  createClass(classData: InsertClass): Promise<Class>;
+  updateClass(id: string, updates: Partial<InsertClass>): Promise<Class | undefined>;
+  deleteClass(id: string): Promise<void>;
+  getClassById(id: string): Promise<Class | undefined>;
+  getClassesByUserId(userId: string): Promise<Class[]>;
+  
+  // Class enrollment methods
+  createClassEnrollment(enrollment: InsertClassEnrollment): Promise<ClassEnrollment>;
+  deleteClassEnrollment(classId: string, userId: string): Promise<void>;
+  getClassEnrollments(classId: string): Promise<any[]>;
+  getStudentClasses(userId: string): Promise<Class[]>;
+  bulkCreateEnrollments(enrollments: InsertClassEnrollment[]): Promise<ClassEnrollment[]>;
+  
+  // Content assignment methods
+  createContentAssignment(assignment: InsertContentAssignment): Promise<ContentAssignment>;
+  deleteContentAssignment(contentId: string, classId: string): Promise<void>;
+  getContentAssignments(contentId: string): Promise<any[]>;
+  getClassAssignments(classId: string): Promise<any[]>;
+  getStudentAssignments(userId: string): Promise<any[]>;
 }
 
 export class DbStorage implements IStorage {
@@ -575,6 +599,175 @@ export class DbStorage implements IStorage {
 
   async deleteChatHistory(userId: string): Promise<void> {
     await db.delete(chatMessages).where(eq(chatMessages.userId, userId));
+  }
+
+  // Class methods
+  async createClass(classData: InsertClass): Promise<Class> {
+    const [class_] = await db.insert(classes).values({
+      ...classData,
+      updatedAt: new Date(),
+    }).returning();
+    return class_;
+  }
+
+  async updateClass(id: string, updates: Partial<InsertClass>): Promise<Class | undefined> {
+    const [updated] = await db.update(classes)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(classes.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteClass(id: string): Promise<void> {
+    await db.delete(classes).where(eq(classes.id, id));
+  }
+
+  async getClassById(id: string): Promise<Class | undefined> {
+    const [class_] = await db.select().from(classes).where(eq(classes.id, id)).limit(1);
+    return class_;
+  }
+
+  async getClassesByUserId(userId: string): Promise<Class[]> {
+    return await db.select().from(classes)
+      .where(eq(classes.userId, userId))
+      .orderBy(desc(classes.createdAt));
+  }
+
+  // Class enrollment methods
+  async createClassEnrollment(enrollment: InsertClassEnrollment): Promise<ClassEnrollment> {
+    const [enrollment_] = await db.insert(classEnrollments).values(enrollment).returning();
+    return enrollment_;
+  }
+
+  async deleteClassEnrollment(classId: string, userId: string): Promise<void> {
+    await db.delete(classEnrollments)
+      .where(and(eq(classEnrollments.classId, classId), eq(classEnrollments.userId, userId)));
+  }
+
+  async getClassEnrollments(classId: string): Promise<any[]> {
+    const enrollments = await db
+      .select({
+        enrollmentId: classEnrollments.id,
+        userId: profiles.id,
+        fullName: profiles.fullName,
+        email: profiles.email,
+        role: profiles.role,
+        enrolledAt: classEnrollments.enrolledAt,
+      })
+      .from(classEnrollments)
+      .innerJoin(profiles, eq(classEnrollments.userId, profiles.id))
+      .where(eq(classEnrollments.classId, classId))
+      .orderBy(desc(classEnrollments.enrolledAt));
+    
+    return enrollments;
+  }
+
+  async getStudentClasses(userId: string): Promise<Class[]> {
+    const studentClasses = await db
+      .select({
+        id: classes.id,
+        name: classes.name,
+        description: classes.description,
+        userId: classes.userId,
+        subject: classes.subject,
+        gradeLevel: classes.gradeLevel,
+        createdAt: classes.createdAt,
+        updatedAt: classes.updatedAt,
+      })
+      .from(classEnrollments)
+      .innerJoin(classes, eq(classEnrollments.classId, classes.id))
+      .where(eq(classEnrollments.userId, userId))
+      .orderBy(desc(classes.createdAt));
+    
+    return studentClasses;
+  }
+
+  async bulkCreateEnrollments(enrollments: InsertClassEnrollment[]): Promise<ClassEnrollment[]> {
+    if (enrollments.length === 0) return [];
+    const results = await db.insert(classEnrollments).values(enrollments).returning();
+    return results;
+  }
+
+  // Content assignment methods
+  async createContentAssignment(assignment: InsertContentAssignment): Promise<ContentAssignment> {
+    const [assignment_] = await db.insert(contentAssignments).values(assignment).returning();
+    return assignment_;
+  }
+
+  async deleteContentAssignment(contentId: string, classId: string): Promise<void> {
+    await db.delete(contentAssignments)
+      .where(and(eq(contentAssignments.contentId, contentId), eq(contentAssignments.classId, classId)));
+  }
+
+  async getContentAssignments(contentId: string): Promise<any[]> {
+    const assignments = await db
+      .select({
+        assignmentId: contentAssignments.id,
+        classId: classes.id,
+        className: classes.name,
+        classDescription: classes.description,
+        assignedAt: contentAssignments.assignedAt,
+        dueDate: contentAssignments.dueDate,
+        instructions: contentAssignments.instructions,
+      })
+      .from(contentAssignments)
+      .innerJoin(classes, eq(contentAssignments.classId, classes.id))
+      .where(eq(contentAssignments.contentId, contentId))
+      .orderBy(desc(contentAssignments.assignedAt));
+    
+    return assignments;
+  }
+
+  async getClassAssignments(classId: string): Promise<any[]> {
+    const assignments = await db
+      .select({
+        assignmentId: contentAssignments.id,
+        contentId: h5pContent.id,
+        contentTitle: h5pContent.title,
+        contentType: h5pContent.type,
+        assignedAt: contentAssignments.assignedAt,
+        dueDate: contentAssignments.dueDate,
+        instructions: contentAssignments.instructions,
+      })
+      .from(contentAssignments)
+      .innerJoin(h5pContent, eq(contentAssignments.contentId, h5pContent.id))
+      .where(eq(contentAssignments.classId, classId))
+      .orderBy(desc(contentAssignments.assignedAt));
+    
+    return assignments;
+  }
+
+  async getStudentAssignments(userId: string): Promise<any[]> {
+    // Get all classes the student is enrolled in
+    const studentClassIds = await db
+      .select({ classId: classEnrollments.classId })
+      .from(classEnrollments)
+      .where(eq(classEnrollments.userId, userId));
+    
+    if (studentClassIds.length === 0) return [];
+    
+    const classIds = studentClassIds.map(c => c.classId);
+    
+    // Get all assignments for those classes
+    const assignments = await db
+      .select({
+        assignmentId: contentAssignments.id,
+        contentId: h5pContent.id,
+        contentTitle: h5pContent.title,
+        contentType: h5pContent.type,
+        classId: classes.id,
+        className: classes.name,
+        assignedAt: contentAssignments.assignedAt,
+        dueDate: contentAssignments.dueDate,
+        instructions: contentAssignments.instructions,
+      })
+      .from(contentAssignments)
+      .innerJoin(h5pContent, eq(contentAssignments.contentId, h5pContent.id))
+      .innerJoin(classes, eq(contentAssignments.classId, classes.id))
+      .where(inArray(contentAssignments.classId, classIds))
+      .orderBy(desc(contentAssignments.assignedAt));
+    
+    return assignments;
   }
 }
 

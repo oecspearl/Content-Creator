@@ -28,6 +28,7 @@ import SharePage from "@/pages/SharePage";
 import PublicPreviewPage from "@/pages/PublicPreviewPage";
 import HelpPage from "@/pages/HelpPage";
 import AnalyticsPage from "@/pages/AnalyticsPage";
+import ClassesPage from "@/pages/ClassesPage";
 import NotFound from "@/pages/not-found";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -137,6 +138,9 @@ function Router() {
       </Route>
       <Route path="/analytics">
         <ProtectedRoute component={AnalyticsPage} />
+      </Route>
+      <Route path="/classes">
+        <ProtectedRoute component={ClassesPage} />
       </Route>
       <Route component={NotFound} />
     </Switch>

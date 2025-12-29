@@ -1446,6 +1446,452 @@ Be conversational, friendly, and educational. Provide specific, actionable advic
     }
   });
 
+  // Class management routes
+  app.post("/api/classes", requireAuth, async (req, res) => {
+    try {
+      const { name, description, subject, gradeLevel } = req.body;
+      
+      if (!name || typeof name !== 'string' || !name.trim()) {
+        return res.status(400).json({ message: "Class name is required" });
+      }
+
+      const class_ = await storage.createClass({
+        name: name.trim(),
+        description: description?.trim() || null,
+        subject: subject?.trim() || null,
+        gradeLevel: gradeLevel?.trim() || null,
+        userId: req.session.userId!,
+      });
+
+      res.json(class_);
+    } catch (error: any) {
+      console.error("Create class error:", error);
+      res.status(500).json({ message: "Failed to create class" });
+    }
+  });
+
+  app.get("/api/classes", requireAuth, async (req, res) => {
+    try {
+      const classes = await storage.getClassesByUserId(req.session.userId!);
+      res.json(classes);
+    } catch (error: any) {
+      console.error("Get classes error:", error);
+      res.status(500).json({ message: "Failed to fetch classes" });
+    }
+  });
+
+  app.get("/api/classes/:id", requireAuth, async (req, res) => {
+    try {
+      const class_ = await storage.getClassById(req.params.id);
+      if (!class_) {
+        return res.status(404).json({ message: "Class not found" });
+      }
+      if (class_.userId !== req.session.userId!) {
+        return res.status(403).json({ message: "Not authorized to view this class" });
+      }
+      res.json(class_);
+    } catch (error: any) {
+      console.error("Get class error:", error);
+      res.status(500).json({ message: "Failed to fetch class" });
+    }
+  });
+
+  app.put("/api/classes/:id", requireAuth, async (req, res) => {
+    try {
+      const class_ = await storage.getClassById(req.params.id);
+      if (!class_) {
+        return res.status(404).json({ message: "Class not found" });
+      }
+      if (class_.userId !== req.session.userId!) {
+        return res.status(403).json({ message: "Not authorized to update this class" });
+      }
+
+      const { name, description, subject, gradeLevel } = req.body;
+      const updates: any = {};
+      if (name !== undefined) updates.name = name.trim();
+      if (description !== undefined) updates.description = description?.trim() || null;
+      if (subject !== undefined) updates.subject = subject?.trim() || null;
+      if (gradeLevel !== undefined) updates.gradeLevel = gradeLevel?.trim() || null;
+
+      const updated = await storage.updateClass(req.params.id, updates);
+      res.json(updated);
+    } catch (error: any) {
+      console.error("Update class error:", error);
+      res.status(500).json({ message: "Failed to update class" });
+    }
+  });
+
+  app.delete("/api/classes/:id", requireAuth, async (req, res) => {
+    try {
+      const class_ = await storage.getClassById(req.params.id);
+      if (!class_) {
+        return res.status(404).json({ message: "Class not found" });
+      }
+      if (class_.userId !== req.session.userId!) {
+        return res.status(403).json({ message: "Not authorized to delete this class" });
+      }
+
+      await storage.deleteClass(req.params.id);
+      res.json({ message: "Class deleted successfully" });
+    } catch (error: any) {
+      console.error("Delete class error:", error);
+      res.status(500).json({ message: "Failed to delete class" });
+    }
+  });
+
+  // Class enrollment routes
+  app.get("/api/classes/:id/enrollments", requireAuth, async (req, res) => {
+    try {
+      const class_ = await storage.getClassById(req.params.id);
+      if (!class_) {
+        return res.status(404).json({ message: "Class not found" });
+      }
+      if (class_.userId !== req.session.userId!) {
+        return res.status(403).json({ message: "Not authorized to view enrollments" });
+      }
+
+      const enrollments = await storage.getClassEnrollments(req.params.id);
+      res.json(enrollments);
+    } catch (error: any) {
+      console.error("Get enrollments error:", error);
+      res.status(500).json({ message: "Failed to fetch enrollments" });
+    }
+  });
+
+  app.post("/api/classes/:id/enrollments", requireAuth, async (req, res) => {
+    try {
+      const class_ = await storage.getClassById(req.params.id);
+      if (!class_) {
+        return res.status(404).json({ message: "Class not found" });
+      }
+      if (class_.userId !== req.session.userId!) {
+        return res.status(403).json({ message: "Not authorized to manage enrollments" });
+      }
+
+      const { userId } = req.body;
+      if (!userId || typeof userId !== 'string') {
+        return res.status(400).json({ message: "User ID is required" });
+      }
+
+      const enrollment = await storage.createClassEnrollment({
+        classId: req.params.id,
+        userId,
+      });
+
+      res.json(enrollment);
+    } catch (error: any) {
+      console.error("Create enrollment error:", error);
+      if (error.message?.includes('unique') || error.message?.includes('duplicate')) {
+        return res.status(409).json({ message: "User is already enrolled in this class" });
+      }
+      res.status(500).json({ message: "Failed to create enrollment" });
+    }
+  });
+
+  app.delete("/api/classes/:id/enrollments/:userId", requireAuth, async (req, res) => {
+    try {
+      const class_ = await storage.getClassById(req.params.id);
+      if (!class_) {
+        return res.status(404).json({ message: "Class not found" });
+      }
+      if (class_.userId !== req.session.userId!) {
+        return res.status(403).json({ message: "Not authorized to manage enrollments" });
+      }
+
+      await storage.deleteClassEnrollment(req.params.id, req.params.userId);
+      res.json({ message: "Enrollment removed successfully" });
+    } catch (error: any) {
+      console.error("Delete enrollment error:", error);
+      res.status(500).json({ message: "Failed to remove enrollment" });
+    }
+  });
+
+  // User search endpoint for finding students to enroll
+  app.get("/api/users/search", requireAuth, async (req, res) => {
+    try {
+      const { email, q } = req.query;
+      
+      if (!email && !q) {
+        return res.status(400).json({ message: "Email or search query is required" });
+      }
+
+      const searchTerm = (email || q) as string;
+      
+      // Search by email (exact match preferred, but also partial match)
+      const user = await storage.getProfileByEmail(searchTerm);
+      
+      if (user) {
+        return res.json([{
+          id: user.id,
+          email: user.email,
+          fullName: user.fullName,
+          role: user.role,
+          institution: user.institution,
+        }]);
+      }
+
+      // If exact match not found, return empty (could extend to search by name in future)
+      res.json([]);
+    } catch (error: any) {
+      console.error("User search error:", error);
+      res.status(500).json({ message: "Failed to search users" });
+    }
+  });
+
+  // Student classes route
+  app.get("/api/student/classes", requireAuth, async (req, res) => {
+    try {
+      const studentClasses = await storage.getStudentClasses(req.session.userId!);
+      res.json(studentClasses);
+    } catch (error: any) {
+      console.error("Get student classes error:", error);
+      res.status(500).json({ message: "Failed to fetch student classes" });
+    }
+  });
+
+  // Content assignment routes
+  app.post("/api/content/:contentId/assignments", requireAuth, async (req, res) => {
+    try {
+      const content = await storage.getContentById(req.params.contentId);
+      if (!content) {
+        return res.status(404).json({ message: "Content not found" });
+      }
+      if (content.userId !== req.session.userId!) {
+        return res.status(403).json({ message: "Not authorized to assign this content" });
+      }
+
+      const { classId, dueDate, instructions } = req.body;
+      if (!classId || typeof classId !== 'string') {
+        return res.status(400).json({ message: "Class ID is required" });
+      }
+
+      const class_ = await storage.getClassById(classId);
+      if (!class_) {
+        return res.status(404).json({ message: "Class not found" });
+      }
+      if (class_.userId !== req.session.userId!) {
+        return res.status(403).json({ message: "Not authorized to assign to this class" });
+      }
+
+      const assignment = await storage.createContentAssignment({
+        contentId: req.params.contentId,
+        classId,
+        dueDate: dueDate ? new Date(dueDate) : null,
+        instructions: instructions?.trim() || null,
+      });
+
+      res.json(assignment);
+    } catch (error: any) {
+      console.error("Create assignment error:", error);
+      if (error.message?.includes('unique') || error.message?.includes('duplicate')) {
+        return res.status(409).json({ message: "Content is already assigned to this class" });
+      }
+      res.status(500).json({ message: "Failed to create assignment" });
+    }
+  });
+
+  app.get("/api/content/:contentId/assignments", requireAuth, async (req, res) => {
+    try {
+      const content = await storage.getContentById(req.params.contentId);
+      if (!content) {
+        return res.status(404).json({ message: "Content not found" });
+      }
+      if (content.userId !== req.session.userId!) {
+        return res.status(403).json({ message: "Not authorized to view assignments" });
+      }
+
+      const assignments = await storage.getContentAssignments(req.params.contentId);
+      res.json(assignments);
+    } catch (error: any) {
+      console.error("Get assignments error:", error);
+      res.status(500).json({ message: "Failed to fetch assignments" });
+    }
+  });
+
+  app.delete("/api/content/:contentId/assignments/:classId", requireAuth, async (req, res) => {
+    try {
+      const content = await storage.getContentById(req.params.contentId);
+      if (!content) {
+        return res.status(404).json({ message: "Content not found" });
+      }
+      if (content.userId !== req.session.userId!) {
+        return res.status(403).json({ message: "Not authorized to manage assignments" });
+      }
+
+      await storage.deleteContentAssignment(req.params.contentId, req.params.classId);
+      res.json({ message: "Assignment removed successfully" });
+    } catch (error: any) {
+      console.error("Delete assignment error:", error);
+      res.status(500).json({ message: "Failed to remove assignment" });
+    }
+  });
+
+  app.get("/api/classes/:id/assignments", requireAuth, async (req, res) => {
+    try {
+      const class_ = await storage.getClassById(req.params.id);
+      if (!class_) {
+        return res.status(404).json({ message: "Class not found" });
+      }
+      if (class_.userId !== req.session.userId!) {
+        return res.status(403).json({ message: "Not authorized to view assignments" });
+      }
+
+      const assignments = await storage.getClassAssignments(req.params.id);
+      res.json(assignments);
+    } catch (error: any) {
+      console.error("Get class assignments error:", error);
+      res.status(500).json({ message: "Failed to fetch assignments" });
+    }
+  });
+
+  app.get("/api/student/assignments", requireAuth, async (req, res) => {
+    try {
+      const assignments = await storage.getStudentAssignments(req.session.userId!);
+      res.json(assignments);
+    } catch (error: any) {
+      console.error("Get student assignments error:", error);
+      res.status(500).json({ message: "Failed to fetch assignments" });
+    }
+  });
+
+  // CSV bulk upload route
+  app.post("/api/classes/bulk-upload", requireAuth, async (req, res) => {
+    try {
+      const { csvData, classId } = req.body;
+      
+      if (!csvData || typeof csvData !== 'string') {
+        return res.status(400).json({ message: "CSV data is required" });
+      }
+
+      // Parse CSV data
+      const lines = csvData.trim().split('\n');
+      if (lines.length < 2) {
+        return res.status(400).json({ message: "CSV must have at least a header row and one data row" });
+      }
+
+      const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+      const emailIndex = headers.findIndex(h => h === 'email' || h === 'e-mail');
+      const nameIndex = headers.findIndex(h => h === 'name' || h === 'full name' || h === 'fullname');
+
+      if (emailIndex === -1) {
+        return res.status(400).json({ message: "CSV must have an 'email' column" });
+      }
+
+      const enrollments: any[] = [];
+      const errors: string[] = [];
+      const targetClassId = classId;
+
+      // If classId is provided, enroll students in that class
+      // Otherwise, create new classes based on CSV data
+      if (targetClassId) {
+        const class_ = await storage.getClassById(targetClassId);
+        if (!class_) {
+          return res.status(404).json({ message: "Class not found" });
+        }
+        if (class_.userId !== req.session.userId!) {
+          return res.status(403).json({ message: "Not authorized to manage this class" });
+        }
+
+        // Enroll students in existing class
+        for (let i = 1; i < lines.length; i++) {
+          const values = lines[i].split(',').map(v => v.trim());
+          const email = values[emailIndex];
+          
+          if (!email) {
+            errors.push(`Row ${i + 1}: Missing email`);
+            continue;
+          }
+
+          // Find user by email
+          const user = await storage.getProfileByEmail(email);
+          if (!user) {
+            errors.push(`Row ${i + 1}: User with email ${email} not found`);
+            continue;
+          }
+
+          enrollments.push({
+            classId: targetClassId,
+            userId: user.id,
+          });
+        }
+
+        if (enrollments.length > 0) {
+          await storage.bulkCreateEnrollments(enrollments);
+        }
+      } else {
+        // Create new classes from CSV
+        // Expected format: class_name, description, subject, grade_level, student_email1, student_email2, ...
+        const classHeaders = ['class_name', 'name', 'class name'];
+        const classNameIndex = headers.findIndex(h => classHeaders.includes(h));
+        
+        if (classNameIndex === -1) {
+          return res.status(400).json({ message: "CSV must have a 'class_name' or 'name' column for creating classes" });
+        }
+
+        const createdClasses: any[] = [];
+        
+        for (let i = 1; i < lines.length; i++) {
+          const values = lines[i].split(',').map(v => v.trim());
+          const className = values[classNameIndex];
+          
+          if (!className) {
+            errors.push(`Row ${i + 1}: Missing class name`);
+            continue;
+          }
+
+          // Create class
+          const class_ = await storage.createClass({
+            name: className,
+            description: nameIndex !== -1 ? values[nameIndex] : null,
+            subject: headers.includes('subject') ? values[headers.indexOf('subject')] : null,
+            gradeLevel: headers.includes('grade_level') || headers.includes('grade level') 
+              ? values[headers.findIndex(h => h === 'grade_level' || h === 'grade level')] 
+              : null,
+            userId: req.session.userId!,
+          });
+
+          createdClasses.push(class_);
+
+          // Enroll students (all other columns after class info are treated as student emails)
+          const studentEmails = values.slice(Math.max(classNameIndex + 1, emailIndex !== -1 ? emailIndex : 0))
+            .filter(v => v && v.includes('@')); // Filter for email-like values
+
+          for (const email of studentEmails) {
+            const user = await storage.getProfileByEmail(email);
+            if (user) {
+              try {
+                await storage.createClassEnrollment({
+                  classId: class_.id,
+                  userId: user.id,
+                });
+              } catch (e: any) {
+                if (!e.message?.includes('unique') && !e.message?.includes('duplicate')) {
+                  errors.push(`Row ${i + 1}: Failed to enroll ${email}`);
+                }
+              }
+            } else {
+              errors.push(`Row ${i + 1}: User with email ${email} not found`);
+            }
+          }
+        }
+
+        return res.json({
+          message: `Successfully created ${createdClasses.length} class(es)`,
+          classes: createdClasses,
+          errors: errors.length > 0 ? errors : undefined,
+        });
+      }
+
+      res.json({
+        message: `Successfully enrolled ${enrollments.length} student(s)`,
+        errors: errors.length > 0 ? errors : undefined,
+      });
+    } catch (error: any) {
+      console.error("Bulk upload error:", error);
+      res.status(500).json({ message: error.message || "Failed to process bulk upload" });
+    }
+  });
+
   // YouTube video search route (simple query-based for book pages)
   app.post("/api/youtube/search-simple", requireAuth, async (req, res) => {
     try {

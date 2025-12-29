@@ -92,6 +92,40 @@ export const chatMessages = pgTable("chat_messages", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Classes table - stores class/group information
+export const classes = pgTable("classes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  description: text("description"),
+  userId: varchar("user_id").notNull().references(() => profiles.id, { onDelete: "cascade" }), // Teacher who created the class
+  subject: text("subject"), // Optional subject area
+  gradeLevel: text("grade_level"), // Optional grade level
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Class enrollments table - many-to-many relationship between students and classes
+export const classEnrollments = pgTable("class_enrollments", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  classId: varchar("class_id").notNull().references(() => classes.id, { onDelete: "cascade" }),
+  userId: varchar("user_id").notNull().references(() => profiles.id, { onDelete: "cascade" }), // Student enrolled in class
+  enrolledAt: timestamp("enrolled_at").defaultNow().notNull(),
+}, (table) => ({
+  uniqueClassUser: unique().on(table.classId, table.userId),
+}));
+
+// Content assignments table - assigns content to classes
+export const contentAssignments = pgTable("content_assignments", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  contentId: varchar("content_id").notNull().references(() => h5pContent.id, { onDelete: "cascade" }),
+  classId: varchar("class_id").notNull().references(() => classes.id, { onDelete: "cascade" }),
+  assignedAt: timestamp("assigned_at").defaultNow().notNull(),
+  dueDate: timestamp("due_date"), // Optional due date
+  instructions: text("instructions"), // Optional instructions for students
+}, (table) => ({
+  uniqueContentClass: unique().on(table.contentId, table.classId),
+}));
+
 // Zod schemas
 export const insertProfileSchema = createInsertSchema(profiles).omit({
   id: true,
@@ -150,6 +184,30 @@ export const insertChatMessageSchema = createInsertSchema(chatMessages).omit({
   context: z.record(z.any()).optional().nullable(),
 });
 
+export const insertClassSchema = createInsertSchema(classes).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  name: z.string().min(1),
+  description: z.string().optional().nullable(),
+  subject: z.string().optional().nullable(),
+  gradeLevel: z.string().optional().nullable(),
+});
+
+export const insertClassEnrollmentSchema = createInsertSchema(classEnrollments).omit({
+  id: true,
+  enrolledAt: true,
+});
+
+export const insertContentAssignmentSchema = createInsertSchema(contentAssignments).omit({
+  id: true,
+  assignedAt: true,
+}).extend({
+  dueDate: z.date().optional().nullable(),
+  instructions: z.string().optional().nullable(),
+});
+
 // Types
 export type Profile = typeof profiles.$inferSelect;
 export type InsertProfile = z.infer<typeof insertProfileSchema>;
@@ -165,6 +223,12 @@ export type InteractionEvent = typeof interactionEvents.$inferSelect;
 export type InsertInteractionEvent = z.infer<typeof insertInteractionEventSchema>;
 export type ChatMessage = typeof chatMessages.$inferSelect;
 export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;
+export type Class = typeof classes.$inferSelect;
+export type InsertClass = z.infer<typeof insertClassSchema>;
+export type ClassEnrollment = typeof classEnrollments.$inferSelect;
+export type InsertClassEnrollment = z.infer<typeof insertClassEnrollmentSchema>;
+export type ContentAssignment = typeof contentAssignments.$inferSelect;
+export type InsertContentAssignment = z.infer<typeof insertContentAssignmentSchema>;
 
 // Content type definitions
 export type ContentType = "quiz" | "flashcard" | "interactive-video" | "image-hotspot" | "drag-drop" | "fill-blanks" | "memory-game" | "interactive-book" | "video-finder" | "presentation";

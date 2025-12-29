@@ -41,6 +41,7 @@ import {
 import { useLocation } from "wouter";
 import type { H5pContent, ContentType } from "@shared/schema";
 import { format } from "date-fns";
+import { AssignToClassDialog } from "@/components/AssignToClassDialog";
 
 const contentTypeConfig: Record<ContentType, { icon: typeof FileQuestion; label: string; pluralLabel: string; color: string }> = {
   quiz: { icon: FileQuestion, label: "Quiz", pluralLabel: "Quizzes", color: "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300" },
@@ -274,6 +275,15 @@ export default function Dashboard() {
               aria-label="View analytics dashboard"
             >
               <BarChart3 className="h-5 w-5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate("/classes")}
+              data-testid="button-classes"
+              aria-label="Manage classes"
+            >
+              <Users className="h-5 w-5" />
             </Button>
             <Button
               variant="ghost"
@@ -600,6 +610,16 @@ export default function Dashboard() {
                             <Edit className="h-4 w-4 mr-1" />
                             Edit
                           </Button>
+                          <AssignToClassDialog contentId={content.id}>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              data-testid={`button-assign-${content.id}`}
+                              aria-label="Assign to class"
+                            >
+                              <Users className="h-4 w-4" />
+                            </Button>
+                          </AssignToClassDialog>
                           <Button
                             variant="outline"
                             size="icon"
