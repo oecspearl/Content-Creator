@@ -306,35 +306,39 @@ export default function Dashboard() {
           {/* Search Bar */}
           <div className="mb-6">
             <div className="relative max-w-2xl">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-primary" />
               <Input
                 placeholder="Search content..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-11 h-11 border-border/40 bg-card"
+                className="pl-11 h-12 border-2 border-primary/20 bg-card focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
                 data-testid="input-search"
               />
             </div>
           </div>
 
           {/* Hero Banner */}
-          <Card className="mb-8 bg-gradient-to-r from-primary/10 to-primary/5 border-primary/20">
-            <CardContent className="p-8">
+          <Card className="mb-8 border-0 shadow-lg overflow-hidden bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500">
+            <CardContent className="p-8 text-white">
               <div className="flex flex-col md:flex-row items-center justify-between gap-6">
                 <div className="flex-1">
-                  <h2 className="text-2xl font-bold text-foreground mb-2">
+                  <h2 className="text-3xl font-bold mb-3 drop-shadow-lg">
                     Track Your Students' Progress Easier With OECS Content Creator
                   </h2>
-                  <p className="text-muted-foreground mb-4">
+                  <p className="text-white/90 mb-6 text-lg">
                     Create engaging educational content and monitor student performance in real-time
                   </p>
-                  <Button onClick={() => navigate("/analytics")} size="lg">
+                  <Button 
+                    onClick={() => navigate("/analytics")} 
+                    size="lg"
+                    className="bg-white text-blue-600 hover:bg-white/90 font-semibold shadow-lg"
+                  >
                     View Analytics
                   </Button>
                 </div>
                 <div className="hidden md:block">
-                  <div className="h-32 w-32 bg-primary/10 rounded-lg flex items-center justify-center">
-                    <BarChart3 className="h-16 w-16 text-primary" />
+                  <div className="h-40 w-40 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-xl">
+                    <BarChart3 className="h-20 w-20 text-white" />
                   </div>
                 </div>
               </div>
@@ -343,55 +347,63 @@ export default function Dashboard() {
 
           {/* Quick Stats */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            <Card className="border-border/40 shadow-sm">
+            <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-500 to-blue-600 text-white overflow-hidden">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Content</CardTitle>
-                <FileQuestion className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-sm font-medium text-white/90">Total Content</CardTitle>
+                <div className="h-10 w-10 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                  <FileQuestion className="h-5 w-5 text-white" />
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{totalContent}</div>
-                <p className="text-xs text-muted-foreground mt-1">
+                <div className="text-3xl font-bold text-white">{totalContent}</div>
+                <p className="text-xs text-white/80 mt-1">
                   {publishedContent} published
                 </p>
               </CardContent>
             </Card>
 
-            <Card className="border-border/40 shadow-sm">
+            <Card className="border-0 shadow-lg bg-gradient-to-br from-emerald-500 to-emerald-600 text-white overflow-hidden">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Views</CardTitle>
-                <Eye className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-sm font-medium text-white/90">Total Views</CardTitle>
+                <div className="h-10 w-10 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                  <Eye className="h-5 w-5 text-white" />
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{totalViews}</div>
-                <p className="text-xs text-muted-foreground mt-1">
+                <div className="text-3xl font-bold text-white">{totalViews}</div>
+                <p className="text-xs text-white/80 mt-1">
                   Across all content
                 </p>
               </CardContent>
             </Card>
 
-            <Card className="border-border/40 shadow-sm">
+            <Card className="border-0 shadow-lg bg-gradient-to-br from-purple-500 to-purple-600 text-white overflow-hidden">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Avg. Completion</CardTitle>
-                <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-sm font-medium text-white/90">Avg. Completion</CardTitle>
+                <div className="h-10 w-10 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                  <CheckCircle2 className="h-5 w-5 text-white" />
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{Math.round(avgCompletion)}%</div>
-                <p className="text-xs text-muted-foreground mt-1">
+                <div className="text-3xl font-bold text-white">{Math.round(avgCompletion)}%</div>
+                <p className="text-xs text-white/80 mt-1">
                   Student completion rate
                 </p>
               </CardContent>
             </Card>
 
-            <Card className="border-border/40 shadow-sm">
+            <Card className="border-0 shadow-lg bg-gradient-to-br from-orange-500 to-orange-600 text-white overflow-hidden">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Performance</CardTitle>
-                <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-sm font-medium text-white/90">Performance</CardTitle>
+                <div className="h-10 w-10 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                  <TrendingUp className="h-5 w-5 text-white" />
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">
+                <div className="text-3xl font-bold text-white">
                   {analytics && analytics.length > 0 ? analytics.length : 0}
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">
+                <p className="text-xs text-white/80 mt-1">
                   Active content items
                 </p>
               </CardContent>
@@ -399,9 +411,9 @@ export default function Dashboard() {
           </div>
 
           {/* Welcome Section */}
-          <div className="mb-8">
-            <h2 className="text-2xl font-semibold text-foreground mb-3">
-              Welcome back, {user?.fullName?.split(" ")[0]}!
+          <div className="mb-8 p-6 rounded-xl bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-950/30 dark:to-purple-950/30 border border-indigo-200/50 dark:border-indigo-800/50">
+            <h2 className="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400 bg-clip-text text-transparent mb-2">
+              Welcome back, {user?.fullName?.split(" ")[0]}! 👋
             </h2>
             <p className="text-base text-muted-foreground">
               Create and manage your interactive educational content
@@ -410,38 +422,38 @@ export default function Dashboard() {
 
           {/* Create Content Buttons */}
           <div className="mb-8">
-            <h3 className="text-xl font-medium text-foreground mb-6">Create New Content</h3>
+            <h3 className="text-2xl font-bold text-foreground mb-6">Create New Content</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             {Object.entries(contentTypeConfig).map(([type, config]) => {
               const Icon = config.icon;
-              // Extract color from config for left border
-              const borderColorMap: Record<ContentType, string> = {
-                quiz: "border-l-blue-500",
-                flashcard: "border-l-purple-500",
-                "interactive-video": "border-l-green-500",
-                "image-hotspot": "border-l-orange-500",
-                "drag-drop": "border-l-pink-500",
-                "fill-blanks": "border-l-cyan-500",
-                "memory-game": "border-l-yellow-500",
-                "interactive-book": "border-l-indigo-500",
-                "video-finder": "border-l-emerald-500",
-                "presentation": "border-l-sky-500",
+              // Colorful gradient backgrounds for each content type
+              const gradientMap: Record<ContentType, string> = {
+                quiz: "bg-gradient-to-br from-blue-500 to-blue-600",
+                flashcard: "bg-gradient-to-br from-purple-500 to-purple-600",
+                "interactive-video": "bg-gradient-to-br from-green-500 to-green-600",
+                "image-hotspot": "bg-gradient-to-br from-orange-500 to-orange-600",
+                "drag-drop": "bg-gradient-to-br from-pink-500 to-pink-600",
+                "fill-blanks": "bg-gradient-to-br from-cyan-500 to-cyan-600",
+                "memory-game": "bg-gradient-to-br from-yellow-500 to-yellow-600",
+                "interactive-book": "bg-gradient-to-br from-indigo-500 to-indigo-600",
+                "video-finder": "bg-gradient-to-br from-emerald-500 to-emerald-600",
+                "presentation": "bg-gradient-to-br from-sky-500 to-sky-600",
               };
               return (
                 <Card
                   key={type}
-                  className={`border-l-2 ${borderColorMap[type as ContentType]} border-border/40 bg-card hover:shadow-md cursor-pointer transition-all duration-150 ease-out`}
+                  className="border-0 shadow-lg hover:shadow-xl cursor-pointer transition-all duration-300 ease-out hover:scale-105 overflow-hidden group"
                   onClick={() => handleCreate(type as ContentType)}
                   data-testid={`button-create-${type}`}
                 >
-                  <CardHeader className="p-6">
-                    <div className="flex items-center gap-4 mb-2">
-                      <div className="h-10 w-10 rounded-md bg-muted flex items-center justify-center">
-                        <Icon className="h-5 w-5 text-muted-foreground" />
+                  <div className={`${gradientMap[type as ContentType]} p-6 text-white`}>
+                    <div className="flex flex-col items-center text-center gap-3">
+                      <div className="h-14 w-14 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center group-hover:bg-white/30 transition-colors">
+                        <Icon className="h-7 w-7 text-white" />
                       </div>
-                      <CardTitle className="text-base font-medium">{config.label}</CardTitle>
+                      <CardTitle className="text-base font-semibold text-white">{config.label}</CardTitle>
                     </div>
-                  </CardHeader>
+                  </div>
                 </Card>
               );
             })}
@@ -575,7 +587,9 @@ export default function Dashboard() {
           {/* View Mode Toggle */}
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h3 className="text-xl font-medium text-foreground mb-1">My Content</h3>
+              <h3 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent mb-1">
+                My Content
+              </h3>
               {contents && (
                 <p className="text-sm text-muted-foreground">
                   {contents.length} {contents.length === 1 ? "item" : "items"} found
@@ -659,29 +673,92 @@ export default function Dashboard() {
                 "presentation": "border-l-sky-500",
               };
 
+              // Color mapping for section headers
+              const sectionColorMap: Record<ContentType, string> = {
+                quiz: "text-blue-600 dark:text-blue-400",
+                flashcard: "text-purple-600 dark:text-purple-400",
+                "interactive-video": "text-green-600 dark:text-green-400",
+                "image-hotspot": "text-orange-600 dark:text-orange-400",
+                "drag-drop": "text-pink-600 dark:text-pink-400",
+                "fill-blanks": "text-cyan-600 dark:text-cyan-400",
+                "memory-game": "text-yellow-600 dark:text-yellow-400",
+                "interactive-book": "text-indigo-600 dark:text-indigo-400",
+                "video-finder": "text-emerald-600 dark:text-emerald-400",
+                "presentation": "text-sky-600 dark:text-sky-400",
+              };
+              const iconBgMap: Record<ContentType, string> = {
+                quiz: "bg-blue-100 dark:bg-blue-900/30",
+                flashcard: "bg-purple-100 dark:bg-purple-900/30",
+                "interactive-video": "bg-green-100 dark:bg-green-900/30",
+                "image-hotspot": "bg-orange-100 dark:bg-orange-900/30",
+                "drag-drop": "bg-pink-100 dark:bg-pink-900/30",
+                "fill-blanks": "bg-cyan-100 dark:bg-cyan-900/30",
+                "memory-game": "bg-yellow-100 dark:bg-yellow-900/30",
+                "interactive-book": "bg-indigo-100 dark:bg-indigo-900/30",
+                "video-finder": "bg-emerald-100 dark:bg-emerald-900/30",
+                "presentation": "bg-sky-100 dark:bg-sky-900/30",
+              };
+              const iconColorMap: Record<ContentType, string> = {
+                quiz: "text-blue-600 dark:text-blue-400",
+                flashcard: "text-purple-600 dark:text-purple-400",
+                "interactive-video": "text-green-600 dark:text-green-400",
+                "image-hotspot": "text-orange-600 dark:text-orange-400",
+                "drag-drop": "text-pink-600 dark:text-pink-400",
+                "fill-blanks": "text-cyan-600 dark:text-cyan-400",
+                "memory-game": "text-yellow-600 dark:text-yellow-400",
+                "interactive-book": "text-indigo-600 dark:text-indigo-400",
+                "video-finder": "text-emerald-600 dark:text-emerald-400",
+                "presentation": "text-sky-600 dark:text-sky-400",
+              };
+
               return (
                 <div key={type} className="mb-12">
-                  <h4 className="text-xl font-medium text-foreground mb-6 flex items-center gap-3">
-                    <Icon className="h-5 w-5 text-muted-foreground" />
+                  <h4 className={`text-2xl font-bold mb-6 flex items-center gap-3 ${sectionColorMap[type as ContentType]}`}>
+                    <Icon className="h-6 w-6" />
                     {config.pluralLabel}
                     <span className="text-sm font-normal text-muted-foreground">({typeContents.length})</span>
                   </h4>
                   <div className={viewMode === "grid" ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" : "space-y-6"}>
-                    {typeContents.map((content) => (
+                    {typeContents.map((content) => {
+                      return (
+                        quiz: "bg-blue-100 dark:bg-blue-900/30",
+                        flashcard: "bg-purple-100 dark:bg-purple-900/30",
+                        "interactive-video": "bg-green-100 dark:bg-green-900/30",
+                        "image-hotspot": "bg-orange-100 dark:bg-orange-900/30",
+                        "drag-drop": "bg-pink-100 dark:bg-pink-900/30",
+                        "fill-blanks": "bg-cyan-100 dark:bg-cyan-900/30",
+                        "memory-game": "bg-yellow-100 dark:bg-yellow-900/30",
+                        "interactive-book": "bg-indigo-100 dark:bg-indigo-900/30",
+                        "video-finder": "bg-emerald-100 dark:bg-emerald-900/30",
+                        "presentation": "bg-sky-100 dark:bg-sky-900/30",
+                      };
+                      const iconColorMap: Record<ContentType, string> = {
+                        quiz: "text-blue-600 dark:text-blue-400",
+                        flashcard: "text-purple-600 dark:text-purple-400",
+                        "interactive-video": "text-green-600 dark:text-green-400",
+                        "image-hotspot": "text-orange-600 dark:text-orange-400",
+                        "drag-drop": "text-pink-600 dark:text-pink-400",
+                        "fill-blanks": "text-cyan-600 dark:text-cyan-400",
+                        "memory-game": "text-yellow-600 dark:text-yellow-400",
+                        "interactive-book": "text-indigo-600 dark:text-indigo-400",
+                        "video-finder": "text-emerald-600 dark:text-emerald-400",
+                        "presentation": "text-sky-600 dark:text-sky-400",
+                      };
+                      return (
                       <Card 
                         key={content.id} 
-                        className={`border-l-2 ${borderColorMap[type as ContentType]} border-border/40 bg-card shadow-sm hover:shadow-md transition-all duration-150 ease-out`}
+                        className={`border-l-4 ${borderColorMap[type as ContentType]} border-border/40 bg-card shadow-md hover:shadow-xl transition-all duration-300 ease-out hover:scale-[1.02]`}
                         data-testid={`card-content-${content.id}`}
                       >
                         <CardHeader className="p-6 pb-4">
                           <div className="flex items-start justify-between mb-4">
-                            <div className="h-10 w-10 rounded-md bg-muted flex items-center justify-center">
-                              <Icon className="h-5 w-5 text-muted-foreground" />
+                            <div className={`h-12 w-12 rounded-lg ${iconBgMap[type as ContentType]} flex items-center justify-center`}>
+                              <Icon className={`h-6 w-6 ${iconColorMap[type as ContentType]}`} />
                             </div>
                             {content.isPublished && (
-                              <div className="flex items-center gap-1.5">
-                                <div className="h-2 w-2 rounded-full bg-green-500"></div>
-                                <span className="text-xs font-normal text-muted-foreground">Published</span>
+                              <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-green-100 dark:bg-green-900/30">
+                                <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse"></div>
+                                <span className="text-xs font-medium text-green-700 dark:text-green-400">Published</span>
                               </div>
                             )}
                           </div>
@@ -763,7 +840,8 @@ export default function Dashboard() {
                           </Button>
                         </CardFooter>
                       </Card>
-                    ))}
+                    );
+                    })}
                   </div>
                 </div>
               );
