@@ -394,7 +394,14 @@ export default function ClassesPage() {
   };
 
   const downloadTemplate = () => {
-    const template = `class_name,description,subject,grade_level,student_email1,student_email2,student_email3
+    // If a class is selected, provide template for enrolling students
+    // Otherwise, provide template for creating new classes
+    const template = csvClassId && csvClassId !== "create-new"
+      ? `email
+student1@example.com
+student2@example.com
+student3@example.com`
+      : `class_name,description,subject,grade_level,student_email1,student_email2,student_email3
 Math 101,Introduction to Mathematics,Mathematics,Grade 5,student1@example.com,student2@example.com,student3@example.com
 Science 101,Basic Science,Science,Grade 5,student1@example.com,student2@example.com`;
     
@@ -402,7 +409,7 @@ Science 101,Basic Science,Science,Grade 5,student1@example.com,student2@example.
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "class_template.csv";
+    a.download = csvClassId && csvClassId !== "create-new" ? "enrollment_template.csv" : "class_template.csv";
     a.click();
     window.URL.revokeObjectURL(url);
   };

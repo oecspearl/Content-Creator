@@ -1994,16 +1994,19 @@ Be conversational, friendly, and educational. Provide specific, actionable advic
       }
 
       const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
-      const emailIndex = headers.findIndex(h => h === 'email' || h === 'e-mail');
+      const emailIndex = headers.findIndex(h => h === 'email' || h === 'e-mail' || h === 'student_email' || h.startsWith('student_email'));
       const nameIndex = headers.findIndex(h => h === 'name' || h === 'full name' || h === 'fullname');
-
-      if (emailIndex === -1) {
-        return res.status(400).json({ message: "CSV must have an 'email' column" });
-      }
 
       const enrollments: any[] = [];
       const errors: string[] = [];
       const targetClassId = classId;
+
+      // If classId is provided, we're enrolling in an existing class - need email column
+      if (targetClassId && emailIndex === -1) {
+        return res.status(400).json({ 
+          message: "CSV must have an 'email' column when enrolling in an existing class. Expected format: email (or student_email)" 
+        });
+      }
 
       // If classId is provided, enroll students in that class
       // Otherwise, create new classes based on CSV data
@@ -2018,7 +2021,7 @@ Be conversational, friendly, and educational. Provide specific, actionable advic
 
         // Enroll students in existing class
         for (let i = 1; i < lines.length; i++) {
-          const values = lines[i].split(',').map(v => v.trim());
+          const values = parseCSVLine(lines[i]).map(v => v.trim().replace(/^"|"$/g, ''));
           const email = values[emailIndex];
           
           if (!email) {
@@ -2055,7 +2058,7 @@ Be conversational, friendly, and educational. Provide specific, actionable advic
         const createdClasses: any[] = [];
         
         for (let i = 1; i < lines.length; i++) {
-          const values = lines[i].split(',').map(v => v.trim());
+          const values = parseCSVLine(lines[i]).map(v => v.trim().replace(/^"|"$/g, ''));
           const className = values[classNameIndex];
           
           if (!className) {
@@ -2076,9 +2079,33 @@ Be conversational, friendly, and educational. Provide specific, actionable advic
 
           createdClasses.push(class_);
 
-          // Enroll students (all other columns after class info are treated as student emails)
-          const studentEmails = values.slice(Math.max(classNameIndex + 1, emailIndex !== -1 ? emailIndex : 0))
-            .filter(v => v && v.includes('@')); // Filter for email-like values
+          // Enroll students - look for email columns (student_email1, student_email2, etc. or just email)
+          const studentEmails: string[] = [];
+          
+          // First, check if there's a dedicated email column
+          if (emailIndex !== -1 && emailIndex < values.length) {
+            const email = values[emailIndex];
+            if (email && email.includes('@')) {
+              studentEmails.push(email);
+            }
+          }
+          
+          // Also check for student_email columns (student_email1, student_email2, etc.)
+          headers.forEach((header, idx) => {
+            if ((header.startsWith('student_email') || header === 'email') && idx !== emailIndex) {
+              const email = values[idx];
+              if (email && email.includes('@')) {
+                studentEmails.push(email);
+              }
+            }
+          });
+          
+          // If no email columns found, treat all remaining columns after class info as potential emails
+          if (studentEmails.length === 0) {
+            const potentialEmails = values.slice(classNameIndex + 1)
+              .filter(v => v && v.includes('@'));
+            studentEmails.push(...potentialEmails);
+          }
 
           for (const email of studentEmails) {
             const user = await storage.getProfileByEmail(email);
