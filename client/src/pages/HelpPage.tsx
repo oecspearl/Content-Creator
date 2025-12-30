@@ -168,20 +168,30 @@ export default function HelpPage() {
                   </div>
                   <div>
                     <CardTitle>Quiz</CardTitle>
-                    <CardDescription>Multiple choice questions with instant feedback</CardDescription>
+                    <CardDescription>Multiple question types with instant feedback</CardDescription>
                   </div>
                 </div>
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground mb-3">
-                  Create engaging quizzes with multiple-choice questions. Each question can have up to four answer options with one correct answer. Students receive immediate feedback on their responses.
+                  Create engaging quizzes with five different question types: Multiple Choice, True/False, Fill-in-the-Blank, Ordering, and Drag and Drop. Students receive immediate feedback on their responses.
                 </p>
+                <p className="text-sm font-semibold text-foreground mb-2">Question Types:</p>
+                <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1 mb-3">
+                  <li><strong>Multiple Choice:</strong> Traditional format with one correct answer from several options</li>
+                  <li><strong>True/False:</strong> Simple binary questions for quick assessment</li>
+                  <li><strong>Fill-in-the-Blank:</strong> Text-based answers with support for multiple correct answers and case sensitivity</li>
+                  <li><strong>Ordering:</strong> Students arrange items in the correct sequence using drag-and-drop</li>
+                  <li><strong>Drag and Drop:</strong> Students match items to appropriate categories or zones</li>
+                </ul>
                 <p className="text-sm font-semibold text-foreground mb-2">Best Practices:</p>
                 <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
                   <li>Keep questions clear and concise</li>
                   <li>Use plausible distractors (incorrect answers)</li>
                   <li>Provide helpful feedback for both correct and incorrect answers</li>
-                  <li>Mix difficulty levels to challenge all learners</li>
+                  <li>Mix difficulty levels and question types to challenge all learners</li>
+                  <li>For ordering questions, ensure items have a clear logical sequence</li>
+                  <li>For drag-drop, create clear, unambiguous categories</li>
                 </ul>
               </CardContent>
             </Card>
@@ -459,18 +469,27 @@ export default function HelpPage() {
                       <li>Enter your topic (e.g., "Photosynthesis", "World War II")</li>
                       <li>Select difficulty level (Beginner, Intermediate, Advanced)</li>
                       <li>Specify grade level and number of items</li>
+                      <li>For quizzes: Choose question type mode (all same type or mixed types)</li>
+                      <li>If using mixed types, select the question type for each question</li>
                       <li>Add any additional context or requirements</li>
                       <li>Click Generate and review the AI-created content</li>
                       <li>Edit and customize as needed before saving</li>
                     </ol>
                   </div>
                   <div className="bg-accent/50 rounded-lg p-4">
+                    <p className="text-sm font-semibold text-foreground mb-2">Quiz Question Type Selection:</p>
+                    <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1 mb-3">
+                      <li><strong>All Same Type:</strong> Generate all questions using one question type (Multiple Choice, True/False, Fill-in-the-Blank, Ordering, or Drag and Drop)</li>
+                      <li><strong>Mixed Types:</strong> Specify a different question type for each question, allowing you to create diverse assessments</li>
+                    </ul>
                     <p className="text-sm font-semibold text-foreground mb-2">Tips for Better AI Results:</p>
                     <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
                       <li>Be specific with your topic</li>
                       <li>Include learning objectives in additional context</li>
                       <li>Specify the appropriate grade level</li>
                       <li>Review and fact-check AI-generated content</li>
+                      <li>For ordering questions, provide context about the sequence in your topic description</li>
+                      <li>For drag-drop questions, specify the categories or zones you want in the additional context</li>
                     </ul>
                   </div>
                 </div>
@@ -659,13 +678,13 @@ export default function HelpPage() {
               <AccordionTrigger>
                 <div className="flex items-center gap-2">
                   <BookOpen className="h-5 w-5 text-primary" />
-                  <span>Progress Tracking</span>
+                  <span>Progress Tracking & Analytics</span>
                 </div>
               </AccordionTrigger>
               <AccordionContent>
                 <div className="space-y-4 pt-2">
                   <p className="text-sm text-muted-foreground">
-                    Track student progress automatically as they interact with your content. The system monitors completion, time spent, and performance.
+                    Track student progress automatically as they interact with your content. The system monitors completion, time spent, and performance. Access detailed analytics through the Analytics Dashboard.
                   </p>
                   <div>
                     <p className="text-sm font-semibold text-foreground mb-2">Tracked Metrics:</p>
@@ -675,6 +694,21 @@ export default function HelpPage() {
                       <li>Quiz scores and attempt history</li>
                       <li>Pages viewed in interactive books</li>
                       <li>Individual interaction events (card flips, hotspot clicks)</li>
+                      <li>Content performance statistics (views, completions, average scores)</li>
+                      <li>Individual learner progress and performance</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground mb-2">Analytics Dashboard:</p>
+                    <p className="text-sm text-muted-foreground mb-2">
+                      Access the Analytics Dashboard from the Dashboard header to view:
+                    </p>
+                    <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
+                      <li>Summary statistics across all your content</li>
+                      <li>Content performance metrics (views, completions, average scores)</li>
+                      <li>Individual learner data and progress</li>
+                      <li>Quiz attempt details and scores</li>
+                      <li>Filter and search capabilities for specific content or learners</li>
                     </ul>
                   </div>
                   <div className="bg-accent/50 rounded-lg p-4">
@@ -684,6 +718,128 @@ export default function HelpPage() {
                       <li>Students can pick up where they left off</li>
                       <li>Logged-in users get persistent progress across devices</li>
                       <li>Anonymous users maintain progress during their session</li>
+                      <li>All progress data is available in the Analytics Dashboard</li>
+                    </ul>
+                  </div>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="class-management">
+              <AccordionTrigger>
+                <div className="flex items-center gap-2">
+                  <GraduationCap className="h-5 w-5 text-primary" />
+                  <span>Class Management</span>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent>
+                <div className="space-y-4 pt-2">
+                  <p className="text-sm text-muted-foreground">
+                    Create and manage classes, enroll students, and assign content to your classes. This feature helps you organize your students and distribute content efficiently.
+                  </p>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground mb-2">Creating Classes:</p>
+                    <ol className="text-sm text-muted-foreground list-decimal list-inside space-y-1">
+                      <li>Click the "Classes" button (Graduation Cap icon) in the Dashboard header</li>
+                      <li>Click "Create New Class" or use the "Bulk Upload" feature</li>
+                      <li>Enter class name (required), description, subject, and grade level</li>
+                      <li>Click "Create" to save your class</li>
+                    </ol>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground mb-2">Bulk Upload (CSV):</p>
+                    <p className="text-sm text-muted-foreground mb-2">
+                      Upload multiple classes and enrollments at once using a CSV file:
+                    </p>
+                    <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
+                      <li>Click "Bulk Upload" button on the Classes page</li>
+                      <li>Select "Create new classes" or "Add to existing class"</li>
+                      <li>Paste your CSV data or upload a file</li>
+                      <li>CSV format: Class Name, Student Email (one student per row)</li>
+                      <li>For new classes: First row should be Class Name, Description, Subject, Grade Level</li>
+                      <li>For existing classes: Select the class, then paste student emails (one per row)</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground mb-2">Managing Students:</p>
+                    <ol className="text-sm text-muted-foreground list-decimal list-inside space-y-1">
+                      <li>Click on a class to view its details</li>
+                      <li>Click "Manage Students" to open the enrollments dialog</li>
+                      <li>Search for students by email address</li>
+                      <li>Click "Add Student" to enroll them in the class</li>
+                      <li>Click the trash icon next to a student to remove them from the class</li>
+                    </ol>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground mb-2">Editing and Deleting Classes:</p>
+                    <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
+                      <li>Click the edit icon on any class card to modify its details</li>
+                      <li>Click the delete icon to permanently remove a class</li>
+                      <li>Deleting a class will also remove all student enrollments and content assignments</li>
+                    </ul>
+                  </div>
+                  <div className="bg-accent/50 rounded-lg p-4">
+                    <p className="text-sm font-semibold text-foreground mb-2">Best Practices:</p>
+                    <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
+                      <li>Use descriptive class names (e.g., "Grade 9 Mathematics - Section A")</li>
+                      <li>Add subject and grade level for better organization</li>
+                      <li>Use bulk upload for large enrollments to save time</li>
+                      <li>Students must have accounts in the system to be enrolled</li>
+                      <li>Regularly review and update class rosters</li>
+                    </ul>
+                  </div>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="content-assignment">
+              <AccordionTrigger>
+                <div className="flex items-center gap-2">
+                  <BookOpen className="h-5 w-5 text-primary" />
+                  <span>Assigning Content to Classes</span>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent>
+                <div className="space-y-4 pt-2">
+                  <p className="text-sm text-muted-foreground">
+                    Assign your published content directly to one or more classes. Set due dates and add instructions to guide your students.
+                  </p>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground mb-2">How to Assign Content:</p>
+                    <ol className="text-sm text-muted-foreground list-decimal list-inside space-y-1">
+                      <li>Navigate to your Dashboard and find the content you want to assign</li>
+                      <li>Click the "Assign to Class" button (Users icon) on the content card</li>
+                      <li>Select one or more classes from the dropdown</li>
+                      <li>Optionally set a due date and time</li>
+                      <li>Add instructions or notes for your students</li>
+                      <li>Click "Assign" to complete the assignment</li>
+                    </ol>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground mb-2">Assignment Features:</p>
+                    <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
+                      <li>Assign the same content to multiple classes at once</li>
+                      <li>Set different due dates for different classes</li>
+                      <li>Add class-specific instructions</li>
+                      <li>View all assignments from the Classes page</li>
+                      <li>Unassign content from classes when no longer needed</li>
+                    </ul>
+                  </div>
+                  <div className="bg-accent/50 rounded-lg p-4">
+                    <p className="text-sm font-semibold text-foreground mb-2">Requirements:</p>
+                    <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
+                      <li>Content must be published before it can be assigned</li>
+                      <li>You must have at least one class created</li>
+                      <li>Students enrolled in assigned classes will see the content in their dashboard</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground mb-2">Student Experience:</p>
+                    <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
+                      <li>Assigned content appears in students' dashboards</li>
+                      <li>Due dates are clearly displayed</li>
+                      <li>Instructions are visible when students access the assignment</li>
+                      <li>Progress is automatically tracked for assigned content</li>
                     </ul>
                   </div>
                 </div>
@@ -793,6 +949,24 @@ export default function HelpPage() {
                 <AccordionContent>
                   <p className="text-sm text-muted-foreground">
                     There are no limits on the number of content items you can create. However, individual content items have practical limits (e.g., 50 questions per quiz, 100 flashcards per set) to ensure optimal performance and user experience.
+                  </p>
+                </AccordionContent>
+              </AccordionItem>
+
+              <AccordionItem value="faq-8">
+                <AccordionTrigger>How do I enroll students in my classes?</AccordionTrigger>
+                <AccordionContent>
+                  <p className="text-sm text-muted-foreground">
+                    You can enroll students in two ways: (1) Manually by clicking "Manage Students" on a class, searching for the student by email, and clicking "Add Student", or (2) Using the Bulk Upload feature to upload multiple students at once via CSV. Students must have accounts in the system before they can be enrolled.
+                  </p>
+                </AccordionContent>
+              </AccordionItem>
+
+              <AccordionItem value="faq-9">
+                <AccordionTrigger>Can I download my quizzes as HTML files?</AccordionTrigger>
+                <AccordionContent>
+                  <p className="text-sm text-muted-foreground">
+                    Yes! When editing a quiz, click the "Download HTML" button in the toolbar. This will download a standalone HTML file that includes all question types (Multiple Choice, True/False, Fill-in-the-Blank, Ordering, and Drag and Drop) with full interactive functionality. The downloaded file can be used offline or hosted on any web server.
                   </p>
                 </AccordionContent>
               </AccordionItem>
