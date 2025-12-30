@@ -480,106 +480,105 @@ export default function Dashboard() {
           </div>
         </div>
 
-          {showFilters && (
-            <Card className="border-border/40 shadow-sm">
-              <CardContent className="p-6 space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                  <div>
-                    <label className="text-sm font-normal text-foreground mb-2 block">Content Type</label>
-                    <Select value={typeFilter} onValueChange={setTypeFilter}>
-                      <SelectTrigger data-testid="select-type-filter" className="border-border/40 h-11">
-                        <SelectValue placeholder="All types" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All types</SelectItem>
-                        <SelectItem value="quiz">Quiz</SelectItem>
-                        <SelectItem value="flashcard">Flashcard</SelectItem>
-                        <SelectItem value="interactive-video">Interactive Video</SelectItem>
-                        <SelectItem value="image-hotspot">Image Hotspot</SelectItem>
-                        <SelectItem value="drag-drop">Drag & Drop</SelectItem>
-                        <SelectItem value="fill-blanks">Fill in the Blanks</SelectItem>
-                        <SelectItem value="memory-game">Memory Game</SelectItem>
-                        <SelectItem value="interactive-book">Interactive Book</SelectItem>
-                        <SelectItem value="video-finder">Video Finder</SelectItem>
-                        <SelectItem value="presentation">Presentation</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div>
-                    <label className="text-sm font-normal text-foreground mb-2 block">Subject</label>
-                    <Select value={subjectFilter} onValueChange={setSubjectFilter}>
-                      <SelectTrigger data-testid="select-subject-filter" className="border-border/40 h-11">
-                        <SelectValue placeholder="All subjects" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All subjects</SelectItem>
-                        {allSubjects.map((subject) => (
-                          <SelectItem key={subject} value={subject}>
-                            {subject}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div>
-                    <label className="text-sm font-normal text-foreground mb-2 block">Grade</label>
-                    <Select value={gradeFilter} onValueChange={setGradeFilter}>
-                      <SelectTrigger data-testid="select-grade-filter" className="border-border/40 h-11">
-                        <SelectValue placeholder="All grades" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All grades</SelectItem>
-                        {allGrades.map((grade) => (
-                          <SelectItem key={grade} value={grade}>
-                            {grade}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div>
-                    <label className="text-sm font-normal text-foreground mb-2 block">Tags</label>
-                    <Input
-                      placeholder="e.g., science, math"
-                      value={tagFilter}
-                      onChange={(e) => setTagFilter(e.target.value)}
-                      data-testid="input-tag-filter"
-                      className="border-border/40 h-11"
-                    />
-                    <p className="text-xs text-muted-foreground mt-2">Comma-separated</p>
-                  </div>
-
-                  <div>
-                    <label className="text-sm font-normal text-foreground mb-2 block">From Date</label>
-                    <Input
-                      type="date"
-                      value={startDate}
-                      onChange={(e) => setStartDate(e.target.value)}
-                      data-testid="input-start-date"
-                      className="border-border/40 h-11"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-sm font-normal text-foreground mb-2 block">To Date</label>
-                    <Input
-                      type="date"
-                      value={endDate}
-                      onChange={(e) => setEndDate(e.target.value)}
-                      data-testid="input-end-date"
-                      className="border-border/40 h-11"
-                    />
-                  </div>
+        {showFilters && (
+          <Card className="mb-8 border-border/40 shadow-sm">
+            <CardContent className="p-6 space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <div>
+                  <label className="text-sm font-normal text-foreground mb-2 block">Content Type</label>
+                  <Select value={typeFilter} onValueChange={setTypeFilter}>
+                    <SelectTrigger data-testid="select-type-filter" className="border-border/40 h-11">
+                      <SelectValue placeholder="All types" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All types</SelectItem>
+                      <SelectItem value="quiz">Quiz</SelectItem>
+                      <SelectItem value="flashcard">Flashcard</SelectItem>
+                      <SelectItem value="interactive-video">Interactive Video</SelectItem>
+                      <SelectItem value="image-hotspot">Image Hotspot</SelectItem>
+                      <SelectItem value="drag-drop">Drag & Drop</SelectItem>
+                      <SelectItem value="fill-blanks">Fill in the Blanks</SelectItem>
+                      <SelectItem value="memory-game">Memory Game</SelectItem>
+                      <SelectItem value="interactive-book">Interactive Book</SelectItem>
+                      <SelectItem value="video-finder">Video Finder</SelectItem>
+                      <SelectItem value="presentation">Presentation</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-              </CardContent>
-            </Card>
-          )}
-        </div>
 
-          {/* View Mode Toggle */}
+                <div>
+                  <label className="text-sm font-normal text-foreground mb-2 block">Subject</label>
+                  <Select value={subjectFilter} onValueChange={setSubjectFilter}>
+                    <SelectTrigger data-testid="select-subject-filter" className="border-border/40 h-11">
+                      <SelectValue placeholder="All subjects" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All subjects</SelectItem>
+                      {allSubjects.map((subject) => (
+                        <SelectItem key={subject} value={subject}>
+                          {subject}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <label className="text-sm font-normal text-foreground mb-2 block">Grade</label>
+                  <Select value={gradeFilter} onValueChange={setGradeFilter}>
+                    <SelectTrigger data-testid="select-grade-filter" className="border-border/40 h-11">
+                      <SelectValue placeholder="All grades" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All grades</SelectItem>
+                      {allGrades.map((grade) => (
+                        <SelectItem key={grade} value={grade}>
+                          {grade}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <label className="text-sm font-normal text-foreground mb-2 block">Tags</label>
+                  <Input
+                    placeholder="e.g., science, math"
+                    value={tagFilter}
+                    onChange={(e) => setTagFilter(e.target.value)}
+                    data-testid="input-tag-filter"
+                    className="border-border/40 h-11"
+                  />
+                  <p className="text-xs text-muted-foreground mt-2">Comma-separated</p>
+                </div>
+
+                <div>
+                  <label className="text-sm font-normal text-foreground mb-2 block">From Date</label>
+                  <Input
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    data-testid="input-start-date"
+                    className="border-border/40 h-11"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-sm font-normal text-foreground mb-2 block">To Date</label>
+                  <Input
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    data-testid="input-end-date"
+                    className="border-border/40 h-11"
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* View Mode Toggle */}
           <div className="flex items-center justify-between mb-6">
             <div>
               <h3 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent mb-1">
