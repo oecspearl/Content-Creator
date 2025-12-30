@@ -2225,8 +2225,11 @@ Be conversational, friendly, and educational. Provide specific, actionable advic
     }
   });
 
+  // Import rate limiting middleware
+  const { aiGenerationRateLimit, presentationCreationRateLimit, imageSearchRateLimit } = await import('./middleware/rate-limit');
+
   // Presentation AI generation route
-  app.post("/api/presentation/generate", requireAuth, async (req, res) => {
+  app.post("/api/presentation/generate", requireAuth, aiGenerationRateLimit, async (req, res) => {
     // Set a timeout to prevent Heroku's 30-second limit from causing issues
     const timeout = setTimeout(() => {
       if (!res.headersSent) {
@@ -2280,7 +2283,7 @@ Be conversational, friendly, and educational. Provide specific, actionable advic
   });
 
   // Fetch image from Unsplash for a given query
-  app.post("/api/unsplash/search", requireAuth, async (req, res) => {
+  app.post("/api/unsplash/search", requireAuth, imageSearchRateLimit, async (req, res) => {
     try {
       const { query, count = 1 } = req.body;
       
@@ -2358,9 +2361,9 @@ Be conversational, friendly, and educational. Provide specific, actionable advic
   });
 
   // Create actual Google Slides presentation from generated content
-  app.post("/api/presentation/create-presentation", requireAuth, async (req, res) => {
+  app.post("/api/presentation/create-presentation", requireAuth, presentationCreationRateLimit, async (req, res) => {
     try {
-      const { title, slides } = req.body;
+      const { title, slides, colorTheme } = req.body;
 
       if (!title || !slides || !Array.isArray(slides)) {
         return res.status(400).json({ message: "Missing required fields: title and slides" });
@@ -2373,28 +2376,34 @@ Be conversational, friendly, and educational. Provide specific, actionable advic
       }
 
       if (!user.googleAccessToken || !user.googleRefreshToken) {
-        return res.status(403).json({ 
-          message: "Please sign in with Google to create presentations in Google Slides. Your current account doesn't have Google Slides access." 
+        return res.status(403).json({
+          message: "Please sign in with Google to create presentations in Google Slides. Your current account doesn't have Google Slides access."
         });
       }
 
       // Import services (dynamic to avoid loading if not needed)
       const { createPresentation, addSlidesToPresentation } = await import('./presentation');
       const { searchPhotos, getAltText, generateAttribution } = await import('./unsplash');
+      const { GoogleAuthError, TokenExpiredError } = await import('./errors/presentation-errors');
 
-      // Fetch real images for slides that need them
+      // Fetch real images for slides that need them (parallel processing)
       const slidesWithImages = await Promise.all(slides.map(async (slide: any) => {
         if (slide.imageUrl && typeof slide.imageUrl === 'string' && !slide.imageUrl.startsWith('http')) {
           // imageUrl contains a search query, not an actual URL
-          const photos = await searchPhotos(slide.imageUrl, 1);
-          if (photos.length > 0) {
-            const photo = photos[0];
-            return {
-              ...slide,
-              imageUrl: photo.urls.regular,
-              imageAlt: slide.imageAlt || getAltText(photo),
-              imageAttribution: generateAttribution(photo),
-            };
+          try {
+            const photos = await searchPhotos(slide.imageUrl, 1);
+            if (photos.length > 0) {
+              const photo = photos[0];
+              return {
+                ...slide,
+                imageUrl: photo.urls.regular,
+                imageAlt: slide.imageAlt || getAltText(photo),
+                imageAttribution: generateAttribution(photo),
+              };
+            }
+          } catch (error) {
+            console.warn(`Failed to fetch image for query "${slide.imageUrl}":`, error);
+            // Continue without image if fetch fails
           }
         }
         return slide;
@@ -2403,25 +2412,44 @@ Be conversational, friendly, and educational. Provide specific, actionable advic
       // Create presentation
       const { presentationId, url } = await createPresentation(user, title);
 
-      // Add slides to presentation
-      await addSlidesToPresentation(user, presentationId, slidesWithImages);
+      // Add slides to presentation with options
+      const result = await addSlidesToPresentation(user, presentationId, slidesWithImages, {
+        colorTheme: colorTheme || 'blue',
+        allowUntrustedImages: false, // Only allow trusted image domains
+      });
 
-      res.json({ 
-        presentationId, 
+      res.json({
+        presentationId,
         url,
-        message: "Presentation created successfully in Google Slides!" 
+        message: "Presentation created successfully in Google Slides!",
+        successCount: result.successCount,
+        warnings: result.warnings.length > 0 ? result.warnings : undefined,
+        failedSlides: result.failedSlides.length > 0 ? result.failedSlides : undefined,
       });
     } catch (error: any) {
       console.error("Create presentation error:", error);
-      
-      if (error.message?.includes('not connected their Google account')) {
-        return res.status(403).json({ 
-          message: "Please sign in with Google to create presentations. Go to Settings and connect your Google account." 
+
+      // Handle custom error types
+      if (error.name === 'GoogleAuthError' || error.name === 'TokenExpiredError') {
+        return res.status(403).json({
+          message: error.message || "Please reconnect your Google account to create presentations."
         });
       }
-      
-      res.status(500).json({ 
-        message: error.message || "Failed to create presentation. Please try again." 
+
+      if (error.name === 'BatchSizeExceededError') {
+        return res.status(400).json({
+          message: error.message
+        });
+      }
+
+      if (error.message?.includes('not connected their Google account')) {
+        return res.status(403).json({
+          message: "Please sign in with Google to create presentations. Go to Settings and connect your Google account."
+        });
+      }
+
+      res.status(500).json({
+        message: error.message || "Failed to create presentation. Please try again."
       });
     }
   });
