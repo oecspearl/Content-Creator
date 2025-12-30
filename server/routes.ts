@@ -42,7 +42,10 @@ declare module "express-session" {
 export async function registerRoutes(app: Express): Promise<Server> {
   // Trust Heroku's proxy (required for secure cookies and correct IP addresses)
   app.set('trust proxy', 1);
-  
+
+  // Import rate limiting middleware
+  const { aiGenerationRateLimit, presentationCreationRateLimit, imageSearchRateLimit } = await import('./middleware/rate-limit');
+
   // Validate required environment variables
   if (!process.env.SESSION_SECRET) {
     throw new Error("SESSION_SECRET environment variable is required");
@@ -2224,9 +2227,6 @@ Be conversational, friendly, and educational. Provide specific, actionable advic
       });
     }
   });
-
-  // Import rate limiting middleware
-  const { aiGenerationRateLimit, presentationCreationRateLimit, imageSearchRateLimit } = await import('./middleware/rate-limit');
 
   // Presentation AI generation route
   app.post("/api/presentation/generate", requireAuth, aiGenerationRateLimit, async (req, res) => {

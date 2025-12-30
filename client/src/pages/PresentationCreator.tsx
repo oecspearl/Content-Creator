@@ -397,16 +397,29 @@ export default function PresentationCreator() {
       const response = await apiRequest("POST", "/api/presentation/create-presentation", {
         title,
         slides,
+        colorTheme: colorScheme,
       });
       return await response.json();
     },
     onSuccess: async (data) => {
       setPresentationId(data.presentationId);
       setPresentationUrl(data.url);
-      toast({ 
-        title: "Created in Google Slides!", 
-        description: "Your presentation is ready. Click 'Open in Google Slides' to view it." 
+
+      // Show success message with warnings if any
+      const description = data.warnings && data.warnings.length > 0
+        ? `Presentation created with ${data.warnings.length} warning(s). Some features may not be available.`
+        : "Your presentation is ready. Click 'Open in Google Slides' to view it.";
+
+      toast({
+        title: "Created in Google Slides!",
+        description,
+        variant: data.warnings && data.warnings.length > 0 ? "default" : "default",
       });
+
+      // Log warnings for debugging
+      if (data.warnings && data.warnings.length > 0) {
+        console.warn("Presentation creation warnings:", data.warnings);
+      }
       
       // Save the presentation URL to content
       if (isEditing && contentId) {
@@ -825,21 +838,56 @@ export default function PresentationCreator() {
                 </p>
               </div>
               <div>
-                <Label htmlFor="colorScheme">Color Theme</Label>
+                <Label htmlFor="colorScheme" className="flex items-center gap-2">
+                  <Palette className="h-4 w-4" />
+                  Color Theme
+                </Label>
                 <Select value={colorScheme} onValueChange={setColorScheme}>
                   <SelectTrigger id="colorScheme" data-testid="select-color-scheme">
                     <SelectValue placeholder="Select color theme" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="blue">Professional Blue</SelectItem>
-                    <SelectItem value="green">Fresh Green</SelectItem>
-                    <SelectItem value="purple">Creative Purple</SelectItem>
-                    <SelectItem value="orange">Energetic Orange</SelectItem>
-                    <SelectItem value="teal">Modern Teal</SelectItem>
-                    <SelectItem value="red">Bold Red</SelectItem>
+                    <SelectItem value="blue">
+                      <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 rounded-full" style={{ backgroundColor: '#4285F4' }}></div>
+                        <span>Professional Blue</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="green">
+                      <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 rounded-full" style={{ backgroundColor: '#209787' }}></div>
+                        <span>Fresh Green</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="purple">
+                      <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 rounded-full" style={{ backgroundColor: '#9B59B6' }}></div>
+                        <span>Creative Purple</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="orange">
+                      <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 rounded-full" style={{ backgroundColor: '#F39C12' }}></div>
+                        <span>Energetic Orange</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="teal">
+                      <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 rounded-full" style={{ backgroundColor: '#1CA9B4' }}></div>
+                        <span>Modern Teal</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="red">
+                      <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 rounded-full" style={{ backgroundColor: '#E74C3C' }}></div>
+                        <span>Bold Red</span>
+                      </div>
+                    </SelectItem>
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-muted-foreground mt-1">Visual theme for your presentation</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Applied to titles and headings in your Google Slides presentation
+                </p>
               </div>
             </CardContent>
           </Card>
