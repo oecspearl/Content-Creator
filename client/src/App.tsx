@@ -29,6 +29,7 @@ import PublicPreviewPage from "@/pages/PublicPreviewPage";
 import HelpPage from "@/pages/HelpPage";
 import AnalyticsPage from "@/pages/AnalyticsPage";
 import ClassesPage from "@/pages/ClassesPage";
+import SettingsPage from "@/pages/SettingsPage";
 import NotFound from "@/pages/not-found";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -141,6 +142,9 @@ function Router() {
       </Route>
       <Route path="/classes">
         <ProtectedRoute component={ClassesPage} />
+      </Route>
+      <Route path="/settings">
+        <ProtectedRoute component={SettingsPage} />
       </Route>
       <Route component={NotFound} />
     </Switch>

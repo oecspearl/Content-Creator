@@ -303,18 +303,38 @@ export default function Dashboard() {
         </div>
 
         <main id="main-content" className="flex-1 overflow-y-auto px-4 lg:px-6 py-6 lg:py-8" role="main">
-          {/* Search Bar */}
-          <div className="mb-6">
-            <div className="relative max-w-2xl">
+          {/* Search Bar and Filters */}
+          <div className="mb-6 flex gap-3 items-center">
+            <div className="relative flex-1 max-w-2xl">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-primary" />
               <Input
                 placeholder="Search content..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-11 h-12 border-2 border-primary/20 bg-card focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                className="pl-11 h-11 border-2 border-primary/20 bg-card focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
                 data-testid="input-search"
               />
             </div>
+            <Button
+              variant={showFilters ? "secondary" : "outline"}
+              onClick={() => setShowFilters(!showFilters)}
+              data-testid="button-toggle-filters"
+              className="h-11 border-border/40"
+            >
+              <Filter className="h-5 w-5 mr-2" />
+              Filters
+            </Button>
+            {hasActiveFilters && (
+              <Button
+                variant="ghost"
+                onClick={clearFilters}
+                data-testid="button-clear-filters"
+                className="h-11"
+              >
+                <X className="h-5 w-5 mr-2" />
+                Clear
+              </Button>
+            )}
           </div>
 
           {/* Hero Banner */}
@@ -459,31 +479,6 @@ export default function Dashboard() {
             })}
           </div>
         </div>
-
-          {/* Filters */}
-          <div className="mb-8 space-y-4">
-            <div className="flex gap-3">
-              <Button
-                variant={showFilters ? "secondary" : "outline"}
-                onClick={() => setShowFilters(!showFilters)}
-                data-testid="button-toggle-filters"
-                className="h-11 border-border/40"
-              >
-                <Filter className="h-5 w-5 mr-2" />
-                Filters
-              </Button>
-              {hasActiveFilters && (
-                <Button
-                  variant="ghost"
-                  onClick={clearFilters}
-                  data-testid="button-clear-filters"
-                  className="h-11"
-                >
-                  <X className="h-5 w-5 mr-2" />
-                  Clear
-                </Button>
-              )}
-            </div>
 
           {showFilters && (
             <Card className="border-border/40 shadow-sm">

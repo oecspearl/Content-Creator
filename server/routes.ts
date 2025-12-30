@@ -1749,6 +1749,88 @@ Be conversational, friendly, and educational. Provide specific, actionable advic
   });
 
   // User search endpoint for finding students to enroll
+  // Profile management routes
+  app.get("/api/profile", requireAuth, async (req, res) => {
+    try {
+      const profile = await storage.getProfileById(req.session.userId!);
+      if (!profile) {
+        return res.status(404).json({ message: "Profile not found" });
+      }
+      res.json(profile);
+    } catch (error: any) {
+      console.error("Get profile error:", error);
+      res.status(500).json({ message: "Failed to fetch profile" });
+    }
+  });
+
+  app.put("/api/profile", requireAuth, async (req, res) => {
+    try {
+      const { fullName, institution } = req.body;
+      
+      if (fullName && typeof fullName === 'string' && !fullName.trim()) {
+        return res.status(400).json({ message: "Full name cannot be empty" });
+      }
+
+      const updates: any = {};
+      if (fullName) updates.fullName = fullName.trim();
+      if (institution !== undefined) updates.institution = institution?.trim() || null;
+      updates.updatedAt = new Date();
+
+      const updated = await storage.updateProfile(req.session.userId!, updates);
+      if (!updated) {
+        return res.status(404).json({ message: "Profile not found" });
+      }
+      res.json(updated);
+    } catch (error: any) {
+      console.error("Update profile error:", error);
+      res.status(500).json({ message: "Failed to update profile" });
+    }
+  });
+
+  app.put("/api/profile/password", requireAuth, async (req, res) => {
+    try {
+      const { currentPassword, newPassword } = req.body;
+      
+      if (!currentPassword || !newPassword) {
+        return res.status(400).json({ message: "Current password and new password are required" });
+      }
+
+      if (newPassword.length < 8) {
+        return res.status(400).json({ message: "New password must be at least 8 characters long" });
+      }
+
+      // Get current profile to verify password
+      const profile = await storage.getProfileById(req.session.userId!);
+      if (!profile || !profile.password) {
+        return res.status(400).json({ message: "Password change not available for OAuth accounts" });
+      }
+
+      // Verify current password
+      const isValid = await bcrypt.compare(currentPassword, profile.password);
+      if (!isValid) {
+        return res.status(401).json({ message: "Current password is incorrect" });
+      }
+
+      // Hash new password
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+      // Update password
+      const updated = await storage.updateProfile(req.session.userId!, {
+        password: hashedPassword,
+        updatedAt: new Date(),
+      });
+
+      if (!updated) {
+        return res.status(404).json({ message: "Profile not found" });
+      }
+
+      res.json({ message: "Password updated successfully" });
+    } catch (error: any) {
+      console.error("Change password error:", error);
+      res.status(500).json({ message: "Failed to change password" });
+    }
+  });
+
   app.get("/api/users/search", requireAuth, async (req, res) => {
     try {
       const { email, q } = req.query;

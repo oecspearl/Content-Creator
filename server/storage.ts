@@ -101,9 +101,17 @@ export class DbStorage implements IStorage {
   }
 
   async updateProfile(id: string, updates: Partial<InsertProfile>): Promise<Profile | undefined> {
+    // Hash password if it's being updated and not already hashed
+    if (updates.password && typeof updates.password === 'string' && !updates.password.startsWith('$2')) {
+      updates.password = await bcrypt.hash(updates.password, 10);
+    }
+    
+    const updateData: any = { ...updates };
+    updateData.updatedAt = new Date();
+    
     const [profile] = await db
       .update(profiles)
-      .set(updates)
+      .set(updateData)
       .where(eq(profiles.id, id))
       .returning();
     return profile;

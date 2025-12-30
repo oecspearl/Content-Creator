@@ -24,7 +24,7 @@ const navItems: NavItem[] = [
   { label: "Analytics", icon: BarChart3, path: "/analytics" },
   { label: "Shared Resources", icon: Users, path: "/shared-resources" },
   { label: "Help", icon: HelpCircle, path: "/help" },
-  { label: "Settings", icon: Settings, path: "/dashboard" },
+  { label: "Settings", icon: Settings, path: "/settings" },
 ];
 
 type DashboardSidebarProps = {
@@ -69,7 +69,8 @@ export function DashboardSidebar({ onNavigate }: DashboardSidebarProps) {
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = location === item.path || 
-            (item.path === "/dashboard" && location.startsWith("/create"));
+            (item.path === "/dashboard" && location.startsWith("/create")) ||
+            (item.path === "/settings" && location === "/settings");
           
           return (
             <Button
