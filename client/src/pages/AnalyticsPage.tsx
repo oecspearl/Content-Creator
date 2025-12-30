@@ -44,11 +44,16 @@ import {
   BookOpenCheck,
   CheckCircle2,
   Clock,
+  Download,
+  PieChart,
+  AlertCircle,
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { format } from "date-fns";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, PieChart as RechartsPieChart, Pie, Cell } from 'recharts';
 import { useState } from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Progress } from "@/components/ui/progress";
 
 function getInitials(name: string): string {
   return name
@@ -74,6 +79,7 @@ export default function AnalyticsPage() {
   const { user, logout } = useAuth();
   const [_, navigate] = useLocation();
   const [selectedContentId, setSelectedContentId] = useState<string | null>(null);
+  const [analyticsTab, setAnalyticsTab] = useState<"overview" | "questions" | "performance" | "distribution">("overview");
   const breadcrumbs = useBreadcrumbs();
 
   const { data: analytics, isLoading } = useQuery<any[]>({
@@ -83,6 +89,21 @@ export default function AnalyticsPage() {
   const { data: learners, isLoading: isLoadingLearners } = useQuery<any[]>({
     queryKey: ["/api/analytics/content", selectedContentId, "learners"],
     enabled: !!selectedContentId,
+  });
+
+  const { data: questionAnalytics, isLoading: isLoadingQuestions } = useQuery<any>({
+    queryKey: ["/api/analytics/content", selectedContentId, "questions"],
+    enabled: !!selectedContentId && analyticsTab === "questions",
+  });
+
+  const { data: performanceData, isLoading: isLoadingPerformance } = useQuery<any>({
+    queryKey: ["/api/analytics/content", selectedContentId, "performance"],
+    enabled: !!selectedContentId && analyticsTab === "performance",
+  });
+
+  const { data: scoreDistribution, isLoading: isLoadingDistribution } = useQuery<any>({
+    queryKey: ["/api/analytics/content", selectedContentId, "score-distribution"],
+    enabled: !!selectedContentId && analyticsTab === "distribution",
   });
 
   const handleLogout = async () => {
@@ -375,15 +396,34 @@ export default function AnalyticsPage() {
                                 {format(new Date(item.createdAt), "MMM d, yyyy")}
                               </TableCell>
                               <TableCell className="text-right">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => setSelectedContentId(item.contentId)}
-                                  data-testid={`button-view-learners-${item.contentId}`}
-                                >
-                                  <Users className="h-4 w-4 mr-2" />
-                                  View Learners
-                                </Button>
+                                <div className="flex items-center gap-2 justify-end">
+                                  {item.type === "quiz" && (
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => {
+                                        setSelectedContentId(item.contentId);
+                                        setAnalyticsTab("overview");
+                                      }}
+                                      data-testid={`button-view-analytics-${item.contentId}`}
+                                    >
+                                      <BarChart3 className="h-4 w-4 mr-2" />
+                                      Analytics
+                                    </Button>
+                                  )}
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => {
+                                      setSelectedContentId(item.contentId);
+                                      setAnalyticsTab("overview");
+                                    }}
+                                    data-testid={`button-view-learners-${item.contentId}`}
+                                  >
+                                    <Users className="h-4 w-4 mr-2" />
+                                    View Learners
+                                  </Button>
+                                </div>
                               </TableCell>
                             </TableRow>
                           );
@@ -398,38 +438,116 @@ export default function AnalyticsPage() {
         )}
       </main>
 
-      {/* Learner Details Dialog */}
-      <Dialog open={!!selectedContentId} onOpenChange={(open) => !open && setSelectedContentId(null)}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+      {/* Detailed Analytics Dialog */}
+      <Dialog open={!!selectedContentId} onOpenChange={(open) => {
+        if (!open) {
+          setSelectedContentId(null);
+          setAnalyticsTab("overview");
+        }
+      }}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              Individual Learner Performance
-            </DialogTitle>
-            <DialogDescription>
-              {selectedContent && (
-                <span>Viewing learner data for: <strong>{selectedContent.title}</strong></span>
+            <div className="flex items-center justify-between">
+              <div>
+                <DialogTitle className="flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5" />
+                  {selectedContent?.type === "quiz" ? "Quiz Analytics" : "Learner Performance"}
+                </DialogTitle>
+                <DialogDescription className="mt-1">
+                  {selectedContent && (
+                    <span>Viewing analytics for: <strong>{selectedContent.title}</strong></span>
+                  )}
+                </DialogDescription>
+              </div>
+              {selectedContent?.type === "quiz" && (
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={async () => {
+                      try {
+                        const response = await fetch(`/api/analytics/content/${selectedContentId}/export/csv`, {
+                          credentials: 'include',
+                        });
+                        if (response.ok) {
+                          const blob = await response.blob();
+                          const url = window.URL.createObjectURL(blob);
+                          const a = document.createElement('a');
+                          a.href = url;
+                          a.download = `quiz-results-${selectedContentId}.csv`;
+                          document.body.appendChild(a);
+                          a.click();
+                          window.URL.revokeObjectURL(url);
+                          document.body.removeChild(a);
+                        }
+                      } catch (error) {
+                        console.error('Export failed:', error);
+                      }
+                    }}
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Export CSV
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={async () => {
+                      try {
+                        const response = await fetch(`/api/analytics/content/${selectedContentId}/export/json`, {
+                          credentials: 'include',
+                        });
+                        if (response.ok) {
+                          const blob = await response.blob();
+                          const url = window.URL.createObjectURL(blob);
+                          const a = document.createElement('a');
+                          a.href = url;
+                          a.download = `quiz-results-${selectedContentId}.json`;
+                          document.body.appendChild(a);
+                          a.click();
+                          window.URL.revokeObjectURL(url);
+                          document.body.removeChild(a);
+                        }
+                      } catch (error) {
+                        console.error('Export failed:', error);
+                      }
+                    }}
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Export JSON
+                  </Button>
+                </div>
               )}
-            </DialogDescription>
+            </div>
           </DialogHeader>
 
-          {isLoadingLearners ? (
-            <div className="space-y-4">
-              {[1, 2, 3].map(i => (
-                <Skeleton key={i} className="h-20" />
-              ))}
-            </div>
-          ) : !learners || learners.length === 0 ? (
-            <div className="text-center py-12">
-              <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-foreground mb-2">No Learner Data</h3>
-              <p className="text-muted-foreground">
-                No authenticated users have interacted with this content yet
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {learners.map((learner, idx) => (
+          {selectedContent?.type === "quiz" ? (
+            <Tabs value={analyticsTab} onValueChange={(v) => setAnalyticsTab(v as any)} className="w-full">
+              <TabsList className="grid w-full grid-cols-4">
+                <TabsTrigger value="overview">Learners</TabsTrigger>
+                <TabsTrigger value="questions">Questions</TabsTrigger>
+                <TabsTrigger value="performance">Performance</TabsTrigger>
+                <TabsTrigger value="distribution">Score Distribution</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="overview" className="mt-6">
+
+                {isLoadingLearners ? (
+                  <div className="space-y-4">
+                    {[1, 2, 3].map(i => (
+                      <Skeleton key={i} className="h-20" />
+                    ))}
+                  </div>
+                ) : !learners || learners.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold text-foreground mb-2">No Learner Data</h3>
+                    <p className="text-muted-foreground">
+                      No authenticated users have interacted with this content yet
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {learners.map((learner, idx) => (
                 <Card key={learner.userId} data-testid={`card-learner-${idx}`}>
                   <CardContent className="pt-6">
                     <div className="flex items-start justify-between mb-4">
@@ -535,8 +653,392 @@ export default function AnalyticsPage() {
                     )}
                   </CardContent>
                 </Card>
-              ))}
-            </div>
+                    ))}
+                  </div>
+                )}
+              </TabsContent>
+
+              <TabsContent value="questions" className="mt-6">
+                {isLoadingQuestions ? (
+                  <div className="space-y-4">
+                    {[1, 2, 3].map(i => (
+                      <Skeleton key={i} className="h-24" />
+                    ))}
+                  </div>
+                ) : !questionAnalytics || questionAnalytics.questions.length === 0 ? (
+                  <div className="text-center py-12">
+                    <FileQuestion className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold text-foreground mb-2">No Question Data</h3>
+                    <p className="text-muted-foreground">
+                      No quiz attempts have been recorded yet
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="bg-muted rounded-lg p-4">
+                      <div className="text-sm text-muted-foreground mb-1">Total Attempts</div>
+                      <div className="text-2xl font-bold">{questionAnalytics.totalAttempts}</div>
+                    </div>
+                    {questionAnalytics.questions.map((question: any, idx: number) => (
+                      <Card key={question.questionId}>
+                        <CardContent className="pt-6">
+                          <div className="flex items-start justify-between mb-4">
+                            <div className="flex-1">
+                              <h4 className="font-semibold text-foreground mb-2">
+                                Question {idx + 1}
+                              </h4>
+                              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                                <div>
+                                  <div className="text-sm text-muted-foreground mb-1">Success Rate</div>
+                                  <div className="text-xl font-bold text-green-600">
+                                    {question.successRate}%
+                                  </div>
+                                </div>
+                                <div>
+                                  <div className="text-sm text-muted-foreground mb-1">Difficulty</div>
+                                  <div className="text-xl font-bold text-orange-600">
+                                    {question.difficultyScore}%
+                                  </div>
+                                </div>
+                                <div>
+                                  <div className="text-sm text-muted-foreground mb-1">Total Attempts</div>
+                                  <div className="text-xl font-bold">
+                                    {question.totalAttempts}
+                                  </div>
+                                </div>
+                                <div>
+                                  <div className="text-sm text-muted-foreground mb-1">Correct</div>
+                                  <div className="text-xl font-bold text-green-600">
+                                    {question.correctCount} / {question.totalAttempts}
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="mb-2">
+                                <div className="flex items-center justify-between text-sm mb-1">
+                                  <span className="text-muted-foreground">Success Rate</span>
+                                  <span className="font-medium">{question.successRate}%</span>
+                                </div>
+                                <Progress value={question.successRate} className="h-2" />
+                              </div>
+                              {question.commonIncorrectAnswers.length > 0 && (
+                                <div className="mt-4">
+                                  <div className="text-sm font-medium text-foreground mb-2 flex items-center gap-2">
+                                    <AlertCircle className="h-4 w-4 text-orange-500" />
+                                    Common Incorrect Answers
+                                  </div>
+                                  <div className="space-y-1">
+                                    {question.commonIncorrectAnswers.map((incorrect: any, i: number) => (
+                                      <div key={i} className="flex items-center justify-between bg-orange-50 dark:bg-orange-950/20 rounded px-3 py-2 text-sm">
+                                        <span className="font-mono">{incorrect.answer}</span>
+                                        <span className="text-muted-foreground">
+                                          {incorrect.count} time{incorrect.count !== 1 ? 's' : ''}
+                                        </span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </TabsContent>
+
+              <TabsContent value="performance" className="mt-6">
+                {isLoadingPerformance ? (
+                  <div className="space-y-4">
+                    <Skeleton className="h-64" />
+                    <Skeleton className="h-64" />
+                  </div>
+                ) : !performanceData || performanceData.totalStudents === 0 ? (
+                  <div className="text-center py-12">
+                    <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold text-foreground mb-2">No Performance Data</h3>
+                    <p className="text-muted-foreground">
+                      No quiz attempts have been recorded yet
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Performance Distribution</CardTitle>
+                        <CardDescription>
+                          {performanceData.totalStudents} students, {performanceData.totalAttempts} total attempts
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="h-64">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={performanceData.distribution}>
+                              <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                              <XAxis 
+                                dataKey="range" 
+                                className="text-xs"
+                                tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                              />
+                              <YAxis 
+                                className="text-xs"
+                                tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                              />
+                              <Tooltip 
+                                contentStyle={{ 
+                                  backgroundColor: 'hsl(var(--card))',
+                                  border: '1px solid hsl(var(--border))',
+                                  borderRadius: '6px',
+                                  color: 'hsl(var(--card-foreground))'
+                                }}
+                              />
+                              <Bar dataKey="count" fill="hsl(var(--primary))" name="Number of Attempts" />
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Student Rankings</CardTitle>
+                        <CardDescription>Top performers based on best scores</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="rounded-md border border-border/40">
+                          <Table>
+                            <TableHeader>
+                              <TableRow className="border-border/40">
+                                <TableHead className="font-normal">Rank</TableHead>
+                                <TableHead className="font-normal">Student</TableHead>
+                                <TableHead className="font-normal">Email</TableHead>
+                                <TableHead className="text-right font-normal">Best Score</TableHead>
+                                <TableHead className="text-right font-normal">Attempts</TableHead>
+                                <TableHead className="text-right font-normal">Latest Attempt</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {performanceData.students.map((student: any, idx: number) => (
+                                <TableRow key={student.userId} className="border-border/40">
+                                  <TableCell>
+                                    <div className="flex items-center gap-2">
+                                      {idx < 3 && (
+                                        <span className="text-lg">{
+                                          idx === 0 ? '🥇' : idx === 1 ? '🥈' : '🥉'
+                                        }</span>
+                                      )}
+                                      <span className="font-medium">#{idx + 1}</span>
+                                    </div>
+                                  </TableCell>
+                                  <TableCell className="font-medium">{student.fullName}</TableCell>
+                                  <TableCell className="text-muted-foreground text-sm">{student.email}</TableCell>
+                                  <TableCell className="text-right">
+                                    <span className="font-bold text-green-600">
+                                      {student.bestPercentage}%
+                                    </span>
+                                    <span className="text-muted-foreground text-sm ml-1">
+                                      ({student.bestScore}/{Math.round(student.bestScore / (student.bestPercentage / 100))})
+                                    </span>
+                                  </TableCell>
+                                  <TableCell className="text-right">{student.totalAttempts}</TableCell>
+                                  <TableCell className="text-right text-muted-foreground text-sm">
+                                    {format(new Date(student.latestAttempt), "MMM d, yyyy")}
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                )}
+              </TabsContent>
+
+              <TabsContent value="distribution" className="mt-6">
+                {isLoadingDistribution ? (
+                  <div className="space-y-4">
+                    <Skeleton className="h-64" />
+                  </div>
+                ) : !scoreDistribution || scoreDistribution.totalAttempts === 0 ? (
+                  <div className="text-center py-12">
+                    <PieChart className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold text-foreground mb-2">No Score Data</h3>
+                    <p className="text-muted-foreground">
+                      No quiz attempts have been recorded yet
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Score Distribution</CardTitle>
+                        <CardDescription>
+                          {scoreDistribution.totalAttempts} total attempts
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="h-80">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={scoreDistribution.distribution} layout="vertical">
+                              <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                              <XAxis 
+                                type="number"
+                                className="text-xs"
+                                tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                              />
+                              <YAxis 
+                                dataKey="range"
+                                type="category"
+                                width={80}
+                                className="text-xs"
+                                tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                              />
+                              <Tooltip 
+                                contentStyle={{ 
+                                  backgroundColor: 'hsl(var(--card))',
+                                  border: '1px solid hsl(var(--border))',
+                                  borderRadius: '6px',
+                                  color: 'hsl(var(--card-foreground))'
+                                }}
+                              />
+                              <Bar dataKey="count" fill="hsl(var(--primary))" name="Number of Attempts" />
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Distribution Breakdown</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-3">
+                          {scoreDistribution.distribution.map((item: any, idx: number) => (
+                            <div key={idx} className="flex items-center justify-between">
+                              <div className="flex items-center gap-3 flex-1">
+                                <div className="w-24 text-sm font-medium">{item.range}</div>
+                                <Progress value={item.percentage} className="flex-1" />
+                              </div>
+                              <div className="w-20 text-right">
+                                <span className="font-semibold">{item.count}</span>
+                                <span className="text-muted-foreground text-sm ml-1">
+                                  ({item.percentage}%)
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
+          ) : (
+            // Non-quiz content - show learners only
+            <>
+              {isLoadingLearners ? (
+                <div className="space-y-4">
+                  {[1, 2, 3].map(i => (
+                    <Skeleton key={i} className="h-20" />
+                  ))}
+                </div>
+              ) : !learners || learners.length === 0 ? (
+                <div className="text-center py-12">
+                  <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-foreground mb-2">No Learner Data</h3>
+                  <p className="text-muted-foreground">
+                    No authenticated users have interacted with this content yet
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {learners.map((learner, idx) => (
+                    <Card key={learner.userId} data-testid={`card-learner-${idx}`}>
+                      <CardContent className="pt-6">
+                        <div className="flex items-start justify-between mb-4">
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-12 w-12">
+                              <AvatarFallback className="bg-primary text-primary-foreground">
+                                {getInitials(learner.displayName)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <h4 className="font-semibold text-foreground" data-testid={`text-learner-name-${idx}`}>
+                                {learner.displayName}
+                              </h4>
+                              <p className="text-sm text-muted-foreground" data-testid={`text-learner-email-${idx}`}>
+                                {learner.email}
+                              </p>
+                              {learner.role && (
+                                <Badge variant="outline" className="mt-1">{learner.role}</Badge>
+                              )}
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
+                              <Clock className="h-3 w-3" />
+                              Last accessed: {format(new Date(learner.lastAccessedAt), "MMM d, yyyy")}
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                              First accessed: {format(new Date(learner.firstAccessedAt), "MMM d, yyyy")}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div className="bg-muted rounded-lg p-3">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Target className="h-4 w-4 text-primary" />
+                              <span className="text-sm font-medium">Completion</span>
+                            </div>
+                            <div className="text-2xl font-bold" data-testid={`text-learner-completion-${idx}`}>
+                              {learner.completionPercentage.toFixed(1)}%
+                            </div>
+                            {learner.completedAt && (
+                              <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
+                                <CheckCircle2 className="h-3 w-3" />
+                                Completed {format(new Date(learner.completedAt), "MMM d")}
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="bg-muted rounded-lg p-3">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Activity className="h-4 w-4 text-primary" />
+                              <span className="text-sm font-medium">Interactions</span>
+                            </div>
+                            <div className="text-2xl font-bold" data-testid={`text-learner-interactions-${idx}`}>
+                              {learner.totalInteractions}
+                            </div>
+                            <div className="text-xs text-muted-foreground mt-1">
+                              Total engagement events
+                            </div>
+                          </div>
+
+                          {learner.quizAttempts && learner.quizAttempts.length > 0 && (
+                            <div className="bg-muted rounded-lg p-3">
+                              <div className="flex items-center gap-2 mb-2">
+                                <FileQuestion className="h-4 w-4 text-primary" />
+                                <span className="text-sm font-medium">Quiz Attempts</span>
+                              </div>
+                              <div className="text-2xl font-bold" data-testid={`text-learner-quiz-attempts-${idx}`}>
+                                {learner.quizAttempts.length}
+                              </div>
+                              <div className="text-xs text-muted-foreground mt-1">
+                                Best: {Math.max(...learner.quizAttempts.map((a: any) => parseFloat(a.percentage)))}%
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </>
           )}
         </DialogContent>
       </Dialog>

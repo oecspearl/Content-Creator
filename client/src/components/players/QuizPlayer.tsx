@@ -187,15 +187,15 @@ export function QuizPlayer({ data, contentId }: QuizPlayerProps) {
     // 4. It's not an ordering/drag-drop question (those show feedback on Next click)
     if (data.settings.showCorrectAnswers && currentQuestion.explanation && isComplete && shouldShowFeedbackNow) {
       setShowExplanation(true);
-      
-      // Screen reader announcement
+    
+    // Screen reader announcement
       const isCorrect = checkAnswerCorrectness(currentQuestion, answer);
-      announce(
-        isCorrect 
-          ? "Correct! " + (currentQuestion.explanation || "")
-          : "Incorrect. " + (currentQuestion.explanation || ""),
-        "assertive"
-      );
+    announce(
+      isCorrect 
+        ? "Correct! " + (currentQuestion.explanation || "")
+        : "Incorrect. " + (currentQuestion.explanation || ""),
+      "assertive"
+    );
     } else if (!isComplete) {
       // For incomplete ordering/drag-drop questions, provide progress feedback
       if (currentQuestion.type === "ordering") {
@@ -308,7 +308,7 @@ export function QuizPlayer({ data, contentId }: QuizPlayerProps) {
         }
         
         return {
-          questionId: q.id,
+        questionId: q.id,
           answer: serializedAnswer,
           isCorrect: checkAnswerCorrectness(q, answer),
         };

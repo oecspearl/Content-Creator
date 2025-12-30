@@ -493,10 +493,10 @@ export default function QuizCreator() {
 
                           {question.type === "fill-blank" && (
                             <div className="space-y-3">
-                              <div>
+                            <div>
                                 <Label>Correct Answer(s)</Label>
-                                <Input
-                                  placeholder="Enter the correct answer..."
+                              <Input
+                                placeholder="Enter the correct answer..."
                                   value={Array.isArray(question.acceptableAnswers) && question.acceptableAnswers.length > 0 
                                     ? question.acceptableAnswers[0] 
                                     : (question.correctAnswer as string) || ""}
@@ -507,8 +507,8 @@ export default function QuizCreator() {
                                       acceptableAnswers: [answer]
                                     });
                                   }}
-                                  data-testid={`input-answer-${index}`}
-                                />
+                                data-testid={`input-answer-${index}`}
+                              />
                                 <p className="text-xs text-muted-foreground mt-1">
                                   You can add multiple acceptable answers below
                                 </p>

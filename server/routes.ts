@@ -1446,6 +1446,148 @@ Be conversational, friendly, and educational. Provide specific, actionable advic
     }
   });
 
+  app.get("/api/analytics/content/:contentId/questions", requireAuth, async (req, res) => {
+    try {
+      const content = await storage.getContentById(req.params.contentId);
+      if (!content || content.userId !== req.session.userId!) {
+        return res.status(403).json({ message: "Not authorized to view analytics for this content" });
+      }
+
+      const analytics = await storage.getQuestionAnalytics(req.params.contentId);
+      res.json(analytics);
+    } catch (error: any) {
+      console.error("Get question analytics error:", error);
+      res.status(500).json({ message: "Failed to fetch question analytics" });
+    }
+  });
+
+  app.get("/api/analytics/content/:contentId/performance", requireAuth, async (req, res) => {
+    try {
+      const content = await storage.getContentById(req.params.contentId);
+      if (!content || content.userId !== req.session.userId!) {
+        return res.status(403).json({ message: "Not authorized to view analytics for this content" });
+      }
+
+      const performance = await storage.getStudentPerformanceDistribution(req.params.contentId);
+      res.json(performance);
+    } catch (error: any) {
+      console.error("Get performance distribution error:", error);
+      res.status(500).json({ message: "Failed to fetch performance distribution" });
+    }
+  });
+
+  app.get("/api/analytics/content/:contentId/score-distribution", requireAuth, async (req, res) => {
+    try {
+      const content = await storage.getContentById(req.params.contentId);
+      if (!content || content.userId !== req.session.userId!) {
+        return res.status(403).json({ message: "Not authorized to view analytics for this content" });
+      }
+
+      const distribution = await storage.getScoreDistribution(req.params.contentId);
+      res.json(distribution);
+    } catch (error: any) {
+      console.error("Get score distribution error:", error);
+      res.status(500).json({ message: "Failed to fetch score distribution" });
+    }
+  });
+
+  app.get("/api/analytics/content/:contentId/export/csv", requireAuth, async (req, res) => {
+    try {
+      const content = await storage.getContentById(req.params.contentId);
+      if (!content || content.userId !== req.session.userId!) {
+        return res.status(403).json({ message: "Not authorized to export data for this content" });
+      }
+
+      const attempts = await storage.getAllQuizAttemptsForContent(req.params.contentId);
+      
+      // Get user profiles for names
+      const userIds = [...new Set(attempts.map(a => a.userId))];
+      const userProfiles = userIds.length > 0 ? await Promise.all(
+        userIds.map(id => storage.getProfileById(id))
+      ) : [];
+      const userMap = userProfiles.reduce((acc, profile) => {
+        if (profile) acc[profile.id] = profile;
+        return acc;
+      }, {} as Record<string, any>);
+
+      // Generate CSV
+      const headers = ['Student Name', 'Email', 'Score', 'Total Questions', 'Percentage', 'Completed At'];
+      const rows = attempts.map(attempt => {
+        const user = userMap[attempt.userId];
+        const percentage = ((attempt.score / attempt.totalQuestions) * 100).toFixed(1);
+        return [
+          user?.fullName || 'Unknown',
+          user?.email || 'Unknown',
+          attempt.score.toString(),
+          attempt.totalQuestions.toString(),
+          percentage,
+          new Date(attempt.completedAt).toISOString(),
+        ];
+      });
+
+      const csv = [
+        headers.join(','),
+        ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+      ].join('\n');
+
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', `attachment; filename="quiz-results-${contentId}.csv"`);
+      res.send(csv);
+    } catch (error: any) {
+      console.error("Export CSV error:", error);
+      res.status(500).json({ message: "Failed to export CSV" });
+    }
+  });
+
+  app.get("/api/analytics/content/:contentId/export/json", requireAuth, async (req, res) => {
+    try {
+      const content = await storage.getContentById(req.params.contentId);
+      if (!content || content.userId !== req.session.userId!) {
+        return res.status(403).json({ message: "Not authorized to export data for this content" });
+      }
+
+      const attempts = await storage.getAllQuizAttemptsForContent(req.params.contentId);
+      
+      // Get user profiles for names
+      const userIds = [...new Set(attempts.map(a => a.userId))];
+      const userProfiles = userIds.length > 0 ? await Promise.all(
+        userIds.map(id => storage.getProfileById(id))
+      ) : [];
+      const userMap = userProfiles.reduce((acc, profile) => {
+        if (profile) acc[profile.id] = profile;
+        return acc;
+      }, {} as Record<string, any>);
+
+      // Format data for export
+      const exportData = {
+        contentId: content.id,
+        contentTitle: content.title,
+        exportDate: new Date().toISOString(),
+        totalAttempts: attempts.length,
+        attempts: attempts.map(attempt => {
+          const user = userMap[attempt.userId];
+          return {
+            attemptId: attempt.id,
+            studentName: user?.fullName || 'Unknown',
+            studentEmail: user?.email || 'Unknown',
+            score: attempt.score,
+            totalQuestions: attempt.totalQuestions,
+            percentage: Math.round((attempt.score / attempt.totalQuestions) * 100 * 10) / 10,
+            completedAt: attempt.completedAt,
+            answers: attempt.answers,
+          };
+        }),
+      };
+
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Content-Disposition', `attachment; filename="quiz-results-${contentId}.json"`);
+      res.send(JSON.stringify(exportData, null, 2));
+    } catch (error: any) {
+      console.error("Export JSON error:", error);
+      res.status(500).json({ message: "Failed to export JSON" });
+    }
+  });
+
   // Class management routes
   app.post("/api/classes", requireAuth, async (req, res) => {
     try {

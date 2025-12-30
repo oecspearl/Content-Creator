@@ -54,6 +54,10 @@ export interface IStorage {
   getContentAnalytics(contentId: string): Promise<any>;
   getUserContentAnalytics(userId: string): Promise<any[]>;
   getContentLearners(contentId: string): Promise<any[]>;
+  getQuestionAnalytics(contentId: string): Promise<any>;
+  getStudentPerformanceDistribution(contentId: string): Promise<any>;
+  getScoreDistribution(contentId: string): Promise<any>;
+  getAllQuizAttemptsForContent(contentId: string): Promise<QuizAttempt[]>;
   
   // Chat message methods
   createChatMessage(message: InsertChatMessage): Promise<ChatMessage>;
@@ -581,6 +585,235 @@ export class DbStorage implements IStorage {
         totalInteractions: Number(interactionsByUser[learner.userId] || 0),
       };
     });
+  }
+
+  async getQuestionAnalytics(contentId: string): Promise<any> {
+    // Get all quiz attempts for this content
+    const attempts = await db
+      .select()
+      .from(quizAttempts)
+      .where(eq(quizAttempts.contentId, contentId));
+
+    if (attempts.length === 0) {
+      return {
+        totalAttempts: 0,
+        questions: [],
+      };
+    }
+
+    // Aggregate question-level data
+    const questionStats: Record<string, {
+      questionId: string;
+      totalAttempts: number;
+      correctCount: number;
+      incorrectCount: number;
+      successRate: number;
+      difficultyScore: number;
+      commonIncorrectAnswers: Record<string, number>;
+    }> = {};
+
+    attempts.forEach(attempt => {
+      const answers = attempt.answers as Array<{
+        questionId: string;
+        answer: string | number | boolean;
+        isCorrect: boolean;
+      }>;
+
+      answers.forEach(answer => {
+        if (!questionStats[answer.questionId]) {
+          questionStats[answer.questionId] = {
+            questionId: answer.questionId,
+            totalAttempts: 0,
+            correctCount: 0,
+            incorrectCount: 0,
+            successRate: 0,
+            difficultyScore: 0,
+            commonIncorrectAnswers: {},
+          };
+        }
+
+        const stats = questionStats[answer.questionId];
+        stats.totalAttempts++;
+
+        if (answer.isCorrect) {
+          stats.correctCount++;
+        } else {
+          stats.incorrectCount++;
+          // Track incorrect answers
+          const answerKey = String(answer.answer);
+          stats.commonIncorrectAnswers[answerKey] = (stats.commonIncorrectAnswers[answerKey] || 0) + 1;
+        }
+      });
+    });
+
+    // Calculate success rates and difficulty scores
+    const questions = Object.values(questionStats).map(stats => {
+      const successRate = (stats.correctCount / stats.totalAttempts) * 100;
+      const difficultyScore = 100 - successRate;
+      
+      // Get top 3 most common incorrect answers
+      const topIncorrectAnswers = Object.entries(stats.commonIncorrectAnswers)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 3)
+        .map(([answer, count]) => ({ answer, count }));
+
+      return {
+        ...stats,
+        successRate: Math.round(successRate * 10) / 10,
+        difficultyScore: Math.round(difficultyScore * 10) / 10,
+        commonIncorrectAnswers: topIncorrectAnswers,
+      };
+    });
+
+    return {
+      totalAttempts: attempts.length,
+      questions,
+    };
+  }
+
+  async getStudentPerformanceDistribution(contentId: string): Promise<any> {
+    const attempts = await db
+      .select({
+        userId: quizAttempts.userId,
+        score: quizAttempts.score,
+        totalQuestions: quizAttempts.totalQuestions,
+        completedAt: quizAttempts.completedAt,
+        fullName: profiles.fullName,
+        email: profiles.email,
+      })
+      .from(quizAttempts)
+      .innerJoin(profiles, eq(quizAttempts.userId, profiles.id))
+      .where(eq(quizAttempts.contentId, contentId))
+      .orderBy(desc(quizAttempts.completedAt));
+
+    if (attempts.length === 0) {
+      return {
+        totalStudents: 0,
+        distribution: [],
+        students: [],
+      };
+    }
+
+    // Calculate performance ranges
+    const ranges = {
+      '90-100%': 0,
+      '80-89%': 0,
+      '70-79%': 0,
+      '60-69%': 0,
+      '0-59%': 0,
+    };
+
+    // Get unique students and their best scores
+    const studentBestScores: Record<string, {
+      userId: string;
+      fullName: string;
+      email: string;
+      bestScore: number;
+      bestPercentage: number;
+      totalAttempts: number;
+      latestAttempt: Date;
+    }> = {};
+
+    attempts.forEach(attempt => {
+      const percentage = (attempt.score / attempt.totalQuestions) * 100;
+      
+      // Categorize into ranges
+      if (percentage >= 90) ranges['90-100%']++;
+      else if (percentage >= 80) ranges['80-89%']++;
+      else if (percentage >= 70) ranges['70-79%']++;
+      else if (percentage >= 60) ranges['60-69%']++;
+      else ranges['0-59%']++;
+
+      // Track best scores per student
+      if (!studentBestScores[attempt.userId] || percentage > studentBestScores[attempt.userId].bestPercentage) {
+        studentBestScores[attempt.userId] = {
+          userId: attempt.userId,
+          fullName: attempt.fullName,
+          email: attempt.email,
+          bestScore: attempt.score,
+          bestPercentage: percentage,
+          totalAttempts: 1,
+          latestAttempt: attempt.completedAt,
+        };
+      } else {
+        studentBestScores[attempt.userId].totalAttempts++;
+        if (attempt.completedAt > studentBestScores[attempt.userId].latestAttempt) {
+          studentBestScores[attempt.userId].latestAttempt = attempt.completedAt;
+        }
+      }
+    });
+
+    const distribution = Object.entries(ranges).map(([range, count]) => ({
+      range,
+      count,
+      percentage: Math.round((count / attempts.length) * 100 * 10) / 10,
+    }));
+
+    const students = Object.values(studentBestScores)
+      .sort((a, b) => b.bestPercentage - a.bestPercentage)
+      .map(student => ({
+        ...student,
+        bestPercentage: Math.round(student.bestPercentage * 10) / 10,
+      }));
+
+    return {
+      totalStudents: students.length,
+      totalAttempts: attempts.length,
+      distribution,
+      students,
+    };
+  }
+
+  async getScoreDistribution(contentId: string): Promise<any> {
+    const attempts = await db
+      .select({
+        score: quizAttempts.score,
+        totalQuestions: quizAttempts.totalQuestions,
+      })
+      .from(quizAttempts)
+      .where(eq(quizAttempts.contentId, contentId));
+
+    if (attempts.length === 0) {
+      return {
+        totalAttempts: 0,
+        distribution: [],
+      };
+    }
+
+    // Create score buckets (0-10, 11-20, etc. as percentages)
+    const buckets: Record<string, number> = {};
+    
+    attempts.forEach(attempt => {
+      const percentage = Math.round((attempt.score / attempt.totalQuestions) * 100);
+      const bucket = Math.floor(percentage / 10) * 10;
+      const bucketKey = `${bucket}-${bucket + 9}%`;
+      buckets[bucketKey] = (buckets[bucketKey] || 0) + 1;
+    });
+
+    const distribution = Object.entries(buckets)
+      .map(([range, count]) => ({
+        range,
+        count,
+        percentage: Math.round((count / attempts.length) * 100 * 10) / 10,
+      }))
+      .sort((a, b) => {
+        const aStart = parseInt(a.range.split('-')[0]);
+        const bStart = parseInt(b.range.split('-')[0]);
+        return aStart - bStart;
+      });
+
+    return {
+      totalAttempts: attempts.length,
+      distribution,
+    };
+  }
+
+  async getAllQuizAttemptsForContent(contentId: string): Promise<QuizAttempt[]> {
+    return await db
+      .select()
+      .from(quizAttempts)
+      .where(eq(quizAttempts.contentId, contentId))
+      .orderBy(desc(quizAttempts.completedAt));
   }
 
   async createChatMessage(message: InsertChatMessage): Promise<ChatMessage> {
