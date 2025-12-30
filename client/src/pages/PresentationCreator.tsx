@@ -1022,7 +1022,7 @@ export default function PresentationCreator() {
                         variant="outline"
                         data-testid="button-connect-google"
                       >
-                        <a href="/api/auth/google">
+                        <a href={`/api/auth/google?returnTo=${encodeURIComponent(window.location.pathname + window.location.search)}`}>
                           <ExternalLink className="h-4 w-4 mr-1" />
                           Connect Google Account
                         </a>
