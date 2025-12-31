@@ -95,11 +95,18 @@ export default function PresentationCreator() {
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('googleAuthSuccess') === 'true') {
+      console.log("🔄 OAuth success detected, refreshing user data...");
+
       // Refresh user data to get updated Google tokens
       queryClient.invalidateQueries({ queryKey: ["/api/user"] });
 
       // Show success message (wait a bit for query to refresh)
       setTimeout(() => {
+        // Check if user data was actually refreshed
+        const currentUser = queryClient.getQueryData(["/api/user"]) as any;
+        console.log("👤 User after refresh:", currentUser);
+        console.log("🔑 Has Google token:", !!currentUser?.googleAccessToken);
+
         toast({
           title: "Google Account Connected!",
           description: "You can now create presentations.",
@@ -399,6 +406,11 @@ export default function PresentationCreator() {
 
   const createPresentationMutation = useMutation({
     mutationFn: async () => {
+      console.log("🚀 Creating presentation...");
+      console.log("👤 Current user:", user);
+      console.log("🔑 Has Access Token:", !!user?.googleAccessToken);
+      console.log("🔑 Has Refresh Token:", !!user?.googleRefreshToken);
+
       const response = await apiRequest("POST", "/api/presentation/create-presentation", {
         title,
         slides,
@@ -462,7 +474,12 @@ export default function PresentationCreator() {
     },
     onError: (error: any) => {
       const errorMessage = error.message || "An error occurred";
-      
+
+      // Debug logging
+      console.error("Create presentation error:", error);
+      console.log("Current user:", user);
+      console.log("Error message:", errorMessage);
+
       if (errorMessage.includes("Google") || errorMessage.includes("OAuth") || errorMessage.includes("connect your account")) {
         // Auto-redirect to Google authentication
         toast({
@@ -470,8 +487,11 @@ export default function PresentationCreator() {
           description: "Redirecting to Google sign-in...",
         });
 
-        // Build return URL with current location (including query params)
-        const returnUrl = window.location.pathname + window.location.search;
+        // Build return URL with current location (excluding googleAuthSuccess param)
+        const urlParams = new URLSearchParams(window.location.search);
+        urlParams.delete('googleAuthSuccess');
+        const cleanSearch = urlParams.toString() ? '?' + urlParams.toString() : '';
+        const returnUrl = window.location.pathname + cleanSearch;
 
         // Redirect to Google OAuth with return URL
         setTimeout(() => {
