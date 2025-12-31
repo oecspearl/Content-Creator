@@ -24,6 +24,10 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
           'https://www.googleapis.com/auth/classroom.coursework.students', // Create coursework/assignments
           'https://www.googleapis.com/auth/classroom.announcements', // Create announcements
         ],
+        // Request offline access to get refresh token
+        accessType: 'offline',
+        // Force consent screen to ensure refresh token is provided
+        prompt: 'consent',
       } as any,
       async (accessToken: string, refreshToken: string, profile: GoogleProfile, done: VerifyCallback) => {
         try {
