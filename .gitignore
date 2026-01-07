@@ -8,3 +8,9 @@ vite.config.ts.*
 .env.local
 .env.*.local
 *.log
+
+# Files containing secrets - never commit these
+HEROKU_ENV_COMMANDS.txt
+database_export/
+*.json.bak
+credentials*.json
