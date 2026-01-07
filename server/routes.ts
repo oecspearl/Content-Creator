@@ -2068,11 +2068,26 @@ Be conversational, friendly, and educational. Provide specific, actionable advic
             continue;
           }
 
-          // Find user by email
-          const user = await storage.getProfileByEmail(email);
+          // Find user by email, or create if doesn't exist
+          let user = await storage.getProfileByEmail(email);
           if (!user) {
-            errors.push(`Row ${i + 1}: User with email ${email} not found`);
-            continue;
+            // Auto-create user if they don't exist
+            const fullName = nameIndex !== -1 && values[nameIndex] 
+              ? values[nameIndex] 
+              : email.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            
+            try {
+              user = await storage.createProfile({
+                email,
+                fullName,
+                password: null, // User will need to set password via password reset
+                role: 'student',
+                authProvider: 'email',
+              });
+            } catch (e: any) {
+              errors.push(`Row ${i + 1}: Failed to create user for email ${email}: ${e.message}`);
+              continue;
+            }
           }
 
           enrollments.push({
@@ -2147,20 +2162,38 @@ Be conversational, friendly, and educational. Provide specific, actionable advic
           }
 
           for (const email of studentEmails) {
-            const user = await storage.getProfileByEmail(email);
-            if (user) {
+            // Find user by email, or create if doesn't exist
+            let user = await storage.getProfileByEmail(email);
+            if (!user) {
+              // Auto-create user if they don't exist
+              const fullName = nameIndex !== -1 && values[nameIndex] 
+                ? values[nameIndex] 
+                : email.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+              
               try {
-                await storage.createClassEnrollment({
-                  classId: class_.id,
-                  userId: user.id,
+                user = await storage.createProfile({
+                  email,
+                  fullName,
+                  password: null, // User will need to set password via password reset
+                  role: 'student',
+                  authProvider: 'email',
                 });
               } catch (e: any) {
-                if (!e.message?.includes('unique') && !e.message?.includes('duplicate')) {
-                  errors.push(`Row ${i + 1}: Failed to enroll ${email}`);
-                }
+                errors.push(`Row ${i + 1}: Failed to create user for email ${email}: ${e.message}`);
+                continue;
               }
-            } else {
-              errors.push(`Row ${i + 1}: User with email ${email} not found`);
+            }
+            
+            // Enroll the user (whether existing or newly created)
+            try {
+              await storage.createClassEnrollment({
+                classId: class_.id,
+                userId: user.id,
+              });
+            } catch (e: any) {
+              if (!e.message?.includes('unique') && !e.message?.includes('duplicate')) {
+                errors.push(`Row ${i + 1}: Failed to enroll ${email}`);
+              }
             }
           }
         }
