@@ -2032,7 +2032,7 @@ Be conversational, friendly, and educational. Provide specific, actionable advic
         return res.status(400).json({ message: "CSV must have at least a header row and one data row" });
       }
 
-      const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+      const headers = parseCSVLine(lines[0]).map(h => h.trim().replace(/^"|"$/g, '').toLowerCase());
       const emailIndex = headers.findIndex(h => h === 'email' || h === 'e-mail' || h === 'student_email' || h.startsWith('student_email'));
       const nameIndex = headers.findIndex(h => h === 'name' || h === 'full name' || h === 'fullname');
 

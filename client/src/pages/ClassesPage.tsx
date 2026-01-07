@@ -256,6 +256,9 @@ export default function ClassesPage() {
           variant: "destructive",
         });
         console.error("Upload errors:", data.errors);
+        data.errors.forEach((error: string, index: number) => {
+          console.error(`  Error ${index + 1}: ${error}`);
+        });
       }
     },
     onError: (error: any) => {
