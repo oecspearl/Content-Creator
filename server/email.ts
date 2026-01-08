@@ -20,7 +20,7 @@ export function isEmailConfigured(): boolean {
   return !!process.env.RESEND_API_KEY;
 }
 
-const EMAIL_FROM = process.env.EMAIL_FROM || 'OECS Learning Hub <noreply@oecslearninghub.com>';
+const EMAIL_FROM = process.env.RESEND_FROM_EMAIL || process.env.EMAIL_FROM || 'OECS LearnBoard <notifications@oecslearning.org>';
 const APP_NAME = process.env.APP_NAME || 'OECS Learning Hub';
 const APP_URL = process.env.APP_URL || process.env.HEROKU_APP_URL || 'http://localhost:5000';
 
