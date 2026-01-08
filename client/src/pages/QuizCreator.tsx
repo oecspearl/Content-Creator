@@ -446,7 +446,21 @@ export default function QuizCreator() {
                           {/* Answer Options */}
                           {question.type === "multiple-choice" && question.options && (
                             <div className="space-y-2">
-                              <Label>Answer Options</Label>
+                              <div className="flex items-center justify-between">
+                                <Label>Answer Options</Label>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    const newOptions = [...question.options!, ""];
+                                    updateQuestion(index, { options: newOptions });
+                                  }}
+                                  data-testid={`button-add-option-${index}`}
+                                >
+                                  <Plus className="h-3 w-3 mr-1" />
+                                  Add Option
+                                </Button>
+                              </div>
                               {question.options.map((option, optIndex) => (
                                 <div key={optIndex} className="flex items-center gap-2">
                                   <Input
@@ -467,6 +481,27 @@ export default function QuizCreator() {
                                   >
                                     {question.correctAnswer === optIndex ? "Correct" : "Mark Correct"}
                                   </Button>
+                                  {question.options!.length > 2 && (
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-8 w-8 text-destructive hover:text-destructive"
+                                      onClick={() => {
+                                        const newOptions = question.options!.filter((_, i) => i !== optIndex);
+                                        // Adjust correctAnswer if needed
+                                        let newCorrectAnswer = question.correctAnswer as number;
+                                        if (optIndex === newCorrectAnswer) {
+                                          newCorrectAnswer = 0; // Reset to first option if deleted option was correct
+                                        } else if (optIndex < newCorrectAnswer) {
+                                          newCorrectAnswer--; // Shift down if deleted option was before correct
+                                        }
+                                        updateQuestion(index, { options: newOptions, correctAnswer: newCorrectAnswer });
+                                      }}
+                                      data-testid={`button-delete-option-${index}-${optIndex}`}
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  )}
                                 </div>
                               ))}
                             </div>

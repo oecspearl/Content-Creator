@@ -505,6 +505,7 @@ export const aiGenerationSchema = z.object({
   questionTypeMode: z.enum(["all-same", "mixed"]).optional(), // "all-same" = one type for all, "mixed" = specify per question
   questionType: z.enum(["multiple-choice", "true-false", "fill-blank", "ordering", "drag-drop"]).optional(), // For "all-same" mode
   questionTypes: z.array(z.enum(["multiple-choice", "true-false", "fill-blank", "ordering", "drag-drop"])).optional(), // For "mixed" mode - one per question
+  numberOfOptions: z.number().min(2).max(6).optional(), // Number of options for multiple choice questions (default: 4)
 });
 
 export type AIGenerationRequest = z.infer<typeof aiGenerationSchema>;

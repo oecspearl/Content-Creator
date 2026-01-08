@@ -31,6 +31,7 @@ export function AIGenerationModal({ open, onOpenChange, contentType, onGenerated
     questionTypeMode: "all-same" as "all-same" | "mixed",
     questionType: "multiple-choice" as "multiple-choice" | "true-false" | "fill-blank" | "ordering" | "drag-drop",
     questionTypes: [] as Array<"multiple-choice" | "true-false" | "fill-blank" | "ordering" | "drag-drop">,
+    numberOfOptions: 4, // Number of options for multiple choice questions
   });
 
   // Update questionTypes array when numberOfItems changes
@@ -97,6 +98,7 @@ export function AIGenerationModal({ open, onOpenChange, contentType, onGenerated
         questionTypeMode: "all-same",
         questionType: "multiple-choice",
         questionTypes: [],
+        numberOfOptions: 4,
       });
     } catch (error: any) {
       toast({
@@ -246,23 +248,45 @@ export function AIGenerationModal({ open, onOpenChange, contentType, onGenerated
               </div>
 
               {formData.questionTypeMode === "all-same" && (
-                <div className="space-y-2">
-                  <Label htmlFor="questionType">Question Type</Label>
-                  <Select
-                    value={formData.questionType}
-                    onValueChange={(value) => setFormData({ ...formData, questionType: value as any })}
-                  >
-                    <SelectTrigger id="questionType">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="multiple-choice">Multiple Choice</SelectItem>
-                      <SelectItem value="true-false">True/False</SelectItem>
-                      <SelectItem value="fill-blank">Fill in the Blank</SelectItem>
-                      <SelectItem value="ordering">Ordering</SelectItem>
-                      <SelectItem value="drag-drop">Drag and Drop</SelectItem>
-                    </SelectContent>
-                  </Select>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="questionType">Question Type</Label>
+                    <Select
+                      value={formData.questionType}
+                      onValueChange={(value) => setFormData({ ...formData, questionType: value as any })}
+                    >
+                      <SelectTrigger id="questionType">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="multiple-choice">Multiple Choice</SelectItem>
+                        <SelectItem value="true-false">True/False</SelectItem>
+                        <SelectItem value="fill-blank">Fill in the Blank</SelectItem>
+                        <SelectItem value="ordering">Ordering</SelectItem>
+                        <SelectItem value="drag-drop">Drag and Drop</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {formData.questionType === "multiple-choice" && (
+                    <div className="space-y-2">
+                      <Label htmlFor="numberOfOptions">Number of Options</Label>
+                      <Select
+                        value={formData.numberOfOptions.toString()}
+                        onValueChange={(value) => setFormData({ ...formData, numberOfOptions: parseInt(value) })}
+                      >
+                        <SelectTrigger id="numberOfOptions">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="2">2 options</SelectItem>
+                          <SelectItem value="3">3 options</SelectItem>
+                          <SelectItem value="4">4 options</SelectItem>
+                          <SelectItem value="5">5 options</SelectItem>
+                          <SelectItem value="6">6 options</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
                 </div>
               )}
 

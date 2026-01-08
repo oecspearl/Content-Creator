@@ -19,10 +19,13 @@ export function getOpenAIClient() {
 }
 
 export async function generateQuizQuestions(request: AIGenerationRequest): Promise<QuizQuestion[]> {
+  const numberOfOptions = request.numberOfOptions || 4;
+  const optionPlaceholders = Array.from({ length: numberOfOptions }, (_, i) => `"option${i + 1}"`).join(", ");
+
   const prompt = `Generate ${request.numberOfItems} quiz questions about "${request.topic}" at ${request.difficulty} difficulty level${request.gradeLevel ? ` for ${request.gradeLevel}` : ""}.
 
 Requirements:
-- Mix of multiple-choice (with 4 options), true/false, and fill-in-the-blank questions
+- Mix of multiple-choice (with ${numberOfOptions} options), true/false, and fill-in-the-blank questions
 - Each question should have a correct answer and an explanation
 - Make questions educational and engaging
 ${request.additionalContext ? `\nAdditional context: ${request.additionalContext}` : ""}
@@ -34,7 +37,7 @@ Respond in JSON format with an array of questions following this structure:
       "id": "unique-id",
       "type": "multiple-choice" | "true-false" | "fill-blank",
       "question": "question text",
-      "options": ["option1", "option2", "option3", "option4"], // only for multiple-choice
+      "options": [${optionPlaceholders}], // only for multiple-choice, exactly ${numberOfOptions} options
       "correctAnswer": 0 | "true" | "false" | "answer text",
       "explanation": "why this is the correct answer"
     }
