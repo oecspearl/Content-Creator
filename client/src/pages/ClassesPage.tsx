@@ -35,6 +35,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Users,
   LogOut,
@@ -48,6 +49,8 @@ import {
   BookOpen,
   X,
   Download,
+  Search,
+  UserPlus,
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
@@ -107,6 +110,12 @@ export default function ClassesPage() {
   const [studentEmail, setStudentEmail] = useState("");
   const [isSearchingUser, setIsSearchingUser] = useState(false);
   const [foundUser, setFoundUser] = useState<any>(null);
+  const [addStudentMode, setAddStudentMode] = useState<"search" | "create">("search");
+  const [newStudentData, setNewStudentData] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+  });
 
   const { data: classes, isLoading } = useQuery<Class[]>({
     queryKey: ["/api/classes"],
@@ -230,6 +239,33 @@ export default function ClassesPage() {
       toast({
         title: "Error",
         description: error.message || "Failed to remove student",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const createAndEnrollStudentMutation = useMutation({
+    mutationFn: async (data: { classId: string; firstName: string; lastName: string; email: string }) => {
+      const response = await apiRequest("POST", `/api/classes/${data.classId}/students`, {
+        firstName: data.firstName,
+        lastName: data.lastName,
+        email: data.email,
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/classes", selectedClassId, "enrollments"] });
+      setNewStudentData({ firstName: "", lastName: "", email: "" });
+      refetchEnrollments();
+      toast({
+        title: "Student added",
+        description: "Student account created and enrolled in the class successfully.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create student",
         variant: "destructive",
       });
     },
@@ -818,57 +854,135 @@ Michael,Johnson,michael.johnson@example.com`;
           
           <div className="space-y-6">
             {/* Add Student Section */}
-            <div className="space-y-4 border rounded-lg p-4">
-              <h3 className="font-semibold">Add Student</h3>
-              <div className="flex gap-2">
-                <div className="flex-1">
-                  <Input
-                    placeholder="Enter student email address"
-                    value={studentEmail}
-                    onChange={(e) => {
-                      setStudentEmail(e.target.value);
-                      setFoundUser(null);
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && studentEmail.trim()) {
-                        searchUser();
-                      }
-                    }}
-                  />
-                </div>
-                <Button
-                  onClick={searchUser}
-                  disabled={!studentEmail.trim() || isSearchingUser}
-                >
-                  {isSearchingUser ? "Searching..." : "Search"}
-                </Button>
-              </div>
-              
-              {foundUser && (
-                <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-10 w-10">
-                      <AvatarFallback>
-                        {getInitials(foundUser.fullName)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <div className="font-medium">{foundUser.fullName}</div>
-                      <div className="text-sm text-muted-foreground">{foundUser.email}</div>
-                      {foundUser.role && (
-                        <Badge variant="outline" className="mt-1">{foundUser.role}</Badge>
-                      )}
+            <div className="border rounded-lg p-4">
+              <h3 className="font-semibold mb-4">Add Student</h3>
+              <Tabs value={addStudentMode} onValueChange={(v) => setAddStudentMode(v as "search" | "create")}>
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="search" className="flex items-center gap-2">
+                    <Search className="h-4 w-4" />
+                    Find Existing
+                  </TabsTrigger>
+                  <TabsTrigger value="create" className="flex items-center gap-2">
+                    <UserPlus className="h-4 w-4" />
+                    Create New
+                  </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="search" className="space-y-4 mt-4">
+                  <p className="text-sm text-muted-foreground">
+                    Search for an existing user by their email address to enroll them in this class.
+                  </p>
+                  <div className="flex gap-2">
+                    <div className="flex-1">
+                      <Input
+                        placeholder="Enter student email address"
+                        value={studentEmail}
+                        onChange={(e) => {
+                          setStudentEmail(e.target.value);
+                          setFoundUser(null);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && studentEmail.trim()) {
+                            searchUser();
+                          }
+                        }}
+                      />
+                    </div>
+                    <Button
+                      onClick={searchUser}
+                      disabled={!studentEmail.trim() || isSearchingUser}
+                    >
+                      {isSearchingUser ? "Searching..." : "Search"}
+                    </Button>
+                  </div>
+
+                  {foundUser && (
+                    <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-10 w-10">
+                          <AvatarFallback>
+                            {getInitials(foundUser.fullName)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <div className="font-medium">{foundUser.fullName}</div>
+                          <div className="text-sm text-muted-foreground">{foundUser.email}</div>
+                          {foundUser.role && (
+                            <Badge variant="outline" className="mt-1">{foundUser.role}</Badge>
+                          )}
+                        </div>
+                      </div>
+                      <Button
+                        onClick={handleEnrollStudent}
+                        disabled={enrollStudentMutation.isPending}
+                        size="sm"
+                      >
+                        {enrollStudentMutation.isPending ? "Enrolling..." : "Enroll"}
+                      </Button>
+                    </div>
+                  )}
+                </TabsContent>
+
+                <TabsContent value="create" className="space-y-4 mt-4">
+                  <p className="text-sm text-muted-foreground">
+                    Create a new student account and automatically enroll them in this class.
+                  </p>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="firstName">First Name</Label>
+                      <Input
+                        id="firstName"
+                        placeholder="Enter first name"
+                        value={newStudentData.firstName}
+                        onChange={(e) => setNewStudentData({ ...newStudentData, firstName: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="lastName">Last Name</Label>
+                      <Input
+                        id="lastName"
+                        placeholder="Enter last name"
+                        value={newStudentData.lastName}
+                        onChange={(e) => setNewStudentData({ ...newStudentData, lastName: e.target.value })}
+                      />
                     </div>
                   </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email Address</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="Enter email address"
+                      value={newStudentData.email}
+                      onChange={(e) => setNewStudentData({ ...newStudentData, email: e.target.value })}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && newStudentData.firstName.trim() && newStudentData.lastName.trim() && newStudentData.email.trim() && selectedClassId) {
+                          createAndEnrollStudentMutation.mutate({
+                            classId: selectedClassId,
+                            ...newStudentData,
+                          });
+                        }
+                      }}
+                    />
+                  </div>
                   <Button
-                    onClick={handleEnrollStudent}
-                    disabled={enrollStudentMutation.isPending}
-                    size="sm"
+                    onClick={() => {
+                      if (!selectedClassId) return;
+                      createAndEnrollStudentMutation.mutate({
+                        classId: selectedClassId,
+                        ...newStudentData,
+                      });
+                    }}
+                    disabled={!newStudentData.firstName.trim() || !newStudentData.lastName.trim() || !newStudentData.email.trim() || createAndEnrollStudentMutation.isPending}
+                    className="w-full"
                   >
-                    {enrollStudentMutation.isPending ? "Enrolling..." : "Enroll"}
+                    {createAndEnrollStudentMutation.isPending ? "Creating..." : "Create & Enroll Student"}
                   </Button>
-                </div>
-              )}
+                  <p className="text-xs text-muted-foreground">
+                    The student will receive an email to set their password.
+                  </p>
+                </TabsContent>
+              </Tabs>
             </div>
 
             {/* Enrollments List */}

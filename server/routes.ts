@@ -1753,6 +1753,74 @@ Be conversational, friendly, and educational. Provide specific, actionable advic
     }
   });
 
+  // Create a new student and enroll them in a class
+  app.post("/api/classes/:id/students", requireAuth, async (req, res) => {
+    try {
+      const { firstName, lastName, email } = req.body;
+
+      if (!firstName?.trim() || !lastName?.trim() || !email?.trim()) {
+        return res.status(400).json({ message: "First name, last name, and email are required" });
+      }
+
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email.trim())) {
+        return res.status(400).json({ message: "Invalid email format" });
+      }
+
+      const class_ = await storage.getClassById(req.params.id);
+      if (!class_) {
+        return res.status(404).json({ message: "Class not found" });
+      }
+      if (class_.userId !== req.session.userId!) {
+        return res.status(403).json({ message: "Not authorized to manage this class" });
+      }
+
+      // Check if user already exists with this email
+      let user = await storage.getProfileByEmail(email.trim().toLowerCase());
+
+      if (user) {
+        // User exists, check if already enrolled
+        const enrollments = await storage.getClassEnrollments(req.params.id);
+        const alreadyEnrolled = enrollments.some((e: any) => e.userId === user!.id);
+        if (alreadyEnrolled) {
+          return res.status(409).json({ message: "This student is already enrolled in the class" });
+        }
+      } else {
+        // Create new user
+        const fullName = `${firstName.trim()} ${lastName.trim()}`;
+        user = await storage.createProfile({
+          email: email.trim().toLowerCase(),
+          fullName,
+          password: null, // User will need to set password via password reset
+          role: 'student',
+          authProvider: 'email',
+        });
+      }
+
+      // Enroll the student
+      await storage.createClassEnrollment({
+        classId: req.params.id,
+        userId: user.id,
+      });
+
+      res.json({
+        message: "Student added and enrolled successfully",
+        student: {
+          id: user.id,
+          email: user.email,
+          fullName: user.fullName,
+        }
+      });
+    } catch (error: any) {
+      console.error("Create student error:", error);
+      if (error.message?.includes('unique') || error.message?.includes('duplicate')) {
+        return res.status(409).json({ message: "A user with this email already exists" });
+      }
+      res.status(500).json({ message: error.message || "Failed to create student" });
+    }
+  });
+
   // User search endpoint for finding students to enroll
   // Profile management routes
   app.get("/api/profile", requireAuth, async (req, res) => {
